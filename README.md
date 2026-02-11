@@ -17,6 +17,7 @@
 An intelligent multi-agent system that automates SRS creation using **Groq's free API**. Built with FastAPI, it generates professional IEEE 830-1998 compliant documents complete with Mermaid diagrams - all in minutes!
 
 **Key Features:**
+
 - 🤖 7 Specialized AI agents for different SRS sections
 - ⚡ Powered by Groq's lightning-fast LLM inference
 - 📄 Professional `.docx` output with architecture diagrams
@@ -35,32 +36,35 @@ An intelligent multi-agent system that automates SRS creation using **Groq's fre
 
 ## 📦 Prerequisites
 
-| Requirement | Version | Download |
-|------------|---------|----------|
-| Python | 3.10+ | [Download](https://www.python.org/downloads/) |
-| Node.js | Latest LTS | [Download](https://nodejs.org/) |
-| Git | Latest | [Download](https://git-scm.com/downloads/) |
-| Groq API Key | Free | [Get Key](https://console.groq.com/keys) |
+| Requirement  | Version    | Download                                   |
+| ------------ | ---------- | ------------------------------------------ |
+| Python       | 3.10+      | [Download](https://www.python.org/downloads/) |
+| Node.js      | Latest LTS | [Download](https://nodejs.org/)               |
+| Git          | Latest     | [Download](https://git-scm.com/downloads/)    |
+| Groq API Key | Free       | [Get Key](https://console.groq.com/keys)      |
 
 ---
 
 ## 🛠 Installation
 
 ### Step 1: Clone Repository
+
 ```bash
-git clone https://github.com/smitngandhi/SRS_Generation.git
+git clone https://github.com/smitngandhi/SRS_Engine.git
 cd SRS_Generation
 ```
 
 ### Step 2: Create Virtual Environment
 
 **Windows:**
+
 ```bash
 python -m venv venv
 venv\Scripts\activate
 ```
 
 **macOS/Linux:**
+
 ```bash
 python3 -m venv venv
 source venv/bin/activate
@@ -69,12 +73,14 @@ source venv/bin/activate
 > 💡 You'll see `(venv)` in your terminal when activated
 
 ### Step 3: Install Python Dependencies
+
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
 ### Step 4: Install Mermaid CLI
+
 ```bash
 npm install -g @mermaid-js/mermaid-cli
 mmdc --version  # Verify installation
@@ -83,12 +89,14 @@ mmdc --version  # Verify installation
 > **⚠️ CRITICAL for Windows Users**: After installation, you **MUST** configure the Mermaid CLI path in the code.
 
 **Windows Configuration:**
+
 1. Locate your Mermaid CLI installation path (typically):
+
    ```
    C:\Users\<Your Username>\AppData\Roaming\npm\mmdc.cmd
    ```
-
 2. Open `srs_engine/utils/globals.py` and update the `render_mermaid_png` function:
+
    ```python
    # Find the subprocess.run line and update it to:
    subprocess.run([
@@ -97,7 +105,6 @@ mmdc --version  # Verify installation
        "-o", str(output_path)
    ], check=True)
    ```
-
 3. Replace `<Your Username>` with your actual Windows username
 
 **Without this configuration, diagram generation will fail on Windows!**
@@ -107,6 +114,7 @@ mmdc --version  # Verify installation
 ## ⚙️ Configuration
 
 ### 1. Get Your Free Groq API Key
+
 1. Visit [console.groq.com/keys](https://console.groq.com/keys)
 2. Sign up (no billing required!)
 3. Create API Key
@@ -115,11 +123,13 @@ mmdc --version  # Verify installation
 ### 2. Create `.env` File
 
 **Windows:**
+
 ```bash
 type nul > .env
 ```
 
 **macOS/Linux:**
+
 ```bash
 touch .env
 ```
@@ -138,26 +148,30 @@ GROQ_MODEL=groq/meta-llama/llama-4-scout-17b-16e-instruct
 
 **Available Models:** [Groq Models Docs](https://console.groq.com/docs/models)
 
-| Model | Format | Best For |
-|-------|--------|----------|
+| Model             | Format                                             | Best For       |
+| ----------------- | -------------------------------------------------- | -------------- |
 | Llama 4 Scout 17B | `groq/meta-llama/llama-4-scout-17b-16e-instruct` | ⭐ Recommended |
-| Llama 3.3 70B | `groq/meta-llama/llama-3.3-70b-versatile` | High Quality |
-| Llama 3.1 8B | `groq/meta-llama/llama-3.1-8b-instant` | Fast Speed |
+| Llama 3.3 70B     | `groq/meta-llama/llama-3.3-70b-versatile`        | High Quality   |
+| Llama 3.1 8B      | `groq/meta-llama/llama-3.1-8b-instant`           | Fast Speed     |
 
 ---
 
 ## 🚀 Usage
 
 ### 1. Start Server
+
 ```bash
 uvicorn srs_engine.main:app --reload
 ```
 
 ### 2. Open Web Interface
+
 Navigate to: **http://127.0.0.1:8000**
 
 ### 3. Enter Project Details
+
 Fill in the form:
+
 - Project Name
 - Project Description
 - Key Features
@@ -165,16 +179,19 @@ Fill in the form:
 - Technology Stack (optional)
 
 ### 4. Generate SRS
+
 Click "Generate SRS" and wait 2-5 minutes
 
 ### 5. Access Generated Files
 
 **SRS Document:**
+
 ```
 srs_engine/generated_srs/{project_name}_SRS.docx
 ```
 
 **Architecture Diagrams:**
+
 ```
 srs_engine/static/{project_name}_user_interfaces_diagram.png
 srs_engine/static/{project_name}_hardware_interfaces_diagram.png
@@ -187,28 +204,33 @@ srs_engine/static/{project_name}_communication_interfaces_diagram.png
 ## 🔧 Troubleshooting
 
 **`mmdc: command not found`**
+
 ```bash
 npm install -g @mermaid-js/mermaid-cli
 # Add Node.js to PATH if needed
 ```
 
 **`ModuleNotFoundError`**
+
 ```bash
 # Activate venv first!
 pip install -r requirements.txt
 ```
 
 **API Key Error (401)**
+
 - Verify key at [console.groq.com/keys](https://console.groq.com/keys)
 - Check `.env` is in root directory
 - No spaces/quotes around the key
 
 **Port 8000 in use**
+
 ```bash
 uvicorn srs_engine.main:app --reload --port 8001
 ```
 
 **Diagrams not generating (Windows)**
+
 ```bash
 # ⚠️ CRITICAL: Windows users must configure mmdc path
 # Open srs_engine/utils/globals.py
@@ -248,6 +270,7 @@ SRS_Generation/
 ## 🤝 Contributing
 
 Contributions welcome! Please:
+
 1. Fork the repository
 2. Create feature branch (`git checkout -b feature/name`)
 3. Commit changes (`git commit -m 'Add feature'`)
