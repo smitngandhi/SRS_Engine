@@ -218,15 +218,52 @@ def clean_interface_diagrams(external_interfaces: dict) -> dict:
     return external_interfaces
 
 
+
+
 def render_mermaid_png(mermaid_code: str, output_png: Path):
     """
     Renders Mermaid code into a PNG file using mmdc (npm).
     """
+    import os
+    import ctypes
+    from ctypes import wintypes
+    import platform
+    
+    def get_short_path(long_path):
+        """Convert long path to Windows short path (8.3 format)"""
+        if platform.system() != 'Windows':
+            return long_path
+            
+        _GetShortPathNameW = ctypes.windll.kernel32.GetShortPathNameW
+        _GetShortPathNameW.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD]
+        _GetShortPathNameW.restype = wintypes.DWORD
+        
+        output_buf_size = 0
+        while True:
+            output_buf = ctypes.create_unicode_buffer(output_buf_size)
+            needed = _GetShortPathNameW(long_path, output_buf, output_buf_size)
+            if output_buf_size >= needed:
+                return output_buf.value if output_buf.value else long_path
+            else:
+                output_buf_size = needed
+    
     # Check if mmdc is available
-    if not shutil.which("mmdc"):
-        raise FileNotFoundError(
-            "mmdc command not found. Please install it using: npm install -g @mermaid-js/mermaid-cli"
-        )
+    mmdc_path = shutil.which("mmdc")
+    if not mmdc_path:
+        # Try to find it in npm global directory
+        if platform.system() == 'Windows':
+            npm_mmdc = os.path.join(os.environ.get('APPDATA', ''), 'npm', 'mmdc.CMD')
+            if os.path.exists(npm_mmdc):
+                mmdc_path = npm_mmdc
+        
+        if not mmdc_path:
+            raise FileNotFoundError(
+                "mmdc command not found. Please install it using: npm install -g @mermaid-js/mermaid-cli"
+            )
+    
+    # Convert to short path on Windows to handle spaces
+    if platform.system() == 'Windows':
+        mmdc_path = get_short_path(mmdc_path)
     
     output_png.parent.mkdir(parents=True, exist_ok=True)
     mmd_path = output_png.with_suffix(".mmd")
@@ -234,10 +271,8 @@ def render_mermaid_png(mermaid_code: str, output_png: Path):
     with open(mmd_path, "w", encoding="utf-8") as f:
         f.write(mermaid_code)
 
-    css_path = Path("srs_engine/static/custom-diagram.css")
-
     cmd = [
-        "C:\\Users\\Smit\\AppData\\Roaming\\npm\\mmdc.CMD",
+        mmdc_path,
         "-i", str(mmd_path),
         "-o", str(output_png),
         "-w", "2400",
@@ -246,7 +281,6 @@ def render_mermaid_png(mermaid_code: str, output_png: Path):
         "-b", "white",
         "-s", "2"
     ]
-
 
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
