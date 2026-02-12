@@ -68,6 +68,57 @@ async def create_prompt():
     )
 
 
+async def create_prompt(
+    project_name: str,
+    problem_statement: str,
+    section_type: str
+) -> types.Content:
+    
+
+    if section_type == "CORE_FEATURES":
+        text = f"""
+Based on the following project information, generate the core features.
+
+Project Name: {project_name}
+Problem Statement: {problem_statement}
+
+Instructions:
+- Generate 4-12 essential core features
+- Each feature must be clear, concise, and focused on a single functionality
+- Use present tense
+- Keep each feature within 5-10 words
+- Do NOT include explanations or headings
+
+Output Requirements:
+- Return ONLY valid JSON
+- JSON must strictly match the CORE_FEATURES_Section schema
+"""
+    elif section_type == "PRIMARY_USER_FLOW":
+        text = f"""
+Based on the following project information, generate the primary user flow.
+
+Project Name: {project_name}
+Problem Statement: {problem_statement}
+
+Instructions:
+- Describe the complete end-to-end user journey
+- Start from entry/login and end at final output or exit
+- Include all major user actions and system responses
+- Keep the flow logical and sequential
+
+Output Requirements:
+- Return ONLY valid JSON
+- JSON must strictly match the PRIMARY_USER_FLOW_Section schema
+"""
+    else:
+        raise ValueError(f"Unsupported section type: {section_type}")
+
+    return types.Content(
+        role="user",
+        parts=[types.Part(text=text.strip())]
+    )
+
+
 async def generated_response(runner, user_id, session_id, prompt):
     response = None
     async for event in runner.run_async(
@@ -288,3 +339,41 @@ def render_mermaid_png(mermaid_code: str, output_png: Path):
     except subprocess.CalledProcessError as e:
         print(f"❌ mmdc error: {e.stderr}")
         raise
+
+
+from google.genai import types
+
+async def create_enhance_prompt(
+    project_name: str,
+    problem_statement: str
+) -> types.Content:
+    """
+    Create the prompt for the enhance problem statement agent.
+    """
+
+    text = f"""
+Based on the following project information, enhance the problem statement.
+
+Project Name: {project_name}
+Current Problem Statement: {problem_statement}
+
+Instructions:
+- Rewrite the problem statement in an enhanced form
+- Make it specific, measurable, and outcome-driven
+- Identify key stakeholders
+- Define clear success metrics
+- Specify relevant timeframes
+- Clearly explain business value and expected impact
+- Keep the enhanced statement concise and well-structured (50–1000 characters)
+
+Output Requirements:
+- Return ONLY valid JSON
+- JSON must strictly match the EnhancedProblemStatementSection schema
+- Include only the `enhanced_problem_statement` field
+- Do NOT include explanations, markdown, or additional text
+"""
+
+    return types.Content(
+        role="user",
+        parts=[types.Part(text=text.strip())]
+    )
