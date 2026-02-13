@@ -1,25 +1,10 @@
-import os
-from dotenv import load_dotenv, find_dotenv
 from google.adk.agents import LlmAgent
-from google.adk.models.lite_llm import LiteLlm
 from .prompt import AGENT_DESCRIPTION , AGENT_INSTRUCTION
-from ....schemas.nfr_schema import NonFunctionalRequirementsSection
+from ....schemas.technical_srs_schemas.nfr_schema import NonFunctionalRequirementsSection
 from ....utils.globals import generate_content_config
 from ....utils.model import *
 
-# ==================================================
-# Phase 3 System Design Agent ( for CLI )
-# ==================================================
 
-nfr_agent = LlmAgent(
-    name="nfr_agent",
-    model=groq_llm,
-    output_schema=NonFunctionalRequirementsSection,
-    description=AGENT_DESCRIPTION,
-    instruction=AGENT_INSTRUCTION,
-    output_key="nfr_section",
-    generate_content_config = generate_content_config
-)
 
 
 ## For app

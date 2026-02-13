@@ -4,6 +4,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from google.adk.sessions import InMemorySessionService
+from google.adk.agents import SequentialAgent , ParallelAgent
 import json
 import uuid
 from srs_engine.agents.technical_srs_agents.introduction_agent import create_introduction_agent as create_technical_srs_introduction_agent
@@ -13,11 +14,11 @@ from srs_engine.agents.technical_srs_agents.external_interfaces_agent import cre
 from srs_engine.agents.technical_srs_agents.nfr_agent import create_nfr_agent as create_technical_srs_nfr_agent
 from srs_engine.agents.technical_srs_agents.glossary_agent import create_glossary_agent as create_technical_srs_glossary_agent
 from srs_engine.agents.technical_srs_agents.assumptions_agent import create_assumptions_agent as create_technical_srs_assumptions_agent
-from srs_engine.agents.auto_generate_agent import create_auto_generate_agent
-from srs_engine.schemas.srs_input_schema import SRSRequest
-from srs_engine.schemas.auto_generate_input_schema import AutoGenerateInput
-from srs_engine.schemas.problem_statement_enhance_schema import EnhanceProblemStatementInput
-from srs_engine.agents.enhance_problem_statement_agent import create_enhance_problem_statement_agent
+from srs_engine.agents.home_page_agents.auto_generate_agent import create_auto_generate_agent
+from srs_engine.schemas.home_page_schemas.srs_input_schema import SRSRequest
+from srs_engine.schemas.home_page_schemas.auto_generate_input_schema import AutoGenerateInput
+from srs_engine.schemas.home_page_schemas.problem_statement_enhance_schema import EnhanceProblemStatementInput
+from srs_engine.agents.home_page_agents.enhance_problem_statement_agent import create_enhance_problem_statement_agent
 from srs_engine.utils.globals import (
     create_session , 
     create_runner , 
@@ -29,7 +30,6 @@ from srs_engine.utils.globals import (
     render_mermaid_png ,
     create_prompt ,
     create_enhance_prompt)
-from google.adk.agents import SequentialAgent , ParallelAgent
 from pathlib import Path
 import time
 from datetime import datetime
