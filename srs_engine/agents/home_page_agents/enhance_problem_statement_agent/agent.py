@@ -1,8 +1,8 @@
 from google.adk.agents import LlmAgent
 from .prompt import AGENT_DESCRIPTION , AGENT_INSTRUCTION
-from ...schemas.home_page_schemas.problem_statement_enhance_schema import EnhancedProblemStatementSection
-from ...utils.globals import generate_content_config
-from ...utils.model import *
+from ....schemas.home_page_schemas.problem_statement_enhance_schema import EnhancedProblemStatementSection
+from ....utils.globals import generate_content_config
+from ....utils.model import *
 
 
 

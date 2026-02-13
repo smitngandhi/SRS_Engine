@@ -1,9 +1,9 @@
 from google.adk.agents import LlmAgent
 from .prompt import CORE_FEATURES_AGENT_DESCRIPTION , CORE_FEATURES_AGENT_INSTRUCTION , PRIMARY_USER_FLOW_AGENT_DESCRIPTION , PRIMARY_USER_FLOW_AGENT_INSTRUCTION
-from ...schemas.home_page_schemas.core_features_schema import CORE_FEATURES_Section
-from ...schemas.home_page_schemas.primary_user_flow_schema import PRIMARY_USER_FLOW_Section
-from ...utils.globals import generate_content_config
-from ...utils.model import *
+from ....schemas.home_page_schemas.core_features_schema import CORE_FEATURES_Section
+from ....schemas.home_page_schemas.primary_user_flow_schema import PRIMARY_USER_FLOW_Section
+from ....utils.globals import generate_content_config
+from ....utils.model import *
 
 
 
