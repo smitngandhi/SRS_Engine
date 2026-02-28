@@ -1,0 +1,78 @@
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Any
+
+from bson import ObjectId
+from motor.motor_asyncio import AsyncIOMotorDatabase
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+class UserRepo:
+    def __init__(self, db: AsyncIOMotorDatabase):
+        self.db = db
+
+    async def get_by_id(self, user_id: str) -> dict[str, Any] | None:
+        try:
+            oid = ObjectId(user_id)
+        except Exception:
+            return None
+        return await self.db.users.find_one({"_id": oid})
+
+    async def get_by_username(self, username: str) -> dict[str, Any] | None:
+        return await self.db.users.find_one({"username": username})
+
+    async def get_by_google_sub(self, google_sub: str) -> dict[str, Any] | None:
+        return await self.db.users.find_one({"google_sub": google_sub})
+
+    async def create_local_user(
+        self,
+        username: str,
+        password_hash: str,
+        email: str | None = None,
+        display_name: str | None = None,
+    ) -> str:
+        doc = {
+            "username": username,
+            "email": email,
+            "password_hash": password_hash,
+            "google_sub": None,
+            "display_name": display_name or username,
+            "is_active": True,
+            "created_at": _now(),
+            "last_login_at": None,
+        }
+        result = await self.db.users.insert_one(doc)
+        return str(result.inserted_id)
+
+    async def upsert_google_user(
+        self,
+        google_sub: str,
+        email: str | None,
+        display_name: str | None,
+    ) -> dict[str, Any]:
+        update = {
+            "$setOnInsert": {
+                "created_at": _now(),
+                "is_active": True,
+            },
+            "$set": {
+                "google_sub": google_sub,
+                "email": email,
+                "display_name": display_name or email or "Google User",
+                "last_login_at": _now(),
+            },
+        }
+        await self.db.users.update_one({"google_sub": google_sub}, update, upsert=True)
+        return await self.db.users.find_one({"google_sub": google_sub})
+
+    async def update_last_login(self, user_id: str) -> None:
+        try:
+            oid = ObjectId(user_id)
+        except Exception:
+            return
+        await self.db.users.update_one({"_id": oid}, {"$set": {"last_login_at": _now()}})
+

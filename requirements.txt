@@ -1,13 +1,37 @@
-google-adk
-litellm
-pydantic
-typing_extensions
-aiosqlite
-yfinance
-python-docx
+# Core Web Framework
 fastapi[standard]
 uvicorn[standard]
+starlette
+itsdangerous
 jinja2
 python-multipart
-docx2pdf
+
+# AI & LLM
+google-adk
+google-generativeai
+litellm
+
+# Database
+motor
+pymongo
+aiosqlite
+
+# Data Validation & Type Hints
+pydantic
+typing_extensions
+
+# Authentication & Sessions
+passlib[bcrypt]
+bcrypt==4.0.1
+authlib
+python-dotenv
+
+# HTTP & Networking
 requests
+
+# Document Generation
+python-docx
+docx2pdf
+
+# Optional/Legacy (consider removing if not used)
+yfinance

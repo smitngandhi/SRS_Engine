@@ -128,7 +128,7 @@ class SRSRequest(BaseModel):
     output_control: OutputControl
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "project_identity": {
                     "project_name": "Customer Churn Prediction System",
@@ -178,7 +178,7 @@ class SRSResponse(BaseModel):
     srs_document: Optional[str] = Field(None, description="Generated SRS document content")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "status": "success",
                 "message": "SRS generated successfully",

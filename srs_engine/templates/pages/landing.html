@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}Home | SRS_Engine{% endblock %}
+
+{% block content %}
+
+<!-- ── HERO ───────────────────────────────────────────── -->
+<section id="home" class="hero-section">
+  <div class="hero-eyebrow">AI-Powered SRS Generation</div>
+
+  <h1 class="hero-title reveal">
+    Write better specs,<br>
+    <span class="gradient-text">faster than ever.</span>
+  </h1>
+
+  <p class="hero-desc reveal delay-1">
+    SRS_Engine transforms your project ideas into IEEE-grade Software Requirements Specifications — complete with diagrams, structured sections, and compliance guidance.
+  </p>
+
+  <div class="hero-cta reveal delay-2">
+    <a class="btn btn-primary" href="/srs-generator">Open SRS Generator</a>
+    <a class="btn btn-secondary" href="#features">Explore Features</a>
+  </div>
+
+  <div class="hero-scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ── FEATURES ────────────────────────────────────────── -->
+<section id="features" class="features-section">
+  <div class="reveal">
+    <span class="section-label">What we offer</span>
+    <h2 class="section-heading">Everything you need<br>to ship great specs.</h2>
+    <p class="section-sub">From guided forms to AI-enhanced problem statements — every tool you need to document your software properly.</p>
+  </div>
+
+  <div class="features-grid">
+    <div class="feature-card reveal delay-1">
+      <div class="feature-icon">📄</div>
+      <h2>SRS Generation</h2>
+      <p>Guided form input that produces a polished <code>.docx</code> SRS document, following IEEE 830 conventions.</p>
+      <a class="btn btn-primary" href="/srs-generator">Open Generator</a>
+    </div>
+
+    <div class="feature-card reveal delay-2">
+      <div class="feature-icon">✨</div>
+      <h2>Auto-Generate Sections</h2>
+      <p>Generate core features and primary user flows automatically based on your project name and problem statement.</p>
+    </div>
+
+    <div class="feature-card reveal delay-3">
+      <div class="feature-icon">🔁</div>
+      <h2>Problem Statement Enhancer</h2>
+      <p>Improve clarity with measurable, outcome-driven problem statements — powered by AI rewriting.</p>
+    </div>
+
+    <div class="feature-card reveal delay-1">
+      <div class="feature-icon">🗺️</div>
+      <h2>External Interface Diagrams</h2>
+      <p>Mermaid-based architecture diagrams are automatically rendered and embedded directly in your document.</p>
+    </div>
+
+    <div class="feature-card reveal delay-2">
+      <div class="feature-icon">🏛️</div>
+      <h2>Domain-Aware Compliance</h2>
+      <p>Select your industry and get automatic recommendations for standards like HIPAA, GDPR, ISO 25010, and more.</p>
+    </div>
+
+    <div class="feature-card reveal delay-3">
+      <div class="feature-icon">⚡</div>
+      <h2>Multiple Detail Levels</h2>
+      <p>Choose high-level overviews, technical specs, or full enterprise-grade documentation — all from one form.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ── FAQS ─────────────────────────────────────────────── -->
+<section id="faqs" class="faqs-section">
+  <div class="reveal" style="text-align:center; margin: 0 auto;">
+    <span class="section-label">Got questions?</span>
+    <h2 class="section-heading">Frequently Asked<br>Questions</h2>
+  </div>
+
+  <div class="faq-list">
+
+    <div class="faq-item reveal delay-1">
+      <button class="faq-question" aria-expanded="false">
+        Where is the SRS generator?
+        <span class="faq-chevron">▾</span>
+      </button>
+      <div class="faq-answer" role="region">
+        <div class="faq-answer-inner">
+          You can access it from the button above or directly at <a href="/srs-generator">/srs-generator</a>. Just fill in the guided form and click Generate SRS.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item reveal delay-2">
+      <button class="faq-question" aria-expanded="false">
+        Does it change my existing SRS flow?
+        <span class="faq-chevron">▾</span>
+      </button>
+      <div class="faq-answer" role="region">
+        <div class="faq-answer-inner">
+          No. The generator form and API endpoints remain the same — now protected behind login for a personalised experience.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item reveal delay-3">
+      <button class="faq-question" aria-expanded="false">
+        Why do I need to log in?
+        <span class="faq-chevron">▾</span>
+      </button>
+      <div class="faq-answer" role="region">
+        <div class="faq-answer-inner">
+          Login enables user-specific access and future enhancements like saved document history and team collaboration features.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item reveal delay-1">
+      <button class="faq-question" aria-expanded="false">
+        What output format does it produce?
+        <span class="faq-chevron">▾</span>
+      </button>
+      <div class="faq-answer" role="region">
+        <div class="faq-answer-inner">
+          The generator produces a <code>.docx</code> Word document with embedded diagrams, formatted sections, and your chosen level of technical detail.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item reveal delay-2">
+      <button class="faq-question" aria-expanded="false">
+        Can I use Google to sign in?
+        <span class="faq-chevron">▾</span>
+      </button>
+      <div class="faq-answer" role="region">
+        <div class="faq-answer-inner">
+          Yes — Google OAuth is supported. Click "Continue with Google" on the login page for instant access.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ── ABOUT ─────────────────────────────────────────────── -->
+<section id="about" class="about-section">
+  <div class="about-grid">
+    <div class="reveal-left">
+      <span class="section-label">About us</span>
+      <h2 class="section-heading">Built for teams who ship.</h2>
+      <p class="section-sub" style="margin-bottom: 24px;">
+        SRS_Engine is an AI-assisted platform for generating structured Software Requirements Specification documents. It helps teams capture scope, features, interfaces, and non-functional requirements consistently — without the manual overhead.
+      </p>
+      <p class="section-sub">
+        Whether you're a solo developer or a cross-functional team, SRS_Engine makes documentation a first-class citizen of your workflow.
+      </p>
+    </div>
+
+    <div class="about-stat-grid reveal-right">
+      <div class="stat-card">
+        <div class="stat-number">IEEE</div>
+        <div class="stat-label">830-compliant output</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">9+</div>
+        <div class="stat-label">Industry domains</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">3×</div>
+        <div class="stat-label">Faster than manual writing</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">AI</div>
+        <div class="stat-label">Powered enhancements</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ── CONTACT ────────────────────────────────────────────── -->
+<section id="contact" class="contact-section">
+  <div class="reveal" style="text-align:center; margin: 0 auto;">
+    <span class="section-label">Get in touch</span>
+    <h2 class="section-heading">We'd love to<br>hear from you.</h2>
+    <p class="section-sub" style="margin: 0 auto;">Have feedback, a feature request, or a question? Drop us a message.</p>
+  </div>
+
+  <div class="contact-card reveal delay-1">
+    <form id="contactForm" class="form">
+      <label>
+        <span>Your Name</span>
+        <input name="name" type="text" placeholder="Jane Doe" required />
+      </label>
+      <label>
+        <span>Email Address</span>
+        <input name="email" type="email" placeholder="jane@example.com" required />
+      </label>
+      <label>
+        <span>Subject</span>
+        <input name="subject" type="text" placeholder="Feature request, bug report..." required />
+      </label>
+      <label>
+        <span>Message</span>
+        <textarea name="message" rows="5" placeholder="Tell us more..." required></textarea>
+      </label>
+      <input name="website" type="text" class="hp" tabindex="-1" autocomplete="off" />
+      <button class="btn btn-primary" type="submit" style="width: 100%; padding: 13px;">Send Message</button>
+      <div id="contactStatus" class="muted"></div>
+    </form>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', path='site.js') }}"></script>
+{% endblock %}
