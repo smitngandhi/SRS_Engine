@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import email
 from typing import Any
 
 from bson import ObjectId
+from litellm import email
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 
@@ -27,6 +29,9 @@ class UserRepo:
 
     async def get_by_google_sub(self, google_sub: str) -> dict[str, Any] | None:
         return await self.db.users.find_one({"google_sub": google_sub})
+    
+    async def get_by_email(self, email: str) -> dict[str, Any] | None:
+        return await self.db.users.find_one({"email": email})
 
     async def create_local_user(
         self,

@@ -30,6 +30,35 @@
 
 <hr class="section-divider">
 
+<!-- ── MY DOCUMENTS ──────────────────────────────────── -->
+{% if user %}
+<section id="my-documents" class="documents-section">
+  <div class="reveal">
+    <span class="section-label">Your workspace</span>
+    <h2 class="section-heading">My Generated SRS</h2>
+    <p class="section-sub">All your previously generated specifications — ready to download.</p>
+  </div>
+
+  <div id="docsGrid" class="docs-grid">
+    <!-- skeleton cards shown while loading -->
+    <div class="doc-card doc-skeleton reveal delay-1"></div>
+    <div class="doc-card doc-skeleton reveal delay-2"></div>
+    <div class="doc-card doc-skeleton reveal delay-3"></div>
+  </div>
+
+  <div id="docsEmpty" class="docs-empty reveal delay-1" style="display:none;">
+    <div class="docs-empty-icon">📄</div>
+    <p>No documents yet. <a href="/srs-generator">Generate your first SRS →</a></p>
+  </div>
+
+  <div id="docsError" class="docs-error reveal delay-1" style="display:none;">
+    <span>⚠️</span> Failed to load documents. <button class="btn btn-link" onclick="loadDocuments()">Retry</button>
+  </div>
+</section>
+
+<hr class="section-divider">
+{% endif %}
+
 <!-- ── FEATURES ────────────────────────────────────────── -->
 <section id="features" class="features-section">
   <div class="reveal">

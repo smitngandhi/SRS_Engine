@@ -62,7 +62,7 @@
 
   <!-- ── MAIN FORM ────────────────────────────────────── -->
   <main class="srs-main">
-    <form id="srsForm" action="/generate_srs" method="POST">
+    <form id="srsForm">
 
       <!-- STEP 1: Project Identity -->
       <div class="form-step active" data-step="1">
@@ -95,7 +95,7 @@
           <div class="field-group full">
             <div class="label-row">
               <label class="field-label required" for="problem_statement">Problem Statement</label>
-              <button type="button" id="enhanceProblemBtn" class="inline-btn" disabled>✨ Enhance</button>
+              <button type="button" id="enhanceProblemBtn" class="inline-btn">✨ Enhance</button>
             </div>
             <textarea class="field-input" id="problem_statement" name="problem_statement" rows="3"
               placeholder="e.g. Predict customers likely to leave the service to reduce churn" required></textarea>
@@ -190,7 +190,7 @@
           <div class="field-group full">
             <div class="label-row">
               <label class="field-label required" for="core_features">Core Features</label>
-              <button type="button" id="autoGenerateFeaturesBtn" class="inline-btn" disabled>✨ Auto-Generate</button>
+              <button type="button" id="autoGenerateFeaturesBtn" class="inline-btn">✨ Auto-Generate</button>
             </div>
             <textarea class="field-input" id="core_features" name="core_features" rows="5"
               placeholder="e.g. User authentication, dashboard analytics, data upload&#10;(one per line or comma-separated)" required></textarea>
@@ -201,7 +201,7 @@
           <div class="field-group full">
             <div class="label-row">
               <label class="field-label" for="primary_user_flow">Primary User Flow</label>
-              <button type="button" id="autoGenerateFlowBtn" class="inline-btn" disabled>✨ Auto-Generate</button>
+              <button type="button" id="autoGenerateFlowBtn" class="inline-btn">✨ Auto-Generate</button>
             </div>
             <textarea class="field-input" id="primary_user_flow" name="primary_user_flow" rows="4"
               placeholder="e.g. User logs in → uploads data → views prediction results"></textarea>

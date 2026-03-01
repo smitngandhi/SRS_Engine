@@ -14,6 +14,8 @@ import functools
 import logging
 import time
 from typing import Any, Callable, Optional, TypeVar
+# add this import at the top — it's already importing from contextlib? if not, add:
+from contextlib import asynccontextmanager
 
 # Context variables for structured logging
 session_id_var: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
@@ -70,9 +72,10 @@ class LogContext:
 
     def __exit__(self, *args):
         for token in reversed(self.tokens):
-            session_id_var.set(token)  # Reset to previous value
+            token.var.reset(token)
 
 
+@asynccontextmanager
 async def async_log_context(
     session_id: Optional[str] = None,
     user_id: Optional[str] = None,

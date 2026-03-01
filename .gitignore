@@ -210,3 +210,4 @@ __marimo__/
 sample_questions.json
 generated_images/
 venv/
+generated_srs/

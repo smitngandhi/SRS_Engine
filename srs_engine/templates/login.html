@@ -58,16 +58,24 @@
               oninput="validateUsername(this.value)" />
             <span class="input-status" id="usernameStatus"></span>
           </div>
-          <!-- Username rules -->
           <div class="rules-list" id="usernameRules">
             <div class="rule" id="rule-ulen">✗ 3–32 characters</div>
             <div class="rule" id="rule-uchars">✗ Letters, numbers, _ . - only</div>
           </div>
         </label>
 
+        <!-- Email is now REQUIRED -->
         <label>
-          <span>Email <span class="opt-tag">optional</span></span>
-          <input name="email" type="email" placeholder="you@example.com" autocomplete="email" />
+          <span>Email</span>
+          <div class="input-wrap">
+            <input name="email" type="email" id="regEmail" placeholder="you@example.com"
+              autocomplete="email" required
+              oninput="validateEmail(this.value)" />
+            <span class="input-status" id="emailStatus"></span>
+          </div>
+          <div class="rules-list" id="emailRules">
+            <div class="rule" id="rule-email">✗ Valid email address required</div>
+          </div>
         </label>
 
         <label>
@@ -78,12 +86,10 @@
               oninput="validatePassword(this.value)" />
             <button type="button" class="eye-btn" onclick="togglePwd('regPassword', this)">👁</button>
           </div>
-          <!-- Password strength bar -->
           <div class="strength-bar-wrap">
             <div class="strength-bar" id="strengthBar"></div>
           </div>
           <div class="strength-label" id="strengthLabel"></div>
-          <!-- Password rules -->
           <div class="rules-list" id="passwordRules">
             <div class="rule" id="rule-len">✗ At least 8 characters</div>
             <div class="rule" id="rule-upper">✗ One uppercase letter (A–Z)</div>
@@ -133,7 +139,6 @@
   margin-bottom: 16px;
 }
 
-/* Input wrap with icon */
 .input-wrap {
   position: relative;
   display: flex;
@@ -165,22 +170,8 @@
   transition: all 0.2s;
 }
 
-/* Optional tag */
-.opt-tag {
-  font-size: 0.68rem;
-  font-weight: 500;
-  color: var(--muted);
-  background: rgba(255,255,255,0.06);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 1px 7px;
-  margin-left: 6px;
-  vertical-align: middle;
-  text-transform: none;
-  letter-spacing: 0;
-}
+/* No optional tag anymore — email is required */
 
-/* Rules list */
 .rules-list {
   display: grid;
   gap: 5px;
@@ -199,16 +190,9 @@
   align-items: center;
   gap: 6px;
 }
+.rule.pass { color: var(--accent); }
+.rule.fail { color: #ff6b6b; }
 
-.rule.pass {
-  color: var(--accent);
-}
-
-.rule.fail {
-  color: #ff6b6b;
-}
-
-/* Strength bar */
 .strength-bar-wrap {
   height: 3px;
   background: rgba(255,255,255,0.07);
@@ -216,14 +200,12 @@
   margin-top: 8px;
   overflow: hidden;
 }
-
 .strength-bar {
   height: 100%;
   width: 0%;
   border-radius: 999px;
   transition: width 0.4s cubic-bezier(0.22,1,0.36,1), background 0.3s;
 }
-
 .strength-label {
   font-size: 0.74rem;
   font-weight: 600;
@@ -234,7 +216,6 @@
   min-height: 16px;
 }
 
-/* Alert */
 .alert-error {
   display: flex;
   align-items: center;
@@ -275,6 +256,23 @@ function validateUsername(val) {
 
   checkRegisterBtn();
   return lenOk && charsOk;
+}
+
+/* ── Email validation ─────────────────────────────── */
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+function validateEmail(val) {
+  const ok = EMAIL_PATTERN.test(val.trim());
+
+  setRule('rule-email', ok);
+
+  const status = document.getElementById('emailStatus');
+  if (!val.length) { status.textContent = ''; }
+  else if (ok) { status.textContent = '✓'; status.style.color = 'var(--accent)'; }
+  else { status.textContent = '✗'; status.style.color = '#ff6b6b'; }
+
+  checkRegisterBtn();
+  return ok;
 }
 
 /* ── Password validation ──────────────────────────── */
@@ -322,15 +320,19 @@ function updateStrengthBar(passed, length) {
   label.style.color    = level.color;
 }
 
-/* ── Enable register button only when all rules pass ── */
+/* ── Enable register button only when ALL rules pass ── */
 function checkRegisterBtn() {
   const btn      = document.getElementById('registerBtn');
   const username = document.getElementById('regUsername').value;
+  const email    = document.getElementById('regEmail').value;
   const password = document.getElementById('regPassword').value;
+
   const uOk = validateUsernameQuiet(username);
+  const eOk = EMAIL_PATTERN.test(email.trim());
   const pOk = validatePasswordQuiet(password);
-  btn.disabled = !(uOk && pOk);
-  btn.style.opacity = (uOk && pOk) ? '1' : '0.45';
+
+  btn.disabled      = !(uOk && eOk && pOk);
+  btn.style.opacity = (uOk && eOk && pOk) ? '1' : '0.45';
 }
 
 function validateUsernameQuiet(val) {

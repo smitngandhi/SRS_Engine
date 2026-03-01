@@ -68,55 +68,55 @@ async def create_prompt():
     )
 
 
-async def create_prompt(
-    project_name: str,
-    problem_statement: str,
-    section_type: str
-) -> types.Content:
+# async def create_prompt(
+#     project_name: str,
+#     problem_statement: str,
+#     section_type: str
+# ) -> types.Content:
     
 
-    if section_type == "CORE_FEATURES":
-        text = f"""
-Based on the following project information, generate the core features.
+#     if section_type == "CORE_FEATURES":
+#         text = f"""
+# Based on the following project information, generate the core features.
 
-Project Name: {project_name}
-Problem Statement: {problem_statement}
+# Project Name: {project_name}
+# Problem Statement: {problem_statement}
 
-Instructions:
-- Generate 4-12 essential core features
-- Each feature must be clear, concise, and focused on a single functionality
-- Use present tense
-- Keep each feature within 5-10 words
-- Do NOT include explanations or headings
+# Instructions:
+# - Generate 4-12 essential core features
+# - Each feature must be clear, concise, and focused on a single functionality
+# - Use present tense
+# - Keep each feature within 5-10 words
+# - Do NOT include explanations or headings
 
-Output Requirements:
-- Return ONLY valid JSON
-- JSON must strictly match the CORE_FEATURES_Section schema
-"""
-    elif section_type == "PRIMARY_USER_FLOW":
-        text = f"""
-Based on the following project information, generate the primary user flow.
+# Output Requirements:
+# - Return ONLY valid JSON
+# - JSON must strictly match the CORE_FEATURES_Section schema
+# """
+#     elif section_type == "PRIMARY_USER_FLOW":
+#         text = f"""
+# Based on the following project information, generate the primary user flow.
 
-Project Name: {project_name}
-Problem Statement: {problem_statement}
+# Project Name: {project_name}
+# Problem Statement: {problem_statement}
 
-Instructions:
-- Describe the complete end-to-end user journey
-- Start from entry/login and end at final output or exit
-- Include all major user actions and system responses
-- Keep the flow logical and sequential
+# Instructions:
+# - Describe the complete end-to-end user journey
+# - Start from entry/login and end at final output or exit
+# - Include all major user actions and system responses
+# - Keep the flow logical and sequential
 
-Output Requirements:
-- Return ONLY valid JSON
-- JSON must strictly match the PRIMARY_USER_FLOW_Section schema
-"""
-    else:
-        raise ValueError(f"Unsupported section type: {section_type}")
+# Output Requirements:
+# - Return ONLY valid JSON
+# - JSON must strictly match the PRIMARY_USER_FLOW_Section schema
+# """
+#     else:
+#         raise ValueError(f"Unsupported section type: {section_type}")
 
-    return types.Content(
-        role="user",
-        parts=[types.Part(text=text.strip())]
-    )
+#     return types.Content(
+#         role="user",
+#         parts=[types.Part(text=text.strip())]
+#     )
 
 
 async def generated_response(runner, user_id, session_id, prompt):

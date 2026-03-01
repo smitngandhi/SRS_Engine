@@ -28,6 +28,7 @@ USERNAME_MAX = 32
 PASSWORD_MIN = 8
 PASSWORD_MAX = 72  # bcrypt hard limit
 USERNAME_PATTERN = re.compile(r'^[a-zA-Z0-9_.-]+$')
+EMAIL_PATTERN    = re.compile(r'^[^\s@]+@[^\s@]+\.[^\s@]{2,}$')
 
 
 def _redirect_error(url: str, message: str) -> RedirectResponse:
@@ -60,6 +61,15 @@ def _validate_password(password: str) -> str | None:
     return None
 
 
+def _validate_email(email: str) -> str | None:
+    """Returns error message or None if valid."""
+    if not email or not email.strip():
+        return "Email address is required."
+    if not EMAIL_PATTERN.match(email.strip()):
+        return "Please enter a valid email address."
+    return None
+
+
 def _set_session(request: Request, user: dict[str, Any]) -> None:
     request.session["user_id"]      = str(user["_id"])
     request.session["username"]     = user.get("username") or user.get("email") or "user"
@@ -81,7 +91,6 @@ async def login(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     try:
-        # Basic presence check
         username = username.strip()
         if not username or not password:
             return _redirect_error("/login", "Username and password are required.")
@@ -112,26 +121,27 @@ async def register(
     request: Request,
     username: str = Form(...),
     password: str = Form(...),
-    email: str | None = Form(None),
+    email: str = Form(...),          # ← now required, no longer optional
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     try:
         username = username.strip()
-        email    = email.strip() if email else None
+        email    = email.strip()
 
         # ── Validate username ──
         username_error = _validate_username(username)
         if username_error:
             return _redirect_error("/login", username_error)
 
+        # ── Validate email (required) ──
+        email_error = _validate_email(email)
+        if email_error:
+            return _redirect_error("/login", email_error)
+
         # ── Validate password ──
         password_error = _validate_password(password)
         if password_error:
             return _redirect_error("/login", password_error)
-
-        # ── Validate email format if provided ──
-        if email and ("@" not in email or "." not in email.split("@")[-1]):
-            return _redirect_error("/login", "Please enter a valid email address.")
 
         repo = UserRepo(db)
 
@@ -144,14 +154,14 @@ async def register(
             logger.error(f"DB error checking username uniqueness: {e}")
             return _redirect_error("/login", "Could not verify username availability. Please try again.")
 
-        # ── Check email uniqueness if provided ──
-        if email:
-            try:
-                existing_email = await repo.get_by_email(email)
-                if existing_email:
-                    return _redirect_error("/login", "An account with this email already exists.")
-            except Exception:
-                pass  # email check is best-effort; don't block registration
+        # ── Check email uniqueness ──
+        try:
+            existing_email = await repo.get_by_email(email)
+            if existing_email:
+                return _redirect_error("/login", "An account with this email already exists.")
+        except Exception as e:
+            logger.error(f"DB error checking email uniqueness: {e}")
+            return _redirect_error("/login", "Could not verify email availability. Please try again.")
 
         # ── Hash password ──
         try:
@@ -165,7 +175,7 @@ async def register(
             user_id = await repo.create_local_user(
                 username=username,
                 password_hash=password_hash,
-                email=email,
+                email=email,            # always provided now
                 display_name=username,
             )
         except Exception as e:
@@ -177,7 +187,7 @@ async def register(
             return _redirect_error("/login", "Account created but could not load profile. Please log in.")
 
         _set_session(request, user)
-        logger.info(f"New user registered: {username}")
+        logger.info(f"New user registered: {username} | email={email}")
         return RedirectResponse(url="/home", status_code=302)
 
     except Exception as e:
@@ -242,6 +252,10 @@ async def google_callback(request: Request, db: AsyncIOMotorDatabase = Depends(g
 
     if not google_sub:
         return _redirect_error("/login", "Google did not return a valid user ID.")
+
+    # Google always provides a real email — no null risk here
+    if not email:
+        return _redirect_error("/login", "Google did not return an email address.")
 
     try:
         repo = UserRepo(db)

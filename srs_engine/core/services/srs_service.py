@@ -355,8 +355,9 @@ async def generate_srs(app: Any, srs_data: Any, user_id: str) -> dict[str, Any]:
             logger.debug("generate_srs | Final 3 sections extracted")
 
             logger.info("generate_srs | PHASE 4 START | Creating Word document (.docx)...")
-            output_path = f"./srs_engine/generated_srs/{project_name}_SRS.docx"
+            output_path = f"./srs_engine/generated_srs/{user_id}/{project_name}_SRS.docx"
             Path("./srs_engine/generated_srs").mkdir(exist_ok=True)
+            Path(f"./srs_engine/generated_srs/{user_id}").mkdir(exist_ok=True)
 
             generated_path = generate_srs_document(
                 project_name=project_name,

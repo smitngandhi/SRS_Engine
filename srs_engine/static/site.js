@@ -113,3 +113,67 @@ document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
     }
   });
 });
+
+
+/* ── My Documents loader ────────────────────────────── */
+async function loadDocuments() {
+  const grid  = document.getElementById('docsGrid');
+  const empty = document.getElementById('docsEmpty');
+  const error = document.getElementById('docsError');
+  if (!grid) return; // not logged in, section not in DOM
+
+  error.style.display = 'none';
+
+  try {
+    const res  = await fetch('/api/my-documents');
+    if (!res.ok) throw new Error(res.statusText);
+    const docs = await res.json();
+
+    // clear skeletons
+    grid.innerHTML = '';
+
+    if (!docs.length) {
+      empty.style.display = 'block';
+      return;
+    }
+
+    docs.forEach((doc, i) => {
+      const date = new Date(doc.created_at * 1000).toLocaleDateString('en-GB', {
+        day: '2-digit', month: 'short', year: 'numeric'
+      });
+
+      const card = document.createElement('div');
+      card.className = `doc-card reveal delay-${(i % 3) + 1}`;
+      card.innerHTML = `
+        <div class="doc-icon">📋</div>
+        <div class="doc-name">${escHtml(doc.project_name)}</div>
+        <div class="doc-meta">
+          <span class="doc-domain">${escHtml(doc.domain || 'General')}</span>
+          <span class="doc-date">${date}</span>
+          <span class="doc-size">${doc.size_kb} KB</span>
+        </div>
+        <div class="doc-actions">
+          <a class="btn btn-secondary" href="/api/download-srs/${escHtml(doc.id)}" download>
+            ⬇ Download
+          </a>
+        </div>
+      `;
+      grid.appendChild(card);
+
+      // plug into existing reveal observer
+      revealObserver.observe(card);
+    });
+
+  } catch (err) {
+    grid.innerHTML = '';
+    error.style.display = 'block';
+  }
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+document.addEventListener('DOMContentLoaded', loadDocuments);
