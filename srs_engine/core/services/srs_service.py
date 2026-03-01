@@ -323,10 +323,10 @@ async def generate_srs(app: Any, srs_data: Any, user_id: str) -> dict[str, Any]:
             base_dir.mkdir(parents=True, exist_ok=True)
 
             image_paths = {
-                "user_interfaces": base_dir / f"{project_name}_user_interfaces_diagram.png",
-                "hardware_interfaces": base_dir / f"{project_name}_hardware_interfaces_diagram.png",
-                "software_interfaces": base_dir / f"{project_name}_software_interfaces_diagram.png",
-                "communication_interfaces": base_dir / f"{project_name}_communication_interfaces_diagram.png",
+                "user_interfaces": base_dir / f"{user_id}/{project_name}_user_interfaces_diagram.png",
+                "hardware_interfaces": base_dir / f"{user_id}/{project_name}_hardware_interfaces_diagram.png",
+                "software_interfaces": base_dir / f"{user_id}/{project_name}_software_interfaces_diagram.png",
+                "communication_interfaces": base_dir / f"{user_id}/{project_name}_communication_interfaces_diagram.png",
             }
 
             logger.debug("generate_srs | Rendering diagram 1/4 (User Interfaces)...")
