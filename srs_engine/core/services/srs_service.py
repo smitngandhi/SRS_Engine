@@ -211,7 +211,7 @@ async def auto_generate_section(app: Any, input_data: Any, user_id: str) -> dict
             logger.debug("auto_generate_section | Agent created")
             
             runner = await create_runner(agent, project_name, session_service_stateful)
-            prompt = await create_prompt(project_name, problem_statement, internal_section_type)
+            prompt = await create_prompt()
             logger.debug("auto_generate_section | Runner created, calling agent")
             
             response = await generated_response(runner, user_id, session_id, prompt)
