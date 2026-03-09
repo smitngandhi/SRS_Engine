@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-import email
 from typing import Any
 
 from bson import ObjectId
-from litellm import email
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 
@@ -29,7 +27,7 @@ class UserRepo:
 
     async def get_by_google_sub(self, google_sub: str) -> dict[str, Any] | None:
         return await self.db.users.find_one({"google_sub": google_sub})
-    
+
     async def get_by_email(self, email: str) -> dict[str, Any] | None:
         return await self.db.users.find_one({"email": email})
 
@@ -59,20 +57,40 @@ class UserRepo:
         email: str | None,
         display_name: str | None,
     ) -> dict[str, Any]:
-        update = {
-            "$setOnInsert": {
-                "created_at": _now(),
-                "is_active": True,
-            },
-            "$set": {
-                "google_sub": google_sub,
-                "email": email,
-                "display_name": display_name or email or "Google User",
-                "last_login_at": _now(),
-            },
+        # Look up by google_sub first, then fall back to email.
+        # This prevents a duplicate-key error when a user already exists with
+        # the same email but a missing or different google_sub.
+        existing = await self.db.users.find_one({"google_sub": google_sub})
+        if not existing and email:
+            existing = await self.db.users.find_one({"email": email})
+
+        if existing:
+            # Update the existing document — never risk inserting a duplicate.
+            await self.db.users.update_one(
+                {"_id": existing["_id"]},
+                {"$set": {
+                    "google_sub": google_sub,
+                    "email": email,
+                    "display_name": display_name or email or "Google User",
+                    "last_login_at": _now(),
+                    "is_active": True,
+                }},
+            )
+            return await self.db.users.find_one({"_id": existing["_id"]})
+
+        # Brand-new user — safe to insert.
+        doc = {
+            "google_sub": google_sub,
+            "email": email,
+            "display_name": display_name or email or "Google User",
+            "username": None,
+            "password_hash": None,
+            "is_active": True,
+            "created_at": _now(),
+            "last_login_at": _now(),
         }
-        await self.db.users.update_one({"google_sub": google_sub}, update, upsert=True)
-        return await self.db.users.find_one({"google_sub": google_sub})
+        result = await self.db.users.insert_one(doc)
+        return await self.db.users.find_one({"_id": result.inserted_id})
 
     async def update_last_login(self, user_id: str) -> None:
         try:
@@ -80,4 +98,3 @@ class UserRepo:
         except Exception:
             return
         await self.db.users.update_one({"_id": oid}, {"$set": {"last_login_at": _now()}})
-
