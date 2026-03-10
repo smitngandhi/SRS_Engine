@@ -35,3 +35,12 @@ docx2pdf
 
 # Optional/Legacy (consider removing if not used)
 yfinance
+
+docling
+pdfplumber
+pdfminer.six 
+camelot-py[cv] 
+python-docx 
+mammoth 
+pytesseract 
+pdf2image

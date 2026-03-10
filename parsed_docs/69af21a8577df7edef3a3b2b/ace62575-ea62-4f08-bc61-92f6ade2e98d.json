@@ -1,0 +1,751 @@
+{
+  "metadata": {
+    "file_id": "ace62575-ea62-4f08-bc61-92f6ade2e98d",
+    "original_filename": "Task manager_SRS.docx",
+    "file_type": "docx",
+    "page_count": null,
+    "word_count": 2442,
+    "parsed_at": "2026-03-10T18:05:11.235492Z",
+    "primary_extractor": "python-docx",
+    "fallback_used": false,
+    "fallback_extractor": null,
+    "ocr_used": false,
+    "partial_parse": false,
+    "warnings": []
+  },
+  "sections": [
+    {
+      "section_id": "h1-0",
+      "heading": "1. Introduction",
+      "level": 1,
+      "content": "",
+      "tables": [],
+      "subsections": [
+        {
+          "section_id": "1.1",
+          "heading": "Purpose",
+          "level": 2,
+          "content": "The purpose of Task manager is to solve Develop an AI-powered task management system to reduce task completion time by 30% and increase team productivity by 25% within 6 months. The system will serve project managers, team members, and stakeholders by providing automated task assignment, real-time progress tracking, and predictive deadline alerts. This will improve project delivery rates and reduce manual planning efforts while enhancing team collaboration. Success will be measured by task completion rate, project delivery time, and user adoption rate. as defined in the user inputs.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "1.2",
+          "heading": "Intended Audience",
+          "level": 2,
+          "content": "This document is intended for:\nEnd User\nDevelopment Team\nProject Managers\nStakeholders",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "1.3",
+          "heading": "Project Scope",
+          "level": 2,
+          "content": "",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-1",
+              "heading": "Included in scope:",
+              "level": 3,
+              "content": "User registration and authentication\nProject creation and management\nTask assignment and tracking\nReal-time collaboration and commenting\nFile sharing and storage\nCustomizable workflows and pipelines\nAutomated task reminders and notifications\nReporting and analytics dashboard\nIntegration with external tools and services\nRole-based access control and permissions\nData backup and recovery\nSystem monitoring and logging",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-1",
+              "heading": "Excluded from scope:",
+              "level": 3,
+              "content": "Hardware manufacturing\nThird-party marketing",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "1.4",
+          "heading": "Document Conventions",
+          "level": 2,
+          "content": "Standard IEEE formatting\nBold text for UI elements",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "1.5",
+          "heading": "References",
+          "level": 2,
+          "content": "PCI-DSS: Payment Card Industry Data Security Standard",
+          "tables": [],
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "section_id": "h1-1",
+      "heading": "2. Overall Description",
+      "level": 1,
+      "content": "",
+      "tables": [],
+      "subsections": [
+        {
+          "section_id": "2.1",
+          "heading": "Product Perspective",
+          "level": 2,
+          "content": "A standalone Web Application for the Technical sector, as specified in the project identity.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "2.2",
+          "heading": "Product Features",
+          "level": 2,
+          "content": "User registration and authentication\nProject creation and management\nTask assignment and tracking\nReal-time collaboration and commenting\nFile sharing and storage\nCustomizable workflows and pipelines\nAutomated task reminders and notifications\nReporting and analytics dashboard\nIntegration with external tools and services\nRole-based access control and permissions\nData backup and recovery\nSystem monitoring and logging",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "2.3",
+          "heading": "User Classes and Characteristics",
+          "level": 2,
+          "content": "",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-2",
+              "heading": "End User",
+              "level": 3,
+              "content": "Tech-savvy\nFrequent use",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "2.4",
+          "heading": "Operating Environment",
+          "level": 2,
+          "content": "Cloud deployment\nSQL database\nPython backend",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "2.5",
+          "heading": "Design and Implementation Constraints",
+          "level": 2,
+          "content": "PCI-DSS compliance\nHigh performance expectation\nSQL database preference\nPython backend preference\nCloud deployment preference",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "2.6",
+          "heading": "User Documentation",
+          "level": 2,
+          "content": "User Manual\nAPI Documentation",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "2.7",
+          "heading": "Assumptions and Dependencies",
+          "level": 2,
+          "content": "",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-2",
+              "heading": "Assumptions:",
+              "level": 3,
+              "content": "Users have a stable internet connection",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-2",
+              "heading": "Dependencies:",
+              "level": 3,
+              "content": "External tools and services integration\nCloud infrastructure for deployment",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "h1-2",
+      "heading": "3. System Features",
+      "level": 1,
+      "content": "",
+      "tables": [],
+      "subsections": [
+        {
+          "section_id": "3.1",
+          "heading": "User Registration and Authentication",
+          "level": 2,
+          "content": "Description: Manages user registration, login, and authentication.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-3",
+              "heading": "Stimulus/Response Sequences:",
+              "level": 3,
+              "content": "Stimulus: User submits registration form\nResponse: System creates a new user account and sends a verification email.\nStimulus: User logs in with credentials\nResponse: System authenticates the user and redirects to the dashboard.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-3",
+              "heading": "Functional Requirements:",
+              "level": 3,
+              "content": "The system shall validate user input data during registration.\nThe system shall send a verification email to the user's registered email address.\nThe system shall authenticate user credentials during login.",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "3.2",
+          "heading": "Project Creation and Management",
+          "level": 2,
+          "content": "Description: Enables users to create, edit, and manage projects.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-3",
+              "heading": "Stimulus/Response Sequences:",
+              "level": 3,
+              "content": "Stimulus: User submits a new project request\nResponse: System creates a new project and assigns a unique project ID.\nStimulus: User updates project details\nResponse: System updates the project information and notifies team members.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-3",
+              "heading": "Functional Requirements:",
+              "level": 3,
+              "content": "The system shall store project metadata in the database.\nThe system shall validate user input data during project creation.\nThe system shall notify team members of project updates.",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "3.3",
+          "heading": "Task Assignment and Tracking",
+          "level": 2,
+          "content": "Description: Allows users to assign tasks, track progress, and set deadlines.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-3",
+              "heading": "Stimulus/Response Sequences:",
+              "level": 3,
+              "content": "Stimulus: User assigns a task to a team member\nResponse: System updates the task status and notifies the team member.\nStimulus: User updates task progress\nResponse: System updates the task status and notifies the project manager.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-3",
+              "heading": "Functional Requirements:",
+              "level": 3,
+              "content": "The system shall store task metadata in the database.\nThe system shall validate user input data during task assignment.\nThe system shall notify team members of task updates.",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "3.4",
+          "heading": "Real-time Collaboration and Commenting",
+          "level": 2,
+          "content": "Description: Enables real-time collaboration and commenting on projects and tasks.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-3",
+              "heading": "Stimulus/Response Sequences:",
+              "level": 3,
+              "content": "Stimulus: User posts a comment on a project\nResponse: System displays the comment in real-time to all users viewing the project.\nStimulus: User uploads a file to a project\nResponse: System makes the file available for download to all users with access to the project.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-3",
+              "heading": "Functional Requirements:",
+              "level": 3,
+              "content": "The system shall store comments and files in the database.\nThe system shall validate user input data during commenting.\nThe system shall display comments and files in real-time.",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "3.5",
+          "heading": "File Sharing and Storage",
+          "level": 2,
+          "content": "Description: Provides file sharing and storage capabilities.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-3",
+              "heading": "Stimulus/Response Sequences:",
+              "level": 3,
+              "content": "Stimulus: User uploads a file to the system\nResponse: System stores the file and makes it available for download.\nStimulus: User downloads a file from the system\nResponse: System retrieves the file and sends it to the user's device.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-3",
+              "heading": "Functional Requirements:",
+              "level": 3,
+              "content": "The system shall store files in a secure and scalable storage solution.\nThe system shall validate user input data during file upload.\nThe system shall make files available for download to authorized users.",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "3.6",
+          "heading": "Customizable Workflows and Pipelines",
+          "level": 2,
+          "content": "Description: Allows users to customize workflows and pipelines.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-3",
+              "heading": "Stimulus/Response Sequences:",
+              "level": 3,
+              "content": "Stimulus: User configures a custom workflow\nResponse: System updates the workflow configuration and applies it to new projects.\nStimulus: User adds a new stage to a pipeline\nResponse: System updates the pipeline configuration and applies it to new tasks.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-3",
+              "heading": "Functional Requirements:",
+              "level": 3,
+              "content": "The system shall store workflow and pipeline configurations in the database.\nThe system shall validate user input data during workflow and pipeline configuration.\nThe system shall apply workflow and pipeline configurations to new projects and tasks.",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "3.7",
+          "heading": "Automated Task Reminders and Notifications",
+          "level": 2,
+          "content": "Description: Sends automated reminders and notifications for tasks and deadlines.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-3",
+              "heading": "Stimulus/Response Sequences:",
+              "level": 3,
+              "content": "Stimulus: System detects an upcoming deadline\nResponse: System sends a reminder notification to the task assignee.\nStimulus: System detects a task status update\nResponse: System sends a notification to the project manager and task assignee.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-3",
+              "heading": "Functional Requirements:",
+              "level": 3,
+              "content": "The system shall store notification preferences in the database.\nThe system shall detect upcoming deadlines and task status updates.\nThe system shall send notifications to users based on their preferences.",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "3.8",
+          "heading": "Reporting and Analytics Dashboard",
+          "level": 2,
+          "content": "Description: Provides a reporting and analytics dashboard.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-3",
+              "heading": "Stimulus/Response Sequences:",
+              "level": 3,
+              "content": "Stimulus: User views the reporting dashboard\nResponse: System displays project and task metrics in real-time.\nStimulus: User filters dashboard data\nResponse: System updates the dashboard data based on the user's filter criteria.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-3",
+              "heading": "Functional Requirements:",
+              "level": 3,
+              "content": "The system shall store project and task metrics in the database.\nThe system shall display metrics in real-time on the dashboard.\nThe system shall allow users to filter dashboard data.",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "3.9",
+          "heading": "Integration with External Tools and Services",
+          "level": 2,
+          "content": "Description: Integrates with external tools and services.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-3",
+              "heading": "Stimulus/Response Sequences:",
+              "level": 3,
+              "content": "Stimulus: User configures an external tool integration\nResponse: System updates the integration configuration and applies it to new projects.\nStimulus: System receives data from an external tool\nResponse: System processes the data and applies it to the relevant project or task.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-3",
+              "heading": "Functional Requirements:",
+              "level": 3,
+              "content": "The system shall store integration configurations in the database.\nThe system shall validate user input data during integration configuration.\nThe system shall process data from external tools and apply it to projects and tasks.",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "3.10",
+          "heading": "Role-based Access Control and Permissions",
+          "level": 2,
+          "content": "Description: Manages access control and permissions based on user roles.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-3",
+              "heading": "Stimulus/Response Sequences:",
+              "level": 3,
+              "content": "Stimulus: User logs in with a specific role\nResponse: System applies the role-based access control and permissions.\nStimulus: User attempts to access a restricted resource\nResponse: System denies access and notifies the user.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-3",
+              "heading": "Functional Requirements:",
+              "level": 3,
+              "content": "The system shall store role-based access control and permissions in the database.\nThe system shall validate user roles and permissions during login.\nThe system shall deny access to restricted resources based on user roles and permissions.",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "3.11",
+          "heading": "Data Backup and Recovery",
+          "level": 2,
+          "content": "Description: Provides data backup and recovery capabilities.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-3",
+              "heading": "Stimulus/Response Sequences:",
+              "level": 3,
+              "content": "Stimulus: System detects a data loss or corruption\nResponse: System restores data from a backup.\nStimulus: User requests a data backup\nResponse: System creates a backup of the data and stores it securely.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-3",
+              "heading": "Functional Requirements:",
+              "level": 3,
+              "content": "The system shall store backups of data in a secure and scalable storage solution.\nThe system shall validate user input data during backup and recovery.\nThe system shall restore data from backups in case of data loss or corruption.",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "3.12",
+          "heading": "System Monitoring and Logging",
+          "level": 2,
+          "content": "Description: Monitors system performance and logs events.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-3",
+              "heading": "Stimulus/Response Sequences:",
+              "level": 3,
+              "content": "Stimulus: System detects a performance issue\nResponse: System logs the issue and notifies the system administrator.\nStimulus: User views system logs\nResponse: System displays the logs in real-time.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-3",
+              "heading": "Functional Requirements:",
+              "level": 3,
+              "content": "The system shall store logs of system events in a secure and scalable storage solution.\nThe system shall validate user input data during log viewing.\nThe system shall display logs in real-time.",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "h1-3",
+      "heading": "External Interface Requirements",
+      "level": 1,
+      "content": "",
+      "tables": [],
+      "subsections": [
+        {
+          "section_id": "h2-4",
+          "heading": "User Interfaces",
+          "level": 2,
+          "content": "The Task Manager web application will provide an intuitive user interface for project managers, team members, and stakeholders to manage tasks, track progress, and collaborate in real-time. The interface will be accessible on standard computer hardware (keyboard, mouse, display) and will support common web browsers.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-4",
+              "heading": "User Interface Architecture:",
+              "level": 3,
+              "content": "",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "h2-4",
+          "heading": "Hardware Interfaces",
+          "level": 2,
+          "content": "The Task Manager system does not directly interact with any specialized hardware devices. All user interactions are through standard computer hardware (keyboard, mouse, display).",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-4",
+              "heading": "Hardware Interface Architecture:",
+              "level": 3,
+              "content": "",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "h2-4",
+          "heading": "Software Interfaces",
+          "level": 2,
+          "content": "The Task Manager system will integrate with several external software services, including Google OAuth for authentication, SQL database for data storage, and cloud services for deployment and scalability.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-4",
+              "heading": "Software Interface Architecture:",
+              "level": 3,
+              "content": "",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "h2-4",
+          "heading": "Communication Interfaces",
+          "level": 2,
+          "content": "The Task Manager system will communicate with users through standard web protocols (HTTPS) and will support real-time collaboration features using WebSockets.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-4",
+              "heading": "Communication Interface Architecture:",
+              "level": 3,
+              "content": "",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "h1-4",
+      "heading": "5. Non-Functional Requirements",
+      "level": 1,
+      "content": "",
+      "tables": [],
+      "subsections": [
+        {
+          "section_id": "5.1",
+          "heading": "Performance Requirements",
+          "level": 2,
+          "content": "The system shall support 1,000 concurrent users without performance degradation.\nRationale: To accommodate expected peak traffic.\nThe system shall respond to user requests within 2 seconds under normal load.\nRationale: To ensure a responsive user experience.\nThe system shall handle a minimum of 100 tasks per minute.\nRationale: To meet the task management needs of the users.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "5.2",
+          "heading": "Safety Requirements",
+          "level": 2,
+          "content": "The system shall perform automated daily backups of all user data.\nRationale: To prevent data loss in case of system failure or corruption.\nThe system shall have a disaster recovery plan in place.\nRationale: To ensure business continuity in case of a disaster.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "5.3",
+          "heading": "Security Requirements",
+          "level": 2,
+          "content": "The system shall implement OAuth 2.0 for user authentication.\nRationale: To provide a secure and industry-standard authentication mechanism.\nData at rest must be encrypted using AES-256 encryption.\nRationale: To protect sensitive user information in the event of a database breach.\nThe system shall comply with PCI-DSS standards.\nRationale: To ensure secure handling of payment card information.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "5.4",
+          "heading": "Quality Attributes",
+          "level": 2,
+          "content": "The application must achieve 99.9% uptime.\nRationale: To ensure reliability for enterprise-level clients.\nThe system shall be maintainable with modular architecture and comprehensive documentation.\nRationale: To enable efficient updates and reduce long-term maintenance costs.\nThe system shall be scalable to accommodate increasing user demand.\nRationale: To ensure the system can grow with the business.",
+          "tables": [],
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "section_id": "h1-5",
+      "heading": "6. Glossary",
+      "level": 1,
+      "content": "",
+      "tables": [],
+      "subsections": [
+        {
+          "section_id": "6.1",
+          "heading": "Technical Terms",
+          "level": 2,
+          "content": "API: Application Programming Interface - a set of protocols and tools for building software applications.\nMicroservices: An architectural style that structures an application as a collection of loosely coupled services.\nLoad Balancing: Distribution of network traffic across multiple servers to ensure no single server is overwhelmed.\nSQL: Structured Query Language - a language for managing and manipulating data in relational database management systems.\nPython: A high-level, interpreted programming language used for developing the backend of the system.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "6.2",
+          "heading": "Acronyms and Abbreviations",
+          "level": 2,
+          "content": "NFR: Non-Functional Requirements - operational constraints defining system performance, security, and quality.\nAES-256: Advanced Encryption Standard with 256-bit key - a symmetric encryption algorithm for securing data.\nOAuth 2.0: Open Authorization 2.0 - an industry-standard protocol for authorization and authentication.\nGDPR: General Data Protection Regulation - a regulation in EU law on data protection and privacy.\nPCI-DSS: Payment Card Industry Data Security Standard - a set of security standards for handling payment card information.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "6.3",
+          "heading": "System Components",
+          "level": 2,
+          "content": "Authentication Service: Component responsible for verifying user credentials and managing access tokens.\nDatabase Layer: Persistent storage layer managing data operations and ensuring data integrity.\nCloud-based Infrastructure: Infrastructure that uses cloud computing to provide scalable and on-demand access to resources.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "6.4",
+          "heading": "Technologies",
+          "level": 2,
+          "content": "Cloud Service Providers: Third-party services that provide cloud-based infrastructure for deployment and scaling.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "6.5",
+          "heading": "Performance Metrics",
+          "level": 2,
+          "content": "Concurrent Users: Number of users actively using the system simultaneously without performance degradation.\nResponse Time: Time elapsed between a user request and the system's response.\nUptime: Percentage of time the system is operational and accessible, typically expressed as 99.9% or similar.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "6.6",
+          "heading": "Security Terms",
+          "level": 2,
+          "content": "Authentication: Process of verifying the identity of a user or system.\nAuthorization: Process of determining whether a user has access to a particular resource or functionality.\nEncryption: Process of converting plaintext data into unreadable ciphertext to protect it from unauthorized access.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "6.7",
+          "heading": "Quality Attributes",
+          "level": 2,
+          "content": "Reliability: Ability of the system to perform its required functions under normal operating conditions.\nScalability: Ability of the system to handle increased load or demand without decreasing performance.\nMaintainability: Ease with which the system can be maintained, updated, or modified.",
+          "tables": [],
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "section_id": "h1-6",
+      "heading": "7. Assumptions",
+      "level": 1,
+      "content": "",
+      "tables": [],
+      "subsections": [
+        {
+          "section_id": "h3-7",
+          "heading": "Assumption 1:",
+          "level": 3,
+          "content": "Users will have a stable internet connection with a minimum bandwidth of 5 Mbps.\nImpact: If users have poor internet connectivity, the system's performance may degrade, leading to delays in task completion and reduced user satisfaction.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-7",
+              "heading": "Assumption 2:",
+              "level": 3,
+              "content": "The organization will have an existing Active Directory infrastructure for user authentication.\nImpact: Without Active Directory integration, the project would require building a custom authentication system, increasing development time by 3-4 weeks and ongoing maintenance overhead.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-7",
+              "heading": "Assumption 3:",
+              "level": 3,
+              "content": "Average concurrent users will not exceed 1,000 during the first year of operation.\nImpact: If concurrent usage significantly exceeds this threshold, system performance may degrade, requiring emergency infrastructure scaling and potential architecture modifications.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-7",
+              "heading": "Assumption 4:",
+              "level": 3,
+              "content": "Business stakeholders will be available for weekly requirement reviews and timely decision-making.\nImpact: Lack of stakeholder availability could lead to requirement ambiguities, implementation delays, and potential rework due to misaligned expectations.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-7",
+              "heading": "Assumption 5:",
+              "level": 3,
+              "content": "The database server will have at least 500GB of available storage with capacity to expand.\nImpact: Insufficient storage capacity would limit data retention capabilities and could cause system failures if storage limits are reached unexpectedly.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-7",
+              "heading": "Assumption 6:",
+              "level": 3,
+              "content": "Users possess basic computer literacy and familiarity with web-based applications.\nImpact: If users lack basic digital skills, additional training programs and simplified UI/UX would be required, increasing project costs and extending the rollout timeline.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-7",
+              "heading": "Assumption 7:",
+              "level": 3,
+              "content": "Regulatory requirements for data privacy (GDPR, CCPA) will remain stable during development.\nImpact: Changes in data privacy regulations could necessitate significant architectural changes, additional compliance features, and potential project delays.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-7",
+              "heading": "Assumption 8:",
+              "level": 3,
+              "content": "The cloud service provider will maintain the agreed-upon pricing structure for compute and storage resources.\nImpact: Significant price increases could exceed budget constraints, requiring migration to alternative providers or optimization of resource usage to reduce costs.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-7",
+              "heading": "Assumption 9:",
+              "level": 3,
+              "content": "Mobile users will primarily use devices with screen sizes of 5 inches or larger.\nImpact: Supporting smaller screen devices would require additional responsive design work and more extensive mobile testing, increasing development effort.",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "raw_text": "Software Requirements Specification\nfor\nTask manager\nPrepared by Aditya Shukla\nOrganization: Intuitive\nDate Created: 03/02/2026\nTable of Contents\n[Note: The Table of Contents will be automatically generated when you open this document in Microsoft Word. If it doesn't appear, right-click and select 'Update Field']\n1. Introduction\n1.1 Purpose\nThe purpose of Task manager is to solve Develop an AI-powered task management system to reduce task completion time by 30% and increase team productivity by 25% within 6 months. The system will serve project managers, team members, and stakeholders by providing automated task assignment, real-time progress tracking, and predictive deadline alerts. This will improve project delivery rates and reduce manual planning efforts while enhancing team collaboration. Success will be measured by task completion rate, project delivery time, and user adoption rate. as defined in the user inputs.\n1.2 Intended Audience\nThis document is intended for:\nEnd User\nDevelopment Team\nProject Managers\nStakeholders\n1.3 Project Scope\nIncluded in scope:\nUser registration and authentication\nProject creation and management\nTask assignment and tracking\nReal-time collaboration and commenting\nFile sharing and storage\nCustomizable workflows and pipelines\nAutomated task reminders and notifications\nReporting and analytics dashboard\nIntegration with external tools and services\nRole-based access control and permissions\nData backup and recovery\nSystem monitoring and logging\nExcluded from scope:\nHardware manufacturing\nThird-party marketing\n1.4 Document Conventions\nStandard IEEE formatting\nBold text for UI elements\n1.5 References\nPCI-DSS: Payment Card Industry Data Security Standard\n2. Overall Description\n2.1 Product Perspective\nA standalone Web Application for the Technical sector, as specified in the project identity.\n2.2 Product Features\nUser registration and authentication\nProject creation and management\nTask assignment and tracking\nReal-time collaboration and commenting\nFile sharing and storage\nCustomizable workflows and pipelines\nAutomated task reminders and notifications\nReporting and analytics dashboard\nIntegration with external tools and services\nRole-based access control and permissions\nData backup and recovery\nSystem monitoring and logging\n2.3 User Classes and Characteristics\nEnd User\nTech-savvy\nFrequent use\n2.4 Operating Environment\nCloud deployment\nSQL database\nPython backend\n2.5 Design and Implementation Constraints\nPCI-DSS compliance\nHigh performance expectation\nSQL database preference\nPython backend preference\nCloud deployment preference\n2.6 User Documentation\nUser Manual\nAPI Documentation\n2.7 Assumptions and Dependencies\nAssumptions:\nUsers have a stable internet connection\nDependencies:\nExternal tools and services integration\nCloud infrastructure for deployment\n3. System Features\n3.1 User Registration and Authentication\nDescription: Manages user registration, login, and authentication.\nStimulus/Response Sequences:\nStimulus: User submits registration form\nResponse: System creates a new user account and sends a verification email.\nStimulus: User logs in with credentials\nResponse: System authenticates the user and redirects to the dashboard.\nFunctional Requirements:\nThe system shall validate user input data during registration.\nThe system shall send a verification email to the user's registered email address.\nThe system shall authenticate user credentials during login.\n3.2 Project Creation and Management\nDescription: Enables users to create, edit, and manage projects.\nStimulus/Response Sequences:\nStimulus: User submits a new project request\nResponse: System creates a new project and assigns a unique project ID.\nStimulus: User updates project details\nResponse: System updates the project information and notifies team members.\nFunctional Requirements:\nThe system shall store project metadata in the database.\nThe system shall validate user input data during project creation.\nThe system shall notify team members of project updates.\n3.3 Task Assignment and Tracking\nDescription: Allows users to assign tasks, track progress, and set deadlines.\nStimulus/Response Sequences:\nStimulus: User assigns a task to a team member\nResponse: System updates the task status and notifies the team member.\nStimulus: User updates task progress\nResponse: System updates the task status and notifies the project manager.\nFunctional Requirements:\nThe system shall store task metadata in the database.\nThe system shall validate user input data during task assignment.\nThe system shall notify team members of task updates.\n3.4 Real-time Collaboration and Commenting\nDescription: Enables real-time collaboration and commenting on projects and tasks.\nStimulus/Response Sequences:\nStimulus: User posts a comment on a project\nResponse: System displays the comment in real-time to all users viewing the project.\nStimulus: User uploads a file to a project\nResponse: System makes the file available for download to all users with access to the project.\nFunctional Requirements:\nThe system shall store comments and files in the database.\nThe system shall validate user input data during commenting.\nThe system shall display comments and files in real-time.\n3.5 File Sharing and Storage\nDescription: Provides file sharing and storage capabilities.\nStimulus/Response Sequences:\nStimulus: User uploads a file to the system\nResponse: System stores the file and makes it available for download.\nStimulus: User downloads a file from the system\nResponse: System retrieves the file and sends it to the user's device.\nFunctional Requirements:\nThe system shall store files in a secure and scalable storage solution.\nThe system shall validate user input data during file upload.\nThe system shall make files available for download to authorized users.\n3.6 Customizable Workflows and Pipelines\nDescription: Allows users to customize workflows and pipelines.\nStimulus/Response Sequences:\nStimulus: User configures a custom workflow\nResponse: System updates the workflow configuration and applies it to new projects.\nStimulus: User adds a new stage to a pipeline\nResponse: System updates the pipeline configuration and applies it to new tasks.\nFunctional Requirements:\nThe system shall store workflow and pipeline configurations in the database.\nThe system shall validate user input data during workflow and pipeline configuration.\nThe system shall apply workflow and pipeline configurations to new projects and tasks.\n3.7 Automated Task Reminders and Notifications\nDescription: Sends automated reminders and notifications for tasks and deadlines.\nStimulus/Response Sequences:\nStimulus: System detects an upcoming deadline\nResponse: System sends a reminder notification to the task assignee.\nStimulus: System detects a task status update\nResponse: System sends a notification to the project manager and task assignee.\nFunctional Requirements:\nThe system shall store notification preferences in the database.\nThe system shall detect upcoming deadlines and task status updates.\nThe system shall send notifications to users based on their preferences.\n3.8 Reporting and Analytics Dashboard\nDescription: Provides a reporting and analytics dashboard.\nStimulus/Response Sequences:\nStimulus: User views the reporting dashboard\nResponse: System displays project and task metrics in real-time.\nStimulus: User filters dashboard data\nResponse: System updates the dashboard data based on the user's filter criteria.\nFunctional Requirements:\nThe system shall store project and task metrics in the database.\nThe system shall display metrics in real-time on the dashboard.\nThe system shall allow users to filter dashboard data.\n3.9 Integration with External Tools and Services\nDescription: Integrates with external tools and services.\nStimulus/Response Sequences:\nStimulus: User configures an external tool integration\nResponse: System updates the integration configuration and applies it to new projects.\nStimulus: System receives data from an external tool\nResponse: System processes the data and applies it to the relevant project or task.\nFunctional Requirements:\nThe system shall store integration configurations in the database.\nThe system shall validate user input data during integration configuration.\nThe system shall process data from external tools and apply it to projects and tasks.\n3.10 Role-based Access Control and Permissions\nDescription: Manages access control and permissions based on user roles.\nStimulus/Response Sequences:\nStimulus: User logs in with a specific role\nResponse: System applies the role-based access control and permissions.\nStimulus: User attempts to access a restricted resource\nResponse: System denies access and notifies the user.\nFunctional Requirements:\nThe system shall store role-based access control and permissions in the database.\nThe system shall validate user roles and permissions during login.\nThe system shall deny access to restricted resources based on user roles and permissions.\n3.11 Data Backup and Recovery\nDescription: Provides data backup and recovery capabilities.\nStimulus/Response Sequences:\nStimulus: System detects a data loss or corruption\nResponse: System restores data from a backup.\nStimulus: User requests a data backup\nResponse: System creates a backup of the data and stores it securely.\nFunctional Requirements:\nThe system shall store backups of data in a secure and scalable storage solution.\nThe system shall validate user input data during backup and recovery.\nThe system shall restore data from backups in case of data loss or corruption.\n3.12 System Monitoring and Logging\nDescription: Monitors system performance and logs events.\nStimulus/Response Sequences:\nStimulus: System detects a performance issue\nResponse: System logs the issue and notifies the system administrator.\nStimulus: User views system logs\nResponse: System displays the logs in real-time.\nFunctional Requirements:\nThe system shall store logs of system events in a secure and scalable storage solution.\nThe system shall validate user input data during log viewing.\nThe system shall display logs in real-time.\nExternal Interface Requirements\nUser Interfaces\nThe Task Manager web application will provide an intuitive user interface for project managers, team members, and stakeholders to manage tasks, track progress, and collaborate in real-time. The interface will be accessible on standard computer hardware (keyboard, mouse, display) and will support common web browsers.\nUser Interface Architecture:\nHardware Interfaces\nThe Task Manager system does not directly interact with any specialized hardware devices. All user interactions are through standard computer hardware (keyboard, mouse, display).\nHardware Interface Architecture:\nSoftware Interfaces\nThe Task Manager system will integrate with several external software services, including Google OAuth for authentication, SQL database for data storage, and cloud services for deployment and scalability.\nSoftware Interface Architecture:\nCommunication Interfaces\nThe Task Manager system will communicate with users through standard web protocols (HTTPS) and will support real-time collaboration features using WebSockets.\nCommunication Interface Architecture:\n5. Non-Functional Requirements\n5.1 Performance Requirements\nThe system shall support 1,000 concurrent users without performance degradation.\nRationale: To accommodate expected peak traffic.\nThe system shall respond to user requests within 2 seconds under normal load.\nRationale: To ensure a responsive user experience.\nThe system shall handle a minimum of 100 tasks per minute.\nRationale: To meet the task management needs of the users.\n5.2 Safety Requirements\nThe system shall perform automated daily backups of all user data.\nRationale: To prevent data loss in case of system failure or corruption.\nThe system shall have a disaster recovery plan in place.\nRationale: To ensure business continuity in case of a disaster.\n5.3 Security Requirements\nThe system shall implement OAuth 2.0 for user authentication.\nRationale: To provide a secure and industry-standard authentication mechanism.\nData at rest must be encrypted using AES-256 encryption.\nRationale: To protect sensitive user information in the event of a database breach.\nThe system shall comply with PCI-DSS standards.\nRationale: To ensure secure handling of payment card information.\n5.4 Quality Attributes\nThe application must achieve 99.9% uptime.\nRationale: To ensure reliability for enterprise-level clients.\nThe system shall be maintainable with modular architecture and comprehensive documentation.\nRationale: To enable efficient updates and reduce long-term maintenance costs.\nThe system shall be scalable to accommodate increasing user demand.\nRationale: To ensure the system can grow with the business.\n6. Glossary\n6.1 Technical Terms\nAPI: Application Programming Interface - a set of protocols and tools for building software applications.\nMicroservices: An architectural style that structures an application as a collection of loosely coupled services.\nLoad Balancing: Distribution of network traffic across multiple servers to ensure no single server is overwhelmed.\nSQL: Structured Query Language - a language for managing and manipulating data in relational database management systems.\nPython: A high-level, interpreted programming language used for developing the backend of the system.\n6.2 Acronyms and Abbreviations\nNFR: Non-Functional Requirements - operational constraints defining system performance, security, and quality.\nAES-256: Advanced Encryption Standard with 256-bit key - a symmetric encryption algorithm for securing data.\nOAuth 2.0: Open Authorization 2.0 - an industry-standard protocol for authorization and authentication.\nGDPR: General Data Protection Regulation - a regulation in EU law on data protection and privacy.\nPCI-DSS: Payment Card Industry Data Security Standard - a set of security standards for handling payment card information.\n6.3 System Components\nAuthentication Service: Component responsible for verifying user credentials and managing access tokens.\nDatabase Layer: Persistent storage layer managing data operations and ensuring data integrity.\nCloud-based Infrastructure: Infrastructure that uses cloud computing to provide scalable and on-demand access to resources.\n6.4 Technologies\nCloud Service Providers: Third-party services that provide cloud-based infrastructure for deployment and scaling.\n6.5 Performance Metrics\nConcurrent Users: Number of users actively using the system simultaneously without performance degradation.\nResponse Time: Time elapsed between a user request and the system's response.\nUptime: Percentage of time the system is operational and accessible, typically expressed as 99.9% or similar.\n6.6 Security Terms\nAuthentication: Process of verifying the identity of a user or system.\nAuthorization: Process of determining whether a user has access to a particular resource or functionality.\nEncryption: Process of converting plaintext data into unreadable ciphertext to protect it from unauthorized access.\n6.7 Quality Attributes\nReliability: Ability of the system to perform its required functions under normal operating conditions.\nScalability: Ability of the system to handle increased load or demand without decreasing performance.\nMaintainability: Ease with which the system can be maintained, updated, or modified.\n7. Assumptions\nAssumption 1:\nUsers will have a stable internet connection with a minimum bandwidth of 5 Mbps.\nImpact: If users have poor internet connectivity, the system's performance may degrade, leading to delays in task completion and reduced user satisfaction.\nAssumption 2:\nThe organization will have an existing Active Directory infrastructure for user authentication.\nImpact: Without Active Directory integration, the project would require building a custom authentication system, increasing development time by 3-4 weeks and ongoing maintenance overhead.\nAssumption 3:\nAverage concurrent users will not exceed 1,000 during the first year of operation.\nImpact: If concurrent usage significantly exceeds this threshold, system performance may degrade, requiring emergency infrastructure scaling and potential architecture modifications.\nAssumption 4:\nBusiness stakeholders will be available for weekly requirement reviews and timely decision-making.\nImpact: Lack of stakeholder availability could lead to requirement ambiguities, implementation delays, and potential rework due to misaligned expectations.\nAssumption 5:\nThe database server will have at least 500GB of available storage with capacity to expand.\nImpact: Insufficient storage capacity would limit data retention capabilities and could cause system failures if storage limits are reached unexpectedly.\nAssumption 6:\nUsers possess basic computer literacy and familiarity with web-based applications.\nImpact: If users lack basic digital skills, additional training programs and simplified UI/UX would be required, increasing project costs and extending the rollout timeline.\nAssumption 7:\nRegulatory requirements for data privacy (GDPR, CCPA) will remain stable during development.\nImpact: Changes in data privacy regulations could necessitate significant architectural changes, additional compliance features, and potential project delays.\nAssumption 8:\nThe cloud service provider will maintain the agreed-upon pricing structure for compute and storage resources.\nImpact: Significant price increases could exceed budget constraints, requiring migration to alternative providers or optimization of resource usage to reduce costs.\nAssumption 9:\nMobile users will primarily use devices with screen sizes of 5 inches or larger.\nImpact: Supporting smaller screen devices would require additional responsive design work and more extensive mobile testing, increasing development effort.",
+  "tables": []
+}

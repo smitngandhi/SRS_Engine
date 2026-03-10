@@ -3,470 +3,97 @@
 {% block title %}SRS Upgrader | SRS_Engine{% endblock %}
 
 {% block head %}
-<style>
-  /* ── Layout ─────────────────────────────────────────── */
-  .upgrader-layout {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 64px 24px 80px;
-    background: var(--bg, #0d0d10);
-  }
-
-  .upgrader-header {
-    text-align: center;
-    margin-bottom: 56px;
-    max-width: 560px;
-  }
-
-  .upgrader-tag {
-    display: inline-block;
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--accent, #7c6dfa);
-    background: rgba(124, 109, 250, 0.1);
-    border: 1px solid rgba(124, 109, 250, 0.25);
-    border-radius: 100px;
-    padding: 4px 14px;
-    margin-bottom: 20px;
-  }
-
-  .upgrader-title {
-    font-size: clamp(1.9rem, 4vw, 2.6rem);
-    font-weight: 700;
-    color: var(--text, #f0f0f3);
-    line-height: 1.15;
-    margin-bottom: 14px;
-  }
-
-  .upgrader-title .gradient-text {
-    background: linear-gradient(135deg, #7c6dfa 0%, #a78bfa 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .upgrader-desc {
-    font-size: 1rem;
-    color: var(--text-muted, #888);
-    line-height: 1.7;
-  }
-
-  /* ── Upload card ─────────────────────────────────────── */
-  .upload-card {
-    width: 100%;
-    max-width: 640px;
-    background: var(--card-bg, #16161a);
-    border: 1px solid var(--border, #2a2a35);
-    border-radius: 16px;
-    padding: 40px;
-  }
-
-  /* Drop zone */
-  .drop-zone {
-    border: 2px dashed var(--border, #2a2a35);
-    border-radius: 12px;
-    padding: 52px 32px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
-    position: relative;
-  }
-
-  .drop-zone:hover,
-  .drop-zone.drag-over {
-    border-color: var(--accent, #7c6dfa);
-    background: rgba(124, 109, 250, 0.04);
-  }
-
-  .drop-zone input[type="file"] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
-  }
-
-  .drop-icon {
-    font-size: 2.4rem;
-    line-height: 1;
-  }
-
-  .drop-main {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text, #f0f0f3);
-  }
-
-  .drop-sub {
-    font-size: 0.82rem;
-    color: var(--text-muted, #888);
-  }
-
-  .drop-types {
-    display: flex;
-    gap: 8px;
-    margin-top: 4px;
-  }
-
-  .type-badge {
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 3px 10px;
-    border-radius: 100px;
-    border: 1px solid var(--border, #2a2a35);
-    color: var(--text-muted, #888);
-  }
-
-  /* File preview */
-  .file-preview {
-    display: none;
-    align-items: center;
-    gap: 14px;
-    background: rgba(124, 109, 250, 0.06);
-    border: 1px solid rgba(124, 109, 250, 0.2);
-    border-radius: 10px;
-    padding: 14px 18px;
-    margin-top: 16px;
-  }
-
-  .file-preview.visible {
-    display: flex;
-  }
-
-  .file-preview-icon {
-    font-size: 1.6rem;
-    flex-shrink: 0;
-  }
-
-  .file-preview-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .file-preview-name {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text, #f0f0f3);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .file-preview-meta {
-    font-size: 0.78rem;
-    color: var(--text-muted, #888);
-    margin-top: 2px;
-  }
-
-  .file-preview-remove {
-    background: none;
-    border: none;
-    color: var(--text-muted, #888);
-    cursor: pointer;
-    font-size: 1.1rem;
-    padding: 4px;
-    border-radius: 6px;
-    transition: color 0.15s;
-    flex-shrink: 0;
-  }
-
-  .file-preview-remove:hover { color: #ef4444; }
-
-  /* Upload button */
-  .upload-actions {
-    margin-top: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .btn-upload {
-    width: 100%;
-    padding: 14px;
-    background: var(--accent, #7c6dfa);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.2s, transform 0.15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .btn-upload:hover:not(:disabled) {
-    opacity: 0.88;
-    transform: translateY(-1px);
-  }
-
-  .btn-upload:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  /* Status messages */
-  .upload-status {
-    font-size: 0.85rem;
-    border-radius: 8px;
-    padding: 10px 14px;
-    display: none;
-  }
-
-  .upload-status.visible { display: block; }
-
-  .upload-status.success {
-    background: rgba(34, 197, 94, 0.1);
-    border: 1px solid rgba(34, 197, 94, 0.25);
-    color: #4ade80;
-  }
-
-  .upload-status.error {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.25);
-    color: #f87171;
-  }
-
-  /* Progress bar */
-  .progress-wrap {
-    display: none;
-    height: 4px;
-    background: var(--border, #2a2a35);
-    border-radius: 100px;
-    overflow: hidden;
-    margin-top: 8px;
-  }
-
-  .progress-wrap.visible { display: block; }
-
-  .progress-bar {
-    height: 100%;
-    background: var(--accent, #7c6dfa);
-    border-radius: 100px;
-    width: 0%;
-    transition: width 0.4s ease;
-  }
-
-  /* ── Uploaded files list ─────────────────────────────── */
-  .files-section {
-    width: 100%;
-    max-width: 640px;
-    margin-top: 40px;
-  }
-
-  .files-heading {
-    font-size: 0.85rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-muted, #888);
-    margin-bottom: 16px;
-  }
-
-  .files-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .uploaded-file-card {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    background: var(--card-bg, #16161a);
-    border: 1px solid var(--border, #2a2a35);
-    border-radius: 10px;
-    padding: 14px 18px;
-    transition: border-color 0.2s;
-  }
-
-  .uploaded-file-card:hover {
-    border-color: rgba(124, 109, 250, 0.3);
-  }
-
-  .ufc-icon { font-size: 1.5rem; flex-shrink: 0; }
-
-  .ufc-info { flex: 1; min-width: 0; }
-
-  .ufc-name {
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: var(--text, #f0f0f3);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .ufc-meta {
-    font-size: 0.76rem;
-    color: var(--text-muted, #888);
-    margin-top: 2px;
-  }
-
-  .ufc-badge {
-    font-size: 0.68rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 2px 8px;
-    border-radius: 100px;
-    flex-shrink: 0;
-  }
-
-  .ufc-badge.pdf {
-    background: rgba(239, 68, 68, 0.12);
-    color: #f87171;
-    border: 1px solid rgba(239, 68, 68, 0.2);
-  }
-
-  .ufc-badge.docx {
-    background: rgba(59, 130, 246, 0.12);
-    color: #60a5fa;
-    border: 1px solid rgba(59, 130, 246, 0.2);
-  }
-
-  .ufc-delete {
-    background: none;
-    border: none;
-    color: var(--text-muted, #888);
-    cursor: pointer;
-    font-size: 1rem;
-    padding: 4px 6px;
-    border-radius: 6px;
-    transition: color 0.15s, background 0.15s;
-    flex-shrink: 0;
-  }
-
-  .ufc-delete:hover {
-    color: #ef4444;
-    background: rgba(239, 68, 68, 0.08);
-  }
-
-  .files-empty {
-    text-align: center;
-    font-size: 0.88rem;
-    color: var(--text-muted, #888);
-    padding: 32px 0;
-  }
-
-  /* Auth gate */
-  .auth-gate {
-    width: 100%;
-    max-width: 480px;
-    background: var(--card-bg, #16161a);
-    border: 1px solid var(--border, #2a2a35);
-    border-radius: 16px;
-    padding: 52px 40px;
-    text-align: center;
-  }
-
-  .auth-gate-icon { font-size: 2.8rem; margin-bottom: 20px; }
-
-  .auth-gate-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--text, #f0f0f3);
-    margin-bottom: 10px;
-  }
-
-  .auth-gate-desc {
-    font-size: 0.9rem;
-    color: var(--text-muted, #888);
-    line-height: 1.6;
-    margin-bottom: 28px;
-  }
-</style>
+  <link rel="stylesheet" href="{{ url_for('static', path='upgrader_page.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="upgrader-layout">
+<div class="upgrader-page">
 
-  <!-- Header -->
-  <div class="upgrader-header">
-    <div class="upgrader-tag">Step 01 · SRS Upgrader</div>
-    <h1 class="upgrader-title">
+  <!-- ── Page header ──────────────────────────────────── -->
+  <div class="up-header reveal">
+    <div class="up-step-pill">
+      <span class="up-step-dot"></span>
+      Step 01 · SRS Upgrader
+    </div>
+    <h1 class="up-title">
       Upload your <span class="gradient-text">SRS Document</span>
     </h1>
-    <p class="upgrader-desc">
-      Upload an existing PDF or DOCX specification. The upgrader will parse, analyse, and improve it using multi-agent debate.
+    <p class="up-desc">
+      Upload an existing PDF or DOCX specification. The upgrader will parse,
+      analyse, and improve it through multi-agent debate — fixing ambiguity,
+      conflicts, and IEEE&nbsp;830 violations automatically.
     </p>
   </div>
 
   {% if is_logged_in %}
 
-  <!-- ── Upload card ───────────────────────────────────── -->
-  <div class="upload-card">
+  <!-- ── Upload card ──────────────────────────────────── -->
+  <div class="up-card reveal delay-1">
 
     <!-- Drop zone -->
-    <div class="drop-zone" id="dropZone">
-      <input type="file" id="fileInput" accept=".pdf,.docx" />
-      <div class="drop-icon">📂</div>
-      <div class="drop-main">Drop your file here, or click to browse</div>
-      <div class="drop-sub">Maximum file size: 20 MB</div>
-      <div class="drop-types">
-        <span class="type-badge">PDF</span>
-        <span class="type-badge">DOCX</span>
+    <div class="up-drop-zone" id="upDropZone">
+      <input type="file" id="upFileInput" accept=".pdf,.docx" />
+      <div class="up-drop-icon">📂</div>
+      <div class="up-drop-title">Drop your file here, or click to browse</div>
+      <div class="up-drop-sub">Maximum file size: 20 MB</div>
+      <div class="up-type-pills">
+        <span class="up-type-pill">PDF</span>
+        <span class="up-type-pill">DOCX</span>
       </div>
     </div>
 
-    <!-- File preview (shown after selection) -->
-    <div class="file-preview" id="filePreview">
-      <div class="file-preview-icon" id="previewIcon">📄</div>
-      <div class="file-preview-info">
-        <div class="file-preview-name" id="previewName">—</div>
-        <div class="file-preview-meta" id="previewMeta">—</div>
+    <!-- Selected file preview -->
+    <div class="up-file-preview" id="upFilePreview">
+      <div class="up-preview-icon" id="upPreviewIcon">📄</div>
+      <div class="up-preview-info">
+        <div class="up-preview-name" id="upPreviewName">—</div>
+        <div class="up-preview-meta" id="upPreviewMeta">—</div>
       </div>
-      <button class="file-preview-remove" id="removeFileBtn" title="Remove file">✕</button>
+      <button class="up-preview-remove" id="upRemoveFile" title="Remove file">✕</button>
     </div>
 
     <!-- Progress bar -->
-    <div class="progress-wrap" id="progressWrap">
-      <div class="progress-bar" id="progressBar"></div>
+    <div class="up-progress" id="upProgress">
+      <div class="up-progress-fill" id="upProgressFill"></div>
     </div>
 
     <!-- Status message -->
-    <div class="upload-status" id="uploadStatus"></div>
+    <div class="up-status" id="upStatus"></div>
 
-    <!-- Actions -->
-    <div class="upload-actions">
-      <button class="btn-upload" id="uploadBtn" disabled>
-        <span id="uploadBtnIcon">⬆️</span>
-        <span id="uploadBtnLabel">Upload SRS Document</span>
+    <!-- Upload button -->
+    <div class="up-actions">
+      <button class="up-btn-upload" id="upUploadBtn" disabled>
+        <span>⬆</span>
+        <span id="upUploadBtnLabel">Upload SRS Document</span>
       </button>
     </div>
 
   </div>
 
-  <!-- ── Previously uploaded files ──────────────────────── -->
-  <div class="files-section">
-    <div class="files-heading">Your uploaded files</div>
-    <div class="files-list" id="filesList">
-      <div class="files-empty">Loading…</div>
+  <!-- ── Uploaded files ───────────────────────────────── -->
+  <div class="up-files-section reveal delay-2">
+    <div class="up-files-header">
+      <span class="up-files-title">Your uploaded files</span>
+      <span class="up-files-count" id="upFilesCount"></span>
+    </div>
+    <div class="up-files-list" id="upFilesList">
+      <div class="up-files-loading">
+        <div class="up-file-skeleton"></div>
+        <div class="up-file-skeleton"></div>
+      </div>
     </div>
   </div>
 
   {% else %}
 
-  <!-- Auth gate -->
-  <div class="auth-gate">
-    <div class="auth-gate-icon">🔒</div>
-    <div class="auth-gate-title">Login required</div>
-    <div class="auth-gate-desc">
+  <!-- ── Auth gate ────────────────────────────────────── -->
+  <div class="up-auth-gate reveal delay-1">
+    <div class="up-auth-icon">🔒</div>
+    <div class="up-auth-title">Login required</div>
+    <div class="up-auth-desc">
       You need to be logged in to upload and analyse SRS documents.
     </div>
-    <a class="btn btn-primary" href="/login?next=/srs-upgrader" style="display:inline-block; padding: 12px 32px;">
+    <a class="btn btn-primary" href="/login?next=/srs-upgrader">
       Sign in to continue →
     </a>
   </div>
@@ -477,205 +104,7 @@
 {% endblock %}
 
 {% block scripts %}
-{% if is_logged_in %}
-<script>
-  // ── DOM refs ────────────────────────────────────────────
-  const dropZone    = document.getElementById('dropZone');
-  const fileInput   = document.getElementById('fileInput');
-  const filePreview = document.getElementById('filePreview');
-  const previewIcon = document.getElementById('previewIcon');
-  const previewName = document.getElementById('previewName');
-  const previewMeta = document.getElementById('previewMeta');
-  const removeBtn   = document.getElementById('removeFileBtn');
-  const uploadBtn   = document.getElementById('uploadBtn');
-  const uploadBtnLabel = document.getElementById('uploadBtnLabel');
-  const uploadBtnIcon  = document.getElementById('uploadBtnIcon');
-  const uploadStatus   = document.getElementById('uploadStatus');
-  const progressWrap   = document.getElementById('progressWrap');
-  const progressBar    = document.getElementById('progressBar');
-  const filesList      = document.getElementById('filesList');
-
-  let selectedFile = null;
-
-  // ── Drag & drop ─────────────────────────────────────────
-  dropZone.addEventListener('dragover', e => {
-    e.preventDefault();
-    dropZone.classList.add('drag-over');
-  });
-
-  ['dragleave', 'dragend'].forEach(evt =>
-    dropZone.addEventListener(evt, () => dropZone.classList.remove('drag-over'))
-  );
-
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
-    const file = e.dataTransfer?.files?.[0];
-    if (file) setFile(file);
-  });
-
-  fileInput.addEventListener('change', () => {
-    if (fileInput.files?.[0]) setFile(fileInput.files[0]);
-  });
-
-  // ── File selection ──────────────────────────────────────
-  function setFile(file) {
-    const ext = file.name.split('.').pop().toLowerCase();
-    if (!['pdf', 'docx'].includes(ext)) {
-      showStatus('Only PDF and DOCX files are accepted.', 'error');
-      return;
-    }
-    if (file.size > 20 * 1024 * 1024) {
-      showStatus('File exceeds the 20 MB size limit.', 'error');
-      return;
-    }
-
-    selectedFile = file;
-    previewIcon.textContent = ext === 'pdf' ? '📕' : '📘';
-    previewName.textContent = file.name;
-    previewMeta.textContent = `${ext.toUpperCase()} · ${(file.size / 1024).toFixed(1)} KB`;
-    filePreview.classList.add('visible');
-    uploadBtn.disabled = false;
-    clearStatus();
-  }
-
-  removeBtn.addEventListener('click', () => {
-    selectedFile = null;
-    fileInput.value = '';
-    filePreview.classList.remove('visible');
-    uploadBtn.disabled = true;
-    clearStatus();
-  });
-
-  // ── Upload ──────────────────────────────────────────────
-  uploadBtn.addEventListener('click', async () => {
-    if (!selectedFile) return;
-
-    // Lock UI
-    uploadBtn.disabled = true;
-    uploadBtnIcon.textContent = '⏳';
-    uploadBtnLabel.textContent = 'Uploading…';
-    progressWrap.classList.add('visible');
-    animateProgress(80);
-    clearStatus();
-
-    try {
-      const form = new FormData();
-      form.append('file', selectedFile);
-
-      const res = await fetch('/upload/srs', {
-        method: 'POST',
-        body: form,
-      });
-
-      progressBar.style.width = '100%';
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || `Server error (${res.status})`);
-      }
-
-      const data = await res.json();
-      showStatus(`✅ "${data.file.original_filename}" uploaded successfully.`, 'success');
-
-      // Reset form
-      selectedFile = null;
-      fileInput.value = '';
-      filePreview.classList.remove('visible');
-
-      // Refresh list
-      await loadFiles();
-
-    } catch (err) {
-      showStatus(`❌ ${err.message}`, 'error');
-    } finally {
-      uploadBtn.disabled = false;
-      uploadBtnIcon.textContent = '⬆️';
-      uploadBtnLabel.textContent = 'Upload SRS Document';
-      setTimeout(() => {
-        progressWrap.classList.remove('visible');
-        progressBar.style.width = '0%';
-      }, 800);
-    }
-  });
-
-  function animateProgress(target) {
-    let current = 0;
-    const step = () => {
-      if (current < target) {
-        current = Math.min(current + Math.random() * 6 + 2, target);
-        progressBar.style.width = current + '%';
-        requestAnimationFrame(step);
-      }
-    };
-    requestAnimationFrame(step);
-  }
-
-  // ── Status helpers ──────────────────────────────────────
-  function showStatus(msg, type) {
-    uploadStatus.textContent = msg;
-    uploadStatus.className = `upload-status visible ${type}`;
-  }
-
-  function clearStatus() {
-    uploadStatus.className = 'upload-status';
-    uploadStatus.textContent = '';
-  }
-
-  // ── Load uploaded files ─────────────────────────────────
-  async function loadFiles() {
-    try {
-      const res = await fetch('/upload/srs/list');
-      if (!res.ok) throw new Error('Failed to fetch');
-      const { files } = await res.json();
-      renderFiles(files);
-    } catch {
-      filesList.innerHTML = '<div class="files-empty">Failed to load files. Refresh to retry.</div>';
-    }
-  }
-
-  function renderFiles(files) {
-    if (!files.length) {
-      filesList.innerHTML = '<div class="files-empty">No files uploaded yet.</div>';
-      return;
-    }
-
-    filesList.innerHTML = files.map(f => {
-      const date = new Date(f.uploaded_at).toLocaleDateString('en-US', {
-        month: 'short', day: 'numeric', year: 'numeric'
-      });
-      const icon = f.file_type === 'pdf' ? '📕' : '📘';
-      return `
-        <div class="uploaded-file-card" data-id="${f.file_id}">
-          <div class="ufc-icon">${icon}</div>
-          <div class="ufc-info">
-            <div class="ufc-name">${escHtml(f.original_filename)}</div>
-            <div class="ufc-meta">${f.size_kb} KB · Uploaded ${date}</div>
-          </div>
-          <span class="ufc-badge ${f.file_type}">${f.file_type.toUpperCase()}</span>
-          <button class="ufc-delete" onclick="deleteFile('${f.file_id}')" title="Delete">🗑</button>
-        </div>
-      `;
-    }).join('');
-  }
-
-  async function deleteFile(fileId) {
-    if (!confirm('Delete this file?')) return;
-    try {
-      const res = await fetch(`/upload/srs/${fileId}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Delete failed');
-      await loadFiles();
-    } catch (err) {
-      alert(`Failed to delete: ${err.message}`);
-    }
-  }
-
-  function escHtml(str) {
-    return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
-
-  // ── Init ────────────────────────────────────────────────
-  loadFiles();
-</script>
-{% endif %}
+  {% if is_logged_in %}
+    <script src="{{ url_for('static', path='upgrader_page.js') }}"></script>
+  {% endif %}
 {% endblock %}

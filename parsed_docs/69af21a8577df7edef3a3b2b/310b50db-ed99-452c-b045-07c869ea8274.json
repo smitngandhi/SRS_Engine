@@ -1,0 +1,551 @@
+{
+  "metadata": {
+    "file_id": "310b50db-ed99-452c-b045-07c869ea8274",
+    "original_filename": "SentimentScope_SRS.docx",
+    "file_type": "docx",
+    "page_count": null,
+    "word_count": 1304,
+    "parsed_at": "2026-03-10T18:04:27.288462Z",
+    "primary_extractor": "python-docx",
+    "fallback_used": false,
+    "fallback_extractor": null,
+    "ocr_used": false,
+    "partial_parse": false,
+    "warnings": []
+  },
+  "sections": [
+    {
+      "section_id": "h1-0",
+      "heading": "1. Introduction",
+      "level": 1,
+      "content": "",
+      "tables": [],
+      "subsections": [
+        {
+          "section_id": "1.1",
+          "heading": "Purpose",
+          "level": 2,
+          "content": "The purpose of SentimentScope is to analyze public sentiment from social media posts.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "1.2",
+          "heading": "Intended Audience",
+          "level": 2,
+          "content": "This document is intended for:\nManager\nAnalyst\nDevelopment Team\nStakeholders",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "1.3",
+          "heading": "Project Scope",
+          "level": 2,
+          "content": "",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-1",
+              "heading": "Included in scope:",
+              "level": 3,
+              "content": "Data scraping\nSentiment analysis\nVisualization charts",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-1",
+              "heading": "Excluded from scope:",
+              "level": 3,
+              "content": "Hardware manufacturing\nThird-party marketing",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "1.4",
+          "heading": "Document Conventions",
+          "level": 2,
+          "content": "Standard IEEE formatting\nBold text for UI elements",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "1.5",
+          "heading": "References",
+          "level": 2,
+          "content": "GDPR: General Data Protection Regulation",
+          "tables": [],
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "section_id": "h1-1",
+      "heading": "2. Overall Description",
+      "level": 1,
+      "content": "",
+      "tables": [],
+      "subsections": [
+        {
+          "section_id": "2.1",
+          "heading": "Product Perspective",
+          "level": 2,
+          "content": "SentimentScope is a standalone Web Application for the Marketing / Analytics sector, designed to analyze public sentiment from social media posts.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "2.2",
+          "heading": "Product Features",
+          "level": 2,
+          "content": "Data scraping\nSentiment analysis\nVisualization charts",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "2.3",
+          "heading": "User Classes and Characteristics",
+          "level": 2,
+          "content": "",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-2",
+              "heading": "Manager",
+              "level": 3,
+              "content": "Tech-savvy\nFrequent use for strategic decisions",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-2",
+              "heading": "Analyst",
+              "level": 3,
+              "content": "Highly tech-savvy\nFrequent use for data analysis",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "2.4",
+          "heading": "Operating Environment",
+          "level": 2,
+          "content": "Hybrid deployment environment",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "2.5",
+          "heading": "Design and Implementation Constraints",
+          "level": 2,
+          "content": "Backend implementation in Go\nGDPR compliance\nHybrid deployment",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "2.6",
+          "heading": "User Documentation",
+          "level": 2,
+          "content": "User Manual\nAPI Documentation",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "2.7",
+          "heading": "Assumptions and Dependencies",
+          "level": 2,
+          "content": "",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-2",
+              "heading": "Assumptions:",
+              "level": 3,
+              "content": "Users have access to social media platforms",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-2",
+              "heading": "Dependencies:",
+              "level": 3,
+              "content": "Social media APIs for data scraping\nGo backend framework",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "h1-2",
+      "heading": "3. System Features",
+      "level": 1,
+      "content": "",
+      "tables": [],
+      "subsections": [
+        {
+          "section_id": "3.1",
+          "heading": "User Authentication",
+          "level": 2,
+          "content": "Description: Authenticates users and authorizes access to the system.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-3",
+              "heading": "Stimulus/Response Sequences:",
+              "level": 3,
+              "content": "Stimulus: User submits login credentials\nResponse: System verifies credentials and grants access.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-3",
+              "heading": "Functional Requirements:",
+              "level": 3,
+              "content": "The system shall validate user credentials against a database.\nThe system shall generate a session token upon successful authentication.",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "3.2",
+          "heading": "Data Scraping",
+          "level": 2,
+          "content": "Description: Extracts data from social media posts based on user input.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-3",
+              "heading": "Stimulus/Response Sequences:",
+              "level": 3,
+              "content": "Stimulus: Analyst inputs a keyword\nResponse: System scrapes social media posts related to the keyword.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-3",
+              "heading": "Functional Requirements:",
+              "level": 3,
+              "content": "The system shall use a web scraping library to extract data from social media platforms.\nThe system shall store scraped data in a database for further analysis.",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "3.3",
+          "heading": "Sentiment Analysis",
+          "level": 2,
+          "content": "Description: Analyzes the sentiment of scraped social media posts.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-3",
+              "heading": "Stimulus/Response Sequences:",
+              "level": 3,
+              "content": "Stimulus: System receives scraped social media posts\nResponse: System analyzes the sentiment of the posts.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-3",
+              "heading": "Functional Requirements:",
+              "level": 3,
+              "content": "The system shall use a natural language processing library to analyze sentiment.\nThe system shall categorize sentiment as positive, negative, or neutral.",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "3.4",
+          "heading": "Visualization Charts",
+          "level": 2,
+          "content": "Description: Displays sentiment analysis results in a graphical format.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-3",
+              "heading": "Stimulus/Response Sequences:",
+              "level": 3,
+              "content": "Stimulus: System completes sentiment analysis\nResponse: System generates visualization charts.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-3",
+              "heading": "Functional Requirements:",
+              "level": 3,
+              "content": "The system shall use a charting library to generate bar charts and pie charts.\nThe system shall display charts in a user-friendly dashboard.",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "h1-3",
+      "heading": "4. External Interface Requirements",
+      "level": 1,
+      "content": "",
+      "tables": [],
+      "subsections": [
+        {
+          "section_id": "4.1",
+          "heading": "User Interfaces",
+          "level": 2,
+          "content": "The SentimentScope web application features a responsive design built with React 18 and TypeScript. It supports modern web browsers (Chrome 90+, Firefox 88+, Safari 14+) and mobile devices (iOS 14+, Android 10+). The interface includes a real-time dashboard with WebSocket updates, role-based access control (Analyst, Manager), and progressive web app capabilities with service worker caching.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-4",
+              "heading": "User Interface Architecture:",
+              "level": 3,
+              "content": "",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "4.2",
+          "heading": "Hardware Interfaces",
+          "level": 2,
+          "content": "This software system operates entirely in a cloud-native environment with no direct hardware integrations. All infrastructure is virtualized and managed through containerization (Docker/Kubernetes).",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-4",
+              "heading": "Hardware Interface Architecture:",
+              "level": 3,
+              "content": "",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "4.3",
+          "heading": "Software Interfaces",
+          "level": 2,
+          "content": "The system uses a Go-based backend with a hybrid deployment preference. It integrates with external services for authentication and data storage, but specific software interfaces are not detailed in the provided SRS.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-4",
+              "heading": "Software Interface Architecture:",
+              "level": 3,
+              "content": "",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "section_id": "4.4",
+          "heading": "Communication Interfaces",
+          "level": 2,
+          "content": "All client-server communication is encrypted via TLS. The system uses REST APIs for data exchange and WebSocket for real-time updates. Specific communication protocols and security layers are not detailed in the provided SRS.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-4",
+              "heading": "Communication Interface Architecture:",
+              "level": 3,
+              "content": "",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "h1-4",
+      "heading": "5. Non-Functional Requirements",
+      "level": 1,
+      "content": "",
+      "tables": [],
+      "subsections": [
+        {
+          "section_id": "5.1",
+          "heading": "Performance Requirements",
+          "level": 2,
+          "content": "The system shall support 100 to 1,000 concurrent users without performance degradation.\nRationale: To accommodate expected peak traffic during marketing campaigns.\nThe system shall respond to user requests in real-time.\nRationale: To ensure a responsive user experience and meet industry standards.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "5.2",
+          "heading": "Safety Requirements",
+          "level": 2,
+          "content": "",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "5.3",
+          "heading": "Security Requirements",
+          "level": 2,
+          "content": "The system shall implement authentication for all users.\nRationale: To ensure that only authorized users can access the system.\nThe system shall comply with GDPR requirements.\nRationale: To protect sensitive user information and meet regulatory requirements.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "5.4",
+          "heading": "Quality Attributes",
+          "level": 2,
+          "content": "The application must achieve high availability.\nRationale: To ensure reliability for enterprise-level clients.\nThe system shall be maintainable with modular architecture and comprehensive documentation.\nRationale: To enable efficient updates and reduce long-term maintenance costs.",
+          "tables": [],
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "section_id": "h1-5",
+      "heading": "6. Glossary",
+      "level": 1,
+      "content": "",
+      "tables": [],
+      "subsections": [
+        {
+          "section_id": "6.1",
+          "heading": "Technical Terms",
+          "level": 2,
+          "content": "API: Application Programming Interface - a set of protocols and tools for building software applications.\nGo: A statically typed, compiled programming language used for developing the backend of the system.\nGDPR: General Data Protection Regulation - a regulation in EU law on data protection and privacy.\nHybrid Deployment: A deployment environment that combines on-premises and cloud-based infrastructure.\nWeb Scraping: The process of automatically extracting data from web pages.\nSentiment Analysis: A natural language processing technique used to determine the emotional tone or attitude conveyed by a piece of text.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "6.2",
+          "heading": "Acronyms and Abbreviations",
+          "level": 2,
+          "content": "GDPR: General Data Protection Regulation\nAPI: Application Programming Interface",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "6.3",
+          "heading": "System Components",
+          "level": 2,
+          "content": "Authentication Service: Component responsible for verifying user credentials and managing access tokens.\nDatabase Layer: Persistent storage layer managing data operations and ensuring data integrity.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "6.4",
+          "heading": "Technologies",
+          "level": 2,
+          "content": "Go: Programming language used for developing the backend of the system.\nCloud Service Providers: Third-party services that provide cloud-based infrastructure for deployment and scaling.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "6.5",
+          "heading": "Performance Metrics",
+          "level": 2,
+          "content": "Concurrent Users: Number of users actively using the system simultaneously without performance degradation.\nResponse Time: Time elapsed between a user request and the system's response.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "6.6",
+          "heading": "Security Terms",
+          "level": 2,
+          "content": "Authentication: Process of verifying the identity of a user or system.\nAuthorization: Process of determining whether a user has access to a particular resource or functionality.\nEncryption: Process of converting plaintext data into unreadable ciphertext to protect it from unauthorized access.",
+          "tables": [],
+          "subsections": []
+        },
+        {
+          "section_id": "6.7",
+          "heading": "Quality Attributes",
+          "level": 2,
+          "content": "Reliability: Ability of the system to perform its required functions under normal operating conditions.\nScalability: Ability of the system to handle increased load or demand without decreasing performance.\nMaintainability: Ease with which the system can be maintained, updated, or modified.",
+          "tables": [],
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "section_id": "h1-6",
+      "heading": "7. Assumptions",
+      "level": 1,
+      "content": "",
+      "tables": [],
+      "subsections": [
+        {
+          "section_id": "h3-7",
+          "heading": "Assumption 1:",
+          "level": 3,
+          "content": "Users have access to social media platforms.\nImpact: If users do not have access to social media platforms, the system will not be able to scrape data, leading to incomplete sentiment analysis and reduced functionality.",
+          "tables": [],
+          "subsections": [
+            {
+              "section_id": "h3-7",
+              "heading": "Assumption 2:",
+              "level": 3,
+              "content": "The social media APIs used for data scraping will maintain a stable and compatible interface.\nImpact: If the social media APIs change or become unstable, the system's data scraping functionality may break, requiring immediate updates to adapt to the changes.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-7",
+              "heading": "Assumption 3:",
+              "level": 3,
+              "content": "The Go backend framework will be available and compatible with the chosen database.\nImpact: If the Go backend framework or database compatibility issues arise, the system's development timeline may be delayed, and additional resources may be required to resolve the issues.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-7",
+              "heading": "Assumption 4:",
+              "level": 3,
+              "content": "The system will be deployed in a hybrid environment with reliable internet connectivity.\nImpact: If the hybrid environment experiences connectivity issues or downtime, the system's availability and performance may be negatively impacted.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-7",
+              "heading": "Assumption 5:",
+              "level": 3,
+              "content": "Users possess basic computer literacy and familiarity with web-based applications.\nImpact: If users lack basic digital skills, additional training programs and simplified UI/UX may be required, increasing project costs and extending the rollout timeline.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-7",
+              "heading": "Assumption 6:",
+              "level": 3,
+              "content": "The cloud service provider will maintain the agreed-upon pricing structure for compute and storage resources.\nImpact: Significant price increases could exceed budget constraints, requiring migration to alternative providers or optimization of resource usage to reduce costs.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-7",
+              "heading": "Assumption 7:",
+              "level": 3,
+              "content": "Regulatory requirements for data privacy (GDPR, CCPA) will remain stable during development.\nImpact: Changes in data privacy regulations could necessitate significant architectural changes, additional compliance features, and potential project delays.",
+              "tables": [],
+              "subsections": []
+            },
+            {
+              "section_id": "h3-7",
+              "heading": "Assumption 8:",
+              "level": 3,
+              "content": "The database server will have sufficient storage capacity with the ability to expand.\nImpact: Insufficient storage capacity would limit data retention capabilities and could cause system failures if storage limits are reached unexpectedly.",
+              "tables": [],
+              "subsections": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "raw_text": "Software Requirements Specification\nfor\nSentimentScope\nPrepared by Kunal Verma, Dhruvil Joshi\nOrganization: Charotar University of Science and Technology\nDate Created: 02/02/2026\nTable of Contents\n[Note: The Table of Contents will be automatically generated when you open this document in Microsoft Word. If it doesn't appear, right-click and select 'Update Field']\n1. Introduction\n1.1 Purpose\nThe purpose of SentimentScope is to analyze public sentiment from social media posts.\n1.2 Intended Audience\nThis document is intended for:\nManager\nAnalyst\nDevelopment Team\nStakeholders\n1.3 Project Scope\nIncluded in scope:\nData scraping\nSentiment analysis\nVisualization charts\nExcluded from scope:\nHardware manufacturing\nThird-party marketing\n1.4 Document Conventions\nStandard IEEE formatting\nBold text for UI elements\n1.5 References\nGDPR: General Data Protection Regulation\n2. Overall Description\n2.1 Product Perspective\nSentimentScope is a standalone Web Application for the Marketing / Analytics sector, designed to analyze public sentiment from social media posts.\n2.2 Product Features\nData scraping\nSentiment analysis\nVisualization charts\n2.3 User Classes and Characteristics\nManager\nTech-savvy\nFrequent use for strategic decisions\nAnalyst\nHighly tech-savvy\nFrequent use for data analysis\n2.4 Operating Environment\nHybrid deployment environment\n2.5 Design and Implementation Constraints\nBackend implementation in Go\nGDPR compliance\nHybrid deployment\n2.6 User Documentation\nUser Manual\nAPI Documentation\n2.7 Assumptions and Dependencies\nAssumptions:\nUsers have access to social media platforms\nDependencies:\nSocial media APIs for data scraping\nGo backend framework\n3. System Features\n3.1 User Authentication\nDescription: Authenticates users and authorizes access to the system.\nStimulus/Response Sequences:\nStimulus: User submits login credentials\nResponse: System verifies credentials and grants access.\nFunctional Requirements:\nThe system shall validate user credentials against a database.\nThe system shall generate a session token upon successful authentication.\n3.2 Data Scraping\nDescription: Extracts data from social media posts based on user input.\nStimulus/Response Sequences:\nStimulus: Analyst inputs a keyword\nResponse: System scrapes social media posts related to the keyword.\nFunctional Requirements:\nThe system shall use a web scraping library to extract data from social media platforms.\nThe system shall store scraped data in a database for further analysis.\n3.3 Sentiment Analysis\nDescription: Analyzes the sentiment of scraped social media posts.\nStimulus/Response Sequences:\nStimulus: System receives scraped social media posts\nResponse: System analyzes the sentiment of the posts.\nFunctional Requirements:\nThe system shall use a natural language processing library to analyze sentiment.\nThe system shall categorize sentiment as positive, negative, or neutral.\n3.4 Visualization Charts\nDescription: Displays sentiment analysis results in a graphical format.\nStimulus/Response Sequences:\nStimulus: System completes sentiment analysis\nResponse: System generates visualization charts.\nFunctional Requirements:\nThe system shall use a charting library to generate bar charts and pie charts.\nThe system shall display charts in a user-friendly dashboard.\n4. External Interface Requirements\n4.1 User Interfaces\nThe SentimentScope web application features a responsive design built with React 18 and TypeScript. It supports modern web browsers (Chrome 90+, Firefox 88+, Safari 14+) and mobile devices (iOS 14+, Android 10+). The interface includes a real-time dashboard with WebSocket updates, role-based access control (Analyst, Manager), and progressive web app capabilities with service worker caching.\nUser Interface Architecture:\n4.2 Hardware Interfaces\nThis software system operates entirely in a cloud-native environment with no direct hardware integrations. All infrastructure is virtualized and managed through containerization (Docker/Kubernetes).\nHardware Interface Architecture:\n4.3 Software Interfaces\nThe system uses a Go-based backend with a hybrid deployment preference. It integrates with external services for authentication and data storage, but specific software interfaces are not detailed in the provided SRS.\nSoftware Interface Architecture:\n4.4 Communication Interfaces\nAll client-server communication is encrypted via TLS. The system uses REST APIs for data exchange and WebSocket for real-time updates. Specific communication protocols and security layers are not detailed in the provided SRS.\nCommunication Interface Architecture:\n5. Non-Functional Requirements\n5.1 Performance Requirements\nThe system shall support 100 to 1,000 concurrent users without performance degradation.\nRationale: To accommodate expected peak traffic during marketing campaigns.\nThe system shall respond to user requests in real-time.\nRationale: To ensure a responsive user experience and meet industry standards.\n5.2 Safety Requirements\n5.3 Security Requirements\nThe system shall implement authentication for all users.\nRationale: To ensure that only authorized users can access the system.\nThe system shall comply with GDPR requirements.\nRationale: To protect sensitive user information and meet regulatory requirements.\n5.4 Quality Attributes\nThe application must achieve high availability.\nRationale: To ensure reliability for enterprise-level clients.\nThe system shall be maintainable with modular architecture and comprehensive documentation.\nRationale: To enable efficient updates and reduce long-term maintenance costs.\n6. Glossary\n6.1 Technical Terms\nAPI: Application Programming Interface - a set of protocols and tools for building software applications.\nGo: A statically typed, compiled programming language used for developing the backend of the system.\nGDPR: General Data Protection Regulation - a regulation in EU law on data protection and privacy.\nHybrid Deployment: A deployment environment that combines on-premises and cloud-based infrastructure.\nWeb Scraping: The process of automatically extracting data from web pages.\nSentiment Analysis: A natural language processing technique used to determine the emotional tone or attitude conveyed by a piece of text.\n6.2 Acronyms and Abbreviations\nGDPR: General Data Protection Regulation\nAPI: Application Programming Interface\n6.3 System Components\nAuthentication Service: Component responsible for verifying user credentials and managing access tokens.\nDatabase Layer: Persistent storage layer managing data operations and ensuring data integrity.\n6.4 Technologies\nGo: Programming language used for developing the backend of the system.\nCloud Service Providers: Third-party services that provide cloud-based infrastructure for deployment and scaling.\n6.5 Performance Metrics\nConcurrent Users: Number of users actively using the system simultaneously without performance degradation.\nResponse Time: Time elapsed between a user request and the system's response.\n6.6 Security Terms\nAuthentication: Process of verifying the identity of a user or system.\nAuthorization: Process of determining whether a user has access to a particular resource or functionality.\nEncryption: Process of converting plaintext data into unreadable ciphertext to protect it from unauthorized access.\n6.7 Quality Attributes\nReliability: Ability of the system to perform its required functions under normal operating conditions.\nScalability: Ability of the system to handle increased load or demand without decreasing performance.\nMaintainability: Ease with which the system can be maintained, updated, or modified.\n7. Assumptions\nAssumption 1:\nUsers have access to social media platforms.\nImpact: If users do not have access to social media platforms, the system will not be able to scrape data, leading to incomplete sentiment analysis and reduced functionality.\nAssumption 2:\nThe social media APIs used for data scraping will maintain a stable and compatible interface.\nImpact: If the social media APIs change or become unstable, the system's data scraping functionality may break, requiring immediate updates to adapt to the changes.\nAssumption 3:\nThe Go backend framework will be available and compatible with the chosen database.\nImpact: If the Go backend framework or database compatibility issues arise, the system's development timeline may be delayed, and additional resources may be required to resolve the issues.\nAssumption 4:\nThe system will be deployed in a hybrid environment with reliable internet connectivity.\nImpact: If the hybrid environment experiences connectivity issues or downtime, the system's availability and performance may be negatively impacted.\nAssumption 5:\nUsers possess basic computer literacy and familiarity with web-based applications.\nImpact: If users lack basic digital skills, additional training programs and simplified UI/UX may be required, increasing project costs and extending the rollout timeline.\nAssumption 6:\nThe cloud service provider will maintain the agreed-upon pricing structure for compute and storage resources.\nImpact: Significant price increases could exceed budget constraints, requiring migration to alternative providers or optimization of resource usage to reduce costs.\nAssumption 7:\nRegulatory requirements for data privacy (GDPR, CCPA) will remain stable during development.\nImpact: Changes in data privacy regulations could necessitate significant architectural changes, additional compliance features, and potential project delays.\nAssumption 8:\nThe database server will have sufficient storage capacity with the ability to expand.\nImpact: Insufficient storage capacity would limit data retention capabilities and could cause system failures if storage limits are reached unexpectedly.",
+  "tables": []
+}

@@ -1,0 +1,1042 @@
+{
+  "metadata": {
+    "file_id": "2f04d827-c929-44ba-a04c-1da5083783de",
+    "original_filename": "New-Architechture.pdf",
+    "file_type": "pdf",
+    "page_count": 11,
+    "word_count": 1155,
+    "parsed_at": "2026-03-10T18:03:52.122527Z",
+    "primary_extractor": "pdfplumber",
+    "fallback_used": false,
+    "fallback_extractor": null,
+    "ocr_used": false,
+    "partial_parse": false,
+    "warnings": [
+      "camelot found 13 tables (used over pdfplumber tables)"
+    ]
+  },
+  "sections": [
+    {
+      "section_id": "4.1",
+      "heading": "Architecture (Mermaid)",
+      "level": 2,
+      "content": "https://stackedit.io/app# 3/11\n3/10/26, 3:43 PM StackEdit\nUser or Client\nWorkflow API Service - ECS",
+      "tables": [],
+      "subsections": []
+    },
+    {
+      "section_id": "202",
+      "heading": "Accepted + request_id (RabbitMQ)",
+      "level": 1,
+      "content": "Workflow Orchestrator - ECS Worker Agent Worker Pool - ECS Tasks\nExternal Systems\n(Workflow DB - RDS Postgres) Notification Service (S3 Artifact Store)\nJira Xray Confluence GitLab AWS\nThis is the clean “control plane + data plane” split:\nDB = control plane\nS3 = data plane artifacts\n5) Detailed Workflow Design (Step-by-\nstep)",
+      "tables": [],
+      "subsections": []
+    },
+    {
+      "section_id": "5.1",
+      "heading": "Request lifecycle",
+      "level": 2,
+      "content": "Step 1 — API request (fast path)\nPOST /run\n1. Validate minimal payload\n2. Compute idempotency_key (example: workflow_type + story_id +\nconfig_hash )\nhttps://stackedit.io/app# 4/11\n3/10/26, 3:43 PM StackEdit\n3. Insert workflow row (or fetch existing if duplicate)\n4. Publish StartWorkflow(request_id) to RabbitMQ\n5. Return 202 + request_id\nTime target: < 1 second (removes 504 risk)\nStep 2 — Orchestrator drives workflow\nOrchestrator reads StartWorkflow :\n1. Set workflow status to RUNNING\n2. Enqueue first step: story_discovery_agent\n3. Wait for completion event / step completion update\n4. Decide next step(s)\nStep 3 — Agents run as independent jobs\nEach agent:\nReads its required input artifact refs from DB\nDownloads artifact(s) from S3 if needed\nCalls external systems (Jira/Xray/GitLab/Confluence/AWS)\nWrites output to S3\nUpdates DB step row to SUCCESS/FAILED\nPublishes event to RabbitMQ\nStep 4 — Notification\nAt terminal state:\nOrchestrator collects result links from DB\nSends success/failure notification (request_id + links + summary)\nhttps://stackedit.io/app# 5/11\n3/10/26, 3:43 PM StackEdit\n6) Orchestrator Logic (Sequential + Parallel\nBlocks)\nThis directly matches your Wiki optimization.",
+      "tables": [],
+      "subsections": []
+    },
+    {
+      "section_id": "6.1",
+      "heading": "Parallel Block A (after coverage analysis)",
+      "level": 2,
+      "content": "After coverage_analysis_test_generation_agent :\nRun in parallel:\nxray_test_registration_agent\ncoverage_documentation_agent\nThen join, then:\ncode_generation_agent\ndocker_generation_agent\ngitlab_automation_agent",
+      "tables": [],
+      "subsections": []
+    },
+    {
+      "section_id": "6.2",
+      "heading": "Parallel Block B (after GitLab automation)",
+      "level": 2,
+      "content": "After gitlab_automation_agent creates MR:\nRun in parallel:\nB1 (MR review pipeline):\nmerge_request_snapshot_agent\ncode_review_agent\ngitlab_comment_agent\nB2 (build/deploy pipeline):\nbuild_agent\ndeploy_agent\nhttps://stackedit.io/app# 6/11\n3/10/26, 3:43 PM StackEdit\nThen join → workflow completed.\n7) Durable State Model (DB Schema\nBlueprint)\n7.1\nworkflow_requests\nStores one row per request.\nSQL\n-- Pseudocode schema (not meant to be executed as-is)\nworkflow_requests(\nrequest_id varchar primary key,\nidempotency_key varchar unique,\nstatus varchar, -- RECEIVED/RUNNING/COMPLETED/FAILED\ncreated_at timestamp,\nupdated_at timestamp,\ncompleted_at timestamp null,\ninitiated_by varchar null,\nnotify_target varchar null, -- email/teams/webhook endpoint\nlast_error_step varchar null,\nlast_error_message text null\n)\nShow more lines\n7.2\nworkflow_steps\nStores one row per (request_id + step_name).\nSQL\nhttps://stackedit.io/app# 7/11\n3/10/26, 3:43 PM StackEdit\nworkflow_steps(\nrequest_id varchar,\nstep_name varchar,\nstatus varchar, -- PENDING/RUNNING/SUCCESS/FAILED\nattempt int,\nstarted_at timestamp null,\nended_at timestamp null,\noutput_artifact_ref varchar null, -- S3 key or artifact id\nerror_message text null,\nprimary key (request_id, step_name)\n)\nShow more lines",
+      "tables": [],
+      "subsections": []
+    },
+    {
+      "section_id": "7.3",
+      "heading": "(optional if you want)",
+      "level": 2,
+      "content": "workflow_artifacts\nIf you want richer metadata per artifact:\nSQL\nworkflow_artifacts(\nartifact_ref varchar primary key,\nrequest_id varchar,\nstep_name varchar,\ns3_key varchar,\ncontent_type varchar, -- application/json, text/markdown\ncreated_at timestamp\n)\n8) Reliability Requirements (This is what\nmakes it “no re-request”)",
+      "tables": [],
+      "subsections": []
+    },
+    {
+      "section_id": "8.1",
+      "heading": "Idempotency (must-have)",
+      "level": 2,
+      "content": "https://stackedit.io/app# 8/11\n3/10/26, 3:43 PM StackEdit\nGoal: A step runs once per request_id unless retry is intentional.\nHow:\nWorker tries to transition step from PENDING -> RUNNING atomically\nIf it is already RUNNING or SUCCESS , worker does nothing\nExample logic (conceptual):\nUPDATE workflow_steps SET status='RUNNING' ... WHERE request_id=? AND\nstep_name=? AND status='PENDING'\nIf updated rows = 0 → skip (duplicate delivery)\nThis protects you from:\nRabbitMQ re-delivery\nWorker restart\nDouble submit",
+      "tables": [],
+      "subsections": []
+    },
+    {
+      "section_id": "8.2",
+      "heading": "Retries + Dead Letter Pattern",
+      "level": 2,
+      "content": "You’ll need:\nlimited retries for transient failures\ndead-letter queue (DLQ) for poison messages\nrecord final failure in DB and notify\nPractical approach with RabbitMQ:\nUse a retry queue with TTL + dead-letter exchange back to main queue\nAfter N attempts → route to DLQ\nOrchestrator marks step/workflow FAILED and notifies",
+      "tables": [],
+      "subsections": []
+    },
+    {
+      "section_id": "8.3",
+      "heading": "Circuit breaker (correct placement)",
+      "level": 2,
+      "content": "Circuit breaker belongs inside agents that call:\nhttps://stackedit.io/app# 9/11\n3/10/26, 3:43 PM StackEdit\nJira / Xray / GitLab / Confluence / AWS APIs\nThis prevents an agent from hammering a failing dependency repeatedly.",
+      "tables": [],
+      "subsections": []
+    },
+    {
+      "section_id": "8.4",
+      "heading": "Resume-after-crash (the real win)",
+      "level": 2,
+      "content": "If ECS task restarts:\nOrchestrator reads DB state\nContinues from the last incomplete step\nPreviously completed steps are skipped due to step status\nThis is what ensures you do not ask the user to re-request.\n9) Queue Design (RabbitMQ Blueprint)\nMinimum recommended queues/exchanges\nworkflow.commands exchange\nworkflow.events exchange\nQueues:\nworkflow.start (StartWorkflow)\nworkflow.steps (ExecuteStep)\nworkflow.events.q (StepCompleted/StepFailed)\nworkflow.retry.<step> queues (TTL-based retries)\nworkflow.dlq (dead-letter)\nThis separation helps you keep control messages clean and audit-able.\nhttps://stackedit.io/app# 10/11\n3/10/26, 3:43 PM StackEdit\n10) Deployment Blueprint on ECS\nECS Services / Tasks\n1. workflow-api-service (desired count 2+)\n2. workflow-orchestrator-worker (desired count 1–2)\n3. agent-worker-service (autoscale)\neither one generic worker container\nor separate services per agent category\nScaling guidance\nOrchestrator does not need high scale (it’s coordination)\nAgent workers need scaling (they do actual work)\nhttps://stackedit.io/app# 11/11",
+      "tables": [],
+      "subsections": []
+    }
+  ],
+  "raw_text": "3/10/26, 3:43 PM StackEdit\nFinal blueprint + architecture tailored to your current\nstack: AWS ECS + RabbitMQ, supporting:\nInstant response with request_id\n13-agent orchestration in background (15–20 mins)\nNo user re-request on failure\nDurable state + resumability\nPush notification on completion/failure\nParallel Block A & B (from your Wiki model)\n1) Final Blueprint (What you will build)\nCore building blocks (minimum set)\n1. Workflow API (ECS service)\nReceives request\nValidates minimally\nCreates request_id\nWrites initial state to DB\nPublishes StartWorkflow message to RabbitMQ\nReturns 202 Accepted + request_id immediately\n2. Workflow DB (Durable State Store)\nStores workflow + step states\nProvides idempotency, retries, recovery, and audit trail\nMakes “no re-request” possible\n3. RabbitMQ\nDecouples API from execution\nBuffers work\nEnables parallelism and scaling of workers\nSupports retry strategy (with DLQ pattern)\nhttps://stackedit.io/app# 1/11\n3/10/26, 3:43 PM StackEdit\n4. Orchestrator (ECS worker service)\nThe “brain” / state machine\nConsumes workflow events\nDecides next step(s)\nImplements parallel fan-out and join\nUpdates DB transitions\nTriggers notifications at terminal state\n5. Agent Workers (ECS workers)\nEach agent is a worker type (or one worker that routes by step_name )\nEach step is idempotent\nEach step writes outputs to an artifact store + DB references\n6. Artifact Store\nStore agent outputs (JSON, markdown, logs)\nRecommended: S3\nDB stores references (S3 keys), not big blobs\n7. Notification Service\nSends completion/failure to user (Teams/Email/Webhook)\nTriggered by orchestrator when workflow completes/fails\n2) What to store (Durable State vs Agent\nContext)\nYou were exactly right: downstream agents need upstream outputs. The best practice is:\n✅ Workflow DB stores:\nrequest status + step status + retry counts + timestamps + error summary\npointers to artifacts (S3 keys)\n✅ S3 stores:\nhttps://stackedit.io/app# 2/11\n3/10/26, 3:43 PM StackEdit\nlarge agent outputs (story metadata JSON, coverage analysis JSON, MR snapshot\nJSON, docs markdown, build logs, deploy logs)\nOptional (nice-to-have):\nVector DB for RAG to improve “reasoning,” but not for workflow correctness.\n3) Recommended Database Choice (for\nECS + RabbitMQ)\nBest choice: PostgreSQL (RDS/Aurora Postgres)\nWhy it fits orchestration best:\nStrong transactional semantics\nEasy row-level locking / atomic updates\nGreat JSON support when needed ( jsonb )\nReliable uniqueness constraints for idempotency\nIf your org standard is MySQL\n✅ MySQL also works fine for this use case. The key is schema + locking.\n4) Final Architecture Diagram (Clear, not\nmessy)\n4.1 Architecture (Mermaid)\nhttps://stackedit.io/app# 3/11\n3/10/26, 3:43 PM StackEdit\nUser or Client\nWorkflow API Service - ECS\n202 Accepted + request_id (RabbitMQ)\nWorkflow Orchestrator - ECS Worker Agent Worker Pool - ECS Tasks\nExternal Systems\n(Workflow DB - RDS Postgres) Notification Service (S3 Artifact Store)\nJira Xray Confluence GitLab AWS\nThis is the clean “control plane + data plane” split:\nDB = control plane\nS3 = data plane artifacts\n5) Detailed Workflow Design (Step-by-\nstep)\n5.1 Request lifecycle\nStep 1 — API request (fast path)\nPOST /run\n1. Validate minimal payload\n2. Compute idempotency_key (example: workflow_type + story_id +\nconfig_hash )\nhttps://stackedit.io/app# 4/11\n3/10/26, 3:43 PM StackEdit\n3. Insert workflow row (or fetch existing if duplicate)\n4. Publish StartWorkflow(request_id) to RabbitMQ\n5. Return 202 + request_id\nTime target: < 1 second (removes 504 risk)\nStep 2 — Orchestrator drives workflow\nOrchestrator reads StartWorkflow :\n1. Set workflow status to RUNNING\n2. Enqueue first step: story_discovery_agent\n3. Wait for completion event / step completion update\n4. Decide next step(s)\nStep 3 — Agents run as independent jobs\nEach agent:\nReads its required input artifact refs from DB\nDownloads artifact(s) from S3 if needed\nCalls external systems (Jira/Xray/GitLab/Confluence/AWS)\nWrites output to S3\nUpdates DB step row to SUCCESS/FAILED\nPublishes event to RabbitMQ\nStep 4 — Notification\nAt terminal state:\nOrchestrator collects result links from DB\nSends success/failure notification (request_id + links + summary)\nhttps://stackedit.io/app# 5/11\n3/10/26, 3:43 PM StackEdit\n6) Orchestrator Logic (Sequential + Parallel\nBlocks)\nThis directly matches your Wiki optimization.\n6.1 Parallel Block A (after coverage analysis)\nAfter coverage_analysis_test_generation_agent :\nRun in parallel:\nxray_test_registration_agent\ncoverage_documentation_agent\nThen join, then:\ncode_generation_agent\ndocker_generation_agent\ngitlab_automation_agent\n6.2 Parallel Block B (after GitLab automation)\nAfter gitlab_automation_agent creates MR:\nRun in parallel:\nB1 (MR review pipeline):\nmerge_request_snapshot_agent\ncode_review_agent\ngitlab_comment_agent\nB2 (build/deploy pipeline):\nbuild_agent\ndeploy_agent\nhttps://stackedit.io/app# 6/11\n3/10/26, 3:43 PM StackEdit\nThen join → workflow completed.\n7) Durable State Model (DB Schema\nBlueprint)\n7.1\nworkflow_requests\nStores one row per request.\nSQL\n-- Pseudocode schema (not meant to be executed as-is)\nworkflow_requests(\nrequest_id varchar primary key,\nidempotency_key varchar unique,\nstatus varchar, -- RECEIVED/RUNNING/COMPLETED/FAILED\ncreated_at timestamp,\nupdated_at timestamp,\ncompleted_at timestamp null,\ninitiated_by varchar null,\nnotify_target varchar null, -- email/teams/webhook endpoint\nlast_error_step varchar null,\nlast_error_message text null\n)\nShow more lines\n7.2\nworkflow_steps\nStores one row per (request_id + step_name).\nSQL\nhttps://stackedit.io/app# 7/11\n3/10/26, 3:43 PM StackEdit\nworkflow_steps(\nrequest_id varchar,\nstep_name varchar,\nstatus varchar, -- PENDING/RUNNING/SUCCESS/FAILED\nattempt int,\nstarted_at timestamp null,\nended_at timestamp null,\noutput_artifact_ref varchar null, -- S3 key or artifact id\nerror_message text null,\nprimary key (request_id, step_name)\n)\nShow more lines\n7.3 (optional if you want)\nworkflow_artifacts\nIf you want richer metadata per artifact:\nSQL\nworkflow_artifacts(\nartifact_ref varchar primary key,\nrequest_id varchar,\nstep_name varchar,\ns3_key varchar,\ncontent_type varchar, -- application/json, text/markdown\ncreated_at timestamp\n)\n8) Reliability Requirements (This is what\nmakes it “no re-request”)\n8.1 Idempotency (must-have)\nhttps://stackedit.io/app# 8/11\n3/10/26, 3:43 PM StackEdit\nGoal: A step runs once per request_id unless retry is intentional.\nHow:\nWorker tries to transition step from PENDING -> RUNNING atomically\nIf it is already RUNNING or SUCCESS , worker does nothing\nExample logic (conceptual):\nUPDATE workflow_steps SET status='RUNNING' ... WHERE request_id=? AND\nstep_name=? AND status='PENDING'\nIf updated rows = 0 → skip (duplicate delivery)\nThis protects you from:\nRabbitMQ re-delivery\nWorker restart\nDouble submit\n8.2 Retries + Dead Letter Pattern\nYou’ll need:\nlimited retries for transient failures\ndead-letter queue (DLQ) for poison messages\nrecord final failure in DB and notify\nPractical approach with RabbitMQ:\nUse a retry queue with TTL + dead-letter exchange back to main queue\nAfter N attempts → route to DLQ\nOrchestrator marks step/workflow FAILED and notifies\n8.3 Circuit breaker (correct placement)\nCircuit breaker belongs inside agents that call:\nhttps://stackedit.io/app# 9/11\n3/10/26, 3:43 PM StackEdit\nJira / Xray / GitLab / Confluence / AWS APIs\nThis prevents an agent from hammering a failing dependency repeatedly.\n8.4 Resume-after-crash (the real win)\nIf ECS task restarts:\nOrchestrator reads DB state\nContinues from the last incomplete step\nPreviously completed steps are skipped due to step status\nThis is what ensures you do not ask the user to re-request.\n9) Queue Design (RabbitMQ Blueprint)\nMinimum recommended queues/exchanges\nworkflow.commands exchange\nworkflow.events exchange\nQueues:\nworkflow.start (StartWorkflow)\nworkflow.steps (ExecuteStep)\nworkflow.events.q (StepCompleted/StepFailed)\nworkflow.retry.<step> queues (TTL-based retries)\nworkflow.dlq (dead-letter)\nThis separation helps you keep control messages clean and audit-able.\nhttps://stackedit.io/app# 10/11\n3/10/26, 3:43 PM StackEdit\n10) Deployment Blueprint on ECS\nECS Services / Tasks\n1. workflow-api-service (desired count 2+)\n2. workflow-orchestrator-worker (desired count 1–2)\n3. agent-worker-service (autoscale)\neither one generic worker container\nor separate services per agent category\nScaling guidance\nOrchestrator does not need high scale (it’s coordination)\nAgent workers need scaling (they do actual work)\nhttps://stackedit.io/app# 11/11",
+  "tables": [
+    {
+      "table_index": 0,
+      "headers": [
+        "stack: AWS ECS + RabbitMQ, supporting:"
+      ],
+      "rows": [
+        [
+          "Instant response with  request_id"
+        ],
+        [
+          "13-agent orchestration in background (15–20 mins)"
+        ],
+        [
+          "No user re-request on failure"
+        ],
+        [
+          "Durable state + resumability"
+        ],
+        [
+          "Push notiﬁcation on completion/failure"
+        ],
+        [
+          "Parallel Block A & B (from your Wiki model)"
+        ]
+      ],
+      "extraction_method": "camelot"
+    },
+    {
+      "table_index": 1,
+      "headers": [
+        "1. Workﬂow API (ECS service)"
+      ],
+      "rows": [
+        [
+          "Receives request"
+        ],
+        [
+          "Validates minimally"
+        ],
+        [
+          "Creates  request_id"
+        ],
+        [
+          "Writes initial state to DB"
+        ],
+        [
+          "Publishes  StartWorkflow  message to RabbitMQ"
+        ],
+        [
+          "Returns  202 Accepted + request_id  immediately"
+        ]
+      ],
+      "extraction_method": "camelot"
+    },
+    {
+      "table_index": 2,
+      "headers": [
+        "4. Orchestrator (ECS worker service)"
+      ],
+      "rows": [
+        [
+          "The “brain” / state machine"
+        ],
+        [
+          "Consumes workﬂow events"
+        ],
+        [
+          "Decides next step(s)"
+        ],
+        [
+          "Implements parallel fan-out and join"
+        ],
+        [
+          "Updates DB transitions"
+        ],
+        [
+          "Triggers notiﬁcations at terminal state"
+        ]
+      ],
+      "extraction_method": "camelot"
+    },
+    {
+      "table_index": 3,
+      "headers": [
+        "3/10/26, 3:43 PM",
+        "StackEdit",
+        ""
+      ],
+      "rows": [
+        [
+          "",
+          "large agent outputs (story metadata JSON, coverage analysis JSON, MR snapshot",
+          ""
+        ],
+        [
+          "JSON, docs markdown, build logs, deploy logs)",
+          "",
+          ""
+        ],
+        [
+          "Optional (nice-to-have):",
+          "",
+          ""
+        ],
+        [
+          "",
+          "Vector DB for RAG to improve “reasoning,” but not for workﬂow correctness.",
+          ""
+        ],
+        [
+          "",
+          "3) Recommended Database Choice (for",
+          ""
+        ],
+        [
+          "ECS + RabbitMQ)",
+          "",
+          ""
+        ],
+        [
+          "",
+          "Best choice: PostgreSQL (RDS/Aurora Postgres)",
+          ""
+        ],
+        [
+          "Why it ﬁts orchestration best:",
+          "",
+          ""
+        ],
+        [
+          "Strong transactional semantics",
+          "",
+          ""
+        ],
+        [
+          "Easy row-level locking / atomic updates",
+          "",
+          ""
+        ],
+        [
+          "Great JSON support when needed ( jsonb )",
+          "",
+          ""
+        ],
+        [
+          "Reliable uniqueness constraints for idempotency",
+          "",
+          ""
+        ],
+        [
+          "If your org standard is MySQL",
+          "",
+          ""
+        ],
+        [
+          "",
+          "✅ MySQL also works ﬁne for this use case. The key is schema + locking.",
+          ""
+        ],
+        [
+          "",
+          "4) Final Architecture Diagram (Clear, not",
+          ""
+        ],
+        [
+          "messy)",
+          "",
+          ""
+        ],
+        [
+          "4.1 Architecture (Mermaid)",
+          "",
+          ""
+        ],
+        [
+          "https://stackedit.io/app#",
+          "",
+          "3/11"
+        ]
+      ],
+      "extraction_method": "camelot"
+    },
+    {
+      "table_index": 4,
+      "headers": [
+        "3/10/26, 3:43 PM",
+        "",
+        "StackEdit",
+        "",
+        ""
+      ],
+      "rows": [
+        [
+          "",
+          "User or Client",
+          "",
+          "",
+          ""
+        ],
+        [
+          "",
+          "Workflow API Service - ECS",
+          "",
+          "",
+          ""
+        ],
+        [
+          "",
+          "202 Accepted + request_id\n(RabbitMQ)",
+          "",
+          "",
+          ""
+        ],
+        [
+          "",
+          "Workflow Orchestrator - ECS Worker",
+          "",
+          "Agent Worker Pool - ECS Tasks",
+          ""
+        ],
+        [
+          "",
+          "",
+          "",
+          "External Systems",
+          ""
+        ],
+        [
+          "(Workflow DB - RDS Postgres)",
+          "",
+          "Notification Service\n(S3 Artifact Store)",
+          "",
+          ""
+        ],
+        [
+          "",
+          "",
+          "",
+          "Jira Xray Confluence GitLab AWS",
+          ""
+        ],
+        [
+          "",
+          "This is the clean “control plane + data plane” split:",
+          "",
+          "",
+          ""
+        ],
+        [
+          "",
+          "DB = control plane",
+          "",
+          "",
+          ""
+        ],
+        [
+          "",
+          "S3 = data plane artifacts",
+          "",
+          "",
+          ""
+        ],
+        [
+          "",
+          "5) Detailed Workﬂow Design (Step-by-",
+          "",
+          "",
+          ""
+        ],
+        [
+          "step)",
+          "",
+          "",
+          "",
+          ""
+        ],
+        [
+          "",
+          "5.1 Request lifecycle",
+          "",
+          "",
+          ""
+        ],
+        [
+          "",
+          "Step 1 — API request (fast path)",
+          "",
+          "",
+          ""
+        ],
+        [
+          "POST /run",
+          "",
+          "",
+          "",
+          ""
+        ],
+        [
+          "",
+          "1. Validate minimal payload",
+          "",
+          "",
+          ""
+        ],
+        [
+          "",
+          "2. Compute  idempotency_key  (example:  workflow_type + story_id +",
+          "",
+          "",
+          ""
+        ],
+        [
+          "",
+          "config_hash )",
+          "",
+          "",
+          ""
+        ],
+        [
+          "https://stackedit.io/app#",
+          "",
+          "",
+          "",
+          "4/11"
+        ]
+      ],
+      "extraction_method": "camelot"
+    },
+    {
+      "table_index": 5,
+      "headers": [
+        "Each agent:"
+      ],
+      "rows": [
+        [
+          "Reads its required input artifact refs from DB"
+        ],
+        [
+          "Downloads artifact(s) from S3 if needed"
+        ],
+        [
+          "Calls external systems (Jira/Xray/GitLab/Conﬂuence/AWS)"
+        ],
+        [
+          "Writes output to S3"
+        ],
+        [
+          "Updates DB step row to SUCCESS/FAILED"
+        ],
+        [
+          "Publishes event to RabbitMQ"
+        ]
+      ],
+      "extraction_method": "camelot"
+    },
+    {
+      "table_index": 6,
+      "headers": [
+        "3/10/26, 3:43 PM",
+        "StackEdit",
+        ""
+      ],
+      "rows": [
+        [
+          "",
+          "6) Orchestrator Logic (Sequential + Parallel",
+          ""
+        ],
+        [
+          "Blocks)",
+          "",
+          ""
+        ],
+        [
+          "This directly matches your Wiki optimization.",
+          "",
+          ""
+        ],
+        [
+          "",
+          "6.1 Parallel Block A (after coverage analysis)",
+          ""
+        ],
+        [
+          "After  coverage_analysis_test_generation_agent :",
+          "",
+          ""
+        ],
+        [
+          "Run in parallel:",
+          "",
+          ""
+        ],
+        [
+          "xray_test_registration_agent",
+          "",
+          ""
+        ],
+        [
+          "coverage_documentation_agent",
+          "",
+          ""
+        ],
+        [
+          "Then join, then:",
+          "",
+          ""
+        ],
+        [
+          "code_generation_agent",
+          "",
+          ""
+        ],
+        [
+          "docker_generation_agent",
+          "",
+          ""
+        ],
+        [
+          "gitlab_automation_agent",
+          "",
+          ""
+        ],
+        [
+          "",
+          "6.2 Parallel Block B (after GitLab automation)",
+          ""
+        ],
+        [
+          "After  gitlab_automation_agent  creates MR:",
+          "",
+          ""
+        ],
+        [
+          "Run in parallel:",
+          "",
+          ""
+        ],
+        [
+          "B1 (MR review pipeline):",
+          "",
+          ""
+        ],
+        [
+          "merge_request_snapshot_agent",
+          "",
+          ""
+        ],
+        [
+          "code_review_agent",
+          "",
+          ""
+        ],
+        [
+          "gitlab_comment_agent",
+          "",
+          ""
+        ],
+        [
+          "B2 (build/deploy pipeline):",
+          "",
+          ""
+        ],
+        [
+          "build_agent",
+          "",
+          ""
+        ],
+        [
+          "deploy_agent",
+          "",
+          ""
+        ],
+        [
+          "https://stackedit.io/app#",
+          "",
+          "6/11"
+        ]
+      ],
+      "extraction_method": "camelot"
+    },
+    {
+      "table_index": 7,
+      "headers": [
+        "-- Pseudocode schema (not meant to be executed as-is)",
+        ""
+      ],
+      "rows": [
+        [
+          "workflow_requests(",
+          ""
+        ],
+        [
+          "request_id",
+          "varchar  primary  key,"
+        ],
+        [
+          "idempotency_key",
+          "varchar  unique,"
+        ],
+        [
+          "status",
+          "varchar,  -- RECEIVED/RUNNING/COMPLETED/FAILED"
+        ],
+        [
+          "created_at",
+          "timestamp,"
+        ],
+        [
+          "updated_at",
+          "timestamp,"
+        ],
+        [
+          "completed_at",
+          "timestamp  null,"
+        ],
+        [
+          "initiated_by",
+          "varchar  null,"
+        ],
+        [
+          "notify_target",
+          "varchar  null,  -- email/teams/webhook endpoint"
+        ],
+        [
+          "last_error_step",
+          "varchar  null,"
+        ],
+        [
+          "last_error_message",
+          "text  null"
+        ]
+      ],
+      "extraction_method": "camelot"
+    },
+    {
+      "table_index": 8,
+      "headers": [
+        "",
+        "StackEdit"
+      ],
+      "rows": [
+        [
+          "workflow_steps(",
+          ""
+        ],
+        [
+          "request_id",
+          "varchar,"
+        ],
+        [
+          "step_name",
+          "varchar,"
+        ],
+        [
+          "status",
+          "varchar,  -- PENDING/RUNNING/SUCCESS/FAILED"
+        ],
+        [
+          "attempt",
+          "int,"
+        ],
+        [
+          "started_at",
+          "timestamp  null,"
+        ],
+        [
+          "ended_at timestamp",
+          "null,"
+        ],
+        [
+          "output_artifact_ref",
+          "varchar  null,  -- S3 key or artifact id"
+        ],
+        [
+          "error_message text",
+          "null,"
+        ],
+        [
+          "primary  key  (request_id, step_name)",
+          ""
+        ]
+      ],
+      "extraction_method": "camelot"
+    },
+    {
+      "table_index": 9,
+      "headers": [
+        "workflow_artifacts(",
+        ""
+      ],
+      "rows": [
+        [
+          "artifact_ref",
+          "varchar  primary  key,"
+        ],
+        [
+          "request_id",
+          "varchar,"
+        ],
+        [
+          "step_name",
+          "varchar,"
+        ],
+        [
+          "s3_key",
+          "varchar,"
+        ],
+        [
+          "content_type",
+          "varchar,  -- application/json, text/markdown"
+        ],
+        [
+          "created_at",
+          "timestamp"
+        ]
+      ],
+      "extraction_method": "camelot"
+    },
+    {
+      "table_index": 10,
+      "headers": [
+        "3/10/26, 3:43 PM",
+        "StackEdit",
+        ""
+      ],
+      "rows": [
+        [
+          "Goal: A step runs once per request_id unless retry is intentional.",
+          "",
+          ""
+        ],
+        [
+          "How:",
+          "",
+          ""
+        ],
+        [
+          "",
+          "Worker tries to transition step from  PENDING -> RUNNING  atomically",
+          ""
+        ],
+        [
+          "",
+          "If it is already  RUNNING  or  SUCCESS , worker does nothing",
+          ""
+        ],
+        [
+          "Example logic (conceptual):",
+          "",
+          ""
+        ],
+        [
+          "",
+          "UPDATE workflow_steps SET status='RUNNING' ... WHERE request_id=? AND",
+          ""
+        ],
+        [
+          "step_name=? AND status='PENDING'",
+          "",
+          ""
+        ],
+        [
+          "If updated rows = 0 → skip (duplicate delivery)",
+          "",
+          ""
+        ],
+        [
+          "This protects you from:",
+          "",
+          ""
+        ],
+        [
+          "RabbitMQ re-delivery",
+          "",
+          ""
+        ],
+        [
+          "Worker restart",
+          "",
+          ""
+        ],
+        [
+          "Double submit",
+          "",
+          ""
+        ],
+        [
+          "8.2 Retries + Dead Letter Pattern",
+          "",
+          ""
+        ],
+        [
+          "You’ll need:",
+          "",
+          ""
+        ],
+        [
+          "limited retries for transient failures",
+          "",
+          ""
+        ],
+        [
+          "dead-letter queue (DLQ) for poison messages",
+          "",
+          ""
+        ],
+        [
+          "record ﬁnal failure in DB and notify",
+          "",
+          ""
+        ],
+        [
+          "Practical approach with RabbitMQ:",
+          "",
+          ""
+        ],
+        [
+          "",
+          "Use a retry queue with TTL + dead-letter exchange back to main queue",
+          ""
+        ],
+        [
+          "After N attempts → route to DLQ",
+          "",
+          ""
+        ],
+        [
+          "",
+          "Orchestrator marks step/workﬂow FAILED and notiﬁes",
+          ""
+        ],
+        [
+          "8.3 Circuit breaker (correct placement)",
+          "",
+          ""
+        ],
+        [
+          "Circuit breaker belongs inside agents that call:",
+          "",
+          ""
+        ],
+        [
+          "https://stackedit.io/app#",
+          "",
+          "9/11"
+        ]
+      ],
+      "extraction_method": "camelot"
+    },
+    {
+      "table_index": 11,
+      "headers": [
+        "3/10/26, 3:43 PM",
+        "StackEdit",
+        ""
+      ],
+      "rows": [
+        [
+          "Jira / Xray / GitLab / Conﬂuence / AWS APIs",
+          "",
+          ""
+        ],
+        [
+          "",
+          "This prevents an agent from hammering a failing dependency repeatedly.",
+          ""
+        ],
+        [
+          "8.4 Resume-after-crash (the real win)",
+          "",
+          ""
+        ],
+        [
+          "If ECS task restarts:",
+          "",
+          ""
+        ],
+        [
+          "Orchestrator reads DB state",
+          "",
+          ""
+        ],
+        [
+          "Continues from the last incomplete step",
+          "",
+          ""
+        ],
+        [
+          "",
+          "Previously completed steps are skipped due to step status",
+          ""
+        ],
+        [
+          "This is what ensures you do not ask the user to re-request.",
+          "",
+          ""
+        ],
+        [
+          "",
+          "9) Queue Design (RabbitMQ Blueprint)",
+          ""
+        ],
+        [
+          "",
+          "Minimum recommended queues/exchanges",
+          ""
+        ],
+        [
+          "workflow.commands  exchange",
+          "",
+          ""
+        ],
+        [
+          "workflow.events  exchange",
+          "",
+          ""
+        ],
+        [
+          "Queues:",
+          "",
+          ""
+        ],
+        [
+          "workflow.start  (StartWorkﬂow)",
+          "",
+          ""
+        ],
+        [
+          "workflow.steps  (ExecuteStep)",
+          "",
+          ""
+        ],
+        [
+          "workflow.events.q  (StepCompleted/StepFailed)",
+          "",
+          ""
+        ],
+        [
+          "",
+          "workflow.retry.<step>  queues (TTL-based retries)",
+          ""
+        ],
+        [
+          "workflow.dlq  (dead-letter)",
+          "",
+          ""
+        ],
+        [
+          "",
+          "This separation helps you keep control messages clean and audit-able.",
+          ""
+        ],
+        [
+          "https://stackedit.io/app#",
+          "",
+          "10/11"
+        ]
+      ],
+      "extraction_method": "camelot"
+    },
+    {
+      "table_index": 12,
+      "headers": [
+        "3/10/26, 3:43 PM",
+        "",
+        "StackEdit",
+        ""
+      ],
+      "rows": [
+        [
+          "",
+          "10) Deployment Blueprint on ECS",
+          "",
+          ""
+        ],
+        [
+          "",
+          "ECS Services / Tasks",
+          "",
+          ""
+        ],
+        [
+          "",
+          "1. workﬂow-api-service (desired count 2+)",
+          "",
+          ""
+        ],
+        [
+          "",
+          "2. workﬂow-orchestrator-worker (desired count 1–2)",
+          "",
+          ""
+        ],
+        [
+          "",
+          "3. agent-worker-service (autoscale)",
+          "",
+          ""
+        ],
+        [
+          "",
+          "either one generic worker container",
+          "",
+          ""
+        ],
+        [
+          "",
+          "or separate services per agent category",
+          "",
+          ""
+        ],
+        [
+          "Scaling guidance",
+          "",
+          "",
+          ""
+        ],
+        [
+          "",
+          "Orchestrator does not need high scale (it’s coordination)",
+          "",
+          ""
+        ],
+        [
+          "",
+          "Agent workers need scaling (they do actual work)",
+          "",
+          ""
+        ],
+        [
+          "https://stackedit.io/app#",
+          "",
+          "",
+          "11/11"
+        ]
+      ],
+      "extraction_method": "camelot"
+    }
+  ]
+}

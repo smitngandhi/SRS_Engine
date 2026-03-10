@@ -22,7 +22,7 @@ from srs_engine.core.config import get_settings
 from srs_engine.core.db.mongo import init_mongo
 from srs_engine.core.logging import get_logger
 from srs_engine.core.logging.config import setup_logging
-from srs_engine.core.routers import auth_router, contact_router, pages_router, srs_router , upload_router
+from srs_engine.core.routers import auth_router, contact_router, pages_router, srs_router , upload_router, parse_router
 
 
 @asynccontextmanager
@@ -64,6 +64,7 @@ def create_app() -> FastAPI:
     app.include_router(srs_router)
     app.include_router(contact_router)
     app.include_router(upload_router)
+    app.include_router(parse_router)
 
     return app
 
