@@ -1,0 +1,139 @@
+flowchart TD
+    subgraph INPUT["📁 INPUT LAYER"]
+        U1[User Device\nPDF / DOCX] -->|local file path| UA
+        U2[SRS Engine Output\nDOCX] -->|local file path| UA
+    end
+ 
+    subgraph UPLOAD["🔼 UPLOAD AGENT"]
+        UA[Upload Agent] --> UA1{MIME Check\npython-magic}
+        UA1 -->|invalid type| ERR1[❌ Error Response\nUnsupported Format]
+        UA1 -->|valid| UA2[Pydantic v2\nMetadata Schema]
+        UA2 -->|schema fail| ERR1
+        UA2 -->|pass| UA3[File Registry\nJSON State File]
+    end
+ 
+    subgraph PARSE["🔍 PARSER AGENT"]
+        UA3 --> PA{Format Router}
+        PA -->|PDF| PA1[pdfplumber\n+ Camelot tables]
+        PA -->|DOCX| PA2[python-docx\n+ mammoth]
+        PA1 -->|extraction fail| PA3[pdfminer.six\nfallback]
+        PA2 -->|extraction fail| PA4[markitdown\nfallback]
+        PA1 & PA3 --> PA5[Unified\nDocument JSON]
+        PA2 & PA4 --> PA5
+    end
+ 
+    subgraph VALGATE["✅ VALIDATION GATE"]
+        PA5 --> VG1[jsonschema\nSection Structure Check]
+        VG1 -->|fail| VG2{Recoverable?}
+        VG2 -->|yes| VG3[Partial Parse\nFlag + Continue]
+        VG2 -->|no| ERR2[❌ Halt + Notify UI\nCorrupt Document]
+        VG1 -->|pass| VG4[Pydantic v2\nField Validation]
+        VG4 --> VG5[Validated\nDocument JSON]
+        VG3 --> VG5
+    end
+ 
+    subgraph STRUCT["🏗️ STRUCTURE EXTRACTION AGENT"]
+        VG5 --> SE1[spaCy\nSentence Segmentation]
+        SE1 --> SE2[regex\nSHALL / SHOULD / MAY\nRequirement Detection]
+        SE2 --> SE3[sentence-transformers\nall-MiniLM-L6-v2\nLocal Embeddings]
+        SE3 --> SE4[ChromaDB\nLocal Vector Store]
+        SE3 --> SE5[LlamaIndex\nDocument Hierarchy\n+ Chunk Tree]
+        SE4 & SE5 --> SE6[Structured\nRequirements JSON]
+    end
+ 
+    subgraph GRAPH["🕸️ REQUIREMENT GRAPH BUILDER"]
+        SE6 --> GB1[NetworkX\nBuild Dependency Graph]
+        GB1 --> GB2[Node: Requirement\nEdge: depends-on / conflicts / duplicates]
+        GB2 --> GB3[Pyvis\nInteractive HTML Graph]
+        GB2 --> GB4[Graph JSON\nfor downstream agents]
+        GB3 -->|served to| REACT
+    end
+ 
+    subgraph QUALITY["🔬 QUALITY + CONSISTENCY AGENT"]
+        GB4 --> QA1[spaCy\nAmbiguity + Passive Voice]
+        GB4 --> QA2[textstat\nReadability Score]
+        GB4 --> QA3[Vale\nIEEE 830 Prose Rules]
+        GB4 --> QA4[sentence-transformers\nSemantic Similarity\nDuplicate Detection]
+        GB4 --> QA5[deepdiff\nConflict Detection]
+        QA1 & QA2 & QA3 & QA4 & QA5 --> QA6[Quality Report JSON\nper Requirement\nwith Severity Score]
+    end
+ 
+    subgraph RECOMMEND["💡 RECOMMENDATION AGENT"]
+        QA6 --> RA1[Groq LLM\njinja2 Prompt Template]
+        GB4 --> RA1
+        RA1 --> RA2[Pydantic v2\nStructured Output]
+        RA2 --> RA3[Ranked Recommendations\nJSON - severity x impact]
+        RA2 -->|groq fail| RA4[Rule-based\nFallback Recommendations]
+        RA4 --> RA3
+    end
+ 
+    subgraph REVIEW["👤 HUMAN REVIEW CHECKPOINT"]
+        RA3 --> HR1[FastAPI\nPOST /review/submit]
+        HR1 --> HR2[Review State\nJSON File]
+        HR2 -->|served to| REACT
+        REACT -->|user approves / rejects / edits| HR3[FastAPI\nPOST /review/approve]
+        HR3 --> HR4[Approval JSON\nwith user selections]
+    end
+ 
+    subgraph DEBATE["⚔️ SECTION UPGRADE AGENTS - Multi Agent Debate"]
+        HR4 --> DA0[Debate Orchestrator\nADK Agent]
+        DA0 --> DA1[Debater A\nGroq - Conservative Upgrade]
+        DA0 --> DA2[Debater B\nGroq - Aggressive Upgrade]
+        DA0 --> DA3[Debater C\nGroq - IEEE Strict Upgrade]
+        DA1 & DA2 & DA3 --> DA4[Round 1 Proposals\nJSON]
+        DA4 --> DA5{Max Rounds\nReached?}
+        DA5 -->|no - 3 rounds| DA6[deepdiff\nCompare Proposals]
+        DA6 --> DA7[Cross-Critique\nEach debater reviews others]
+        DA7 --> DA1 & DA2 & DA3
+        DA5 -->|yes| DA8[Judge Agent\nGroq - Score + Select Best]
+        DA8 --> DA9[Upgraded\nRequirements JSON]
+        DA8 -->|streamed live| REACT
+    end
+ 
+    subgraph TRACE["🔗 TRACEABILITY AGENT"]
+        DA9 --> TA1[deepdiff\nBefore vs After per Requirement]
+        TA1 --> TA2[NetworkX\nold-req-id → new-req-id edges]
+        TA2 --> TA3[RTM Matrix\nopenpyxl Excel]
+        TA2 --> TA4[Traceability JSON\nfor UI diff view]
+        TA3 & TA4 -->|served to| REACT
+    end
+ 
+    subgraph REBUILD["🔨 DOCUMENT REBUILDER"]
+        TA4 --> DR1[Jinja2\nSection Templates]
+        DR1 --> DR2[python-docx\nRebuild DOCX]
+        DR2 --> DR3[gitpython\nLocal Version Commit]
+        DR3 --> DR4[Rebuilt\nDocument DOCX]
+    end
+ 
+    subgraph EXPORT["📤 EXPORT AGENT"]
+        DR4 --> EA1[python-docx\nFinal DOCX Polish]
+        EA1 --> EA2[WeasyPrint\nDOCX → PDF]
+        EA1 & EA2 --> EA3[zipfile\nBundle Both Formats]
+        EA3 --> EA4[FastAPI\nGET /export/download]
+        EA4 -->|download| REACT
+    end
+ 
+    subgraph REACT["🖥️ REACT FRONTEND - FastAPI + Vite + Tailwind"]
+        UI1[Upload Screen\npathlib file picker]
+        UI2[Pipeline Progress\nReactFlow live stages]
+        UI3[Requirement Graph\nPyvis iframe embed]
+        UI4[Quality Dashboard\nRecharts scores]
+        UI5[Human Review Screen\napprove - reject - edit]
+        UI6[Debate Live View\nSSE streaming rounds]
+        UI7[Before After Diff\nDiffViewer component]
+        UI8[Export Screen\nDOCX + PDF download]
+    end
+ 
+    subgraph STATE["💾 LOCAL STATE - JSON Files"]
+        S1[file_registry.json]
+        S2[parsed_document.json]
+        S3[requirements.json]
+        S4[graph.json]
+        S5[quality_report.json]
+        S6[recommendations.json]
+        S7[review_approval.json]
+        S8[upgraded_requirements.json]
+        S9[traceability.json]
+    end
+ 
+    ERR1 & ERR2 -->|error event| REACT

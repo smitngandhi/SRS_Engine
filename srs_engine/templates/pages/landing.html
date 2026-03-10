@@ -2,6 +2,10 @@
 
 {% block title %}Home | SRS_Engine{% endblock %}
 
+{% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', path='upgrader.css') }}">
+{% endblock %}
+
 {% block content %}
 
 <!-- ── HERO ───────────────────────────────────────────── -->
@@ -40,7 +44,6 @@
   </div>
 
   <div id="docsGrid" class="docs-grid">
-    <!-- skeleton cards shown while loading -->
     <div class="doc-card doc-skeleton reveal delay-1"></div>
     <div class="doc-card doc-skeleton reveal delay-2"></div>
     <div class="doc-card doc-skeleton reveal delay-3"></div>
@@ -58,6 +61,138 @@
 
 <hr class="section-divider">
 {% endif %}
+
+<!-- ── SRS UPGRADER BANNER ──────────────────────────── -->
+<section id="srs-upgrader" class="upgrader-section">
+
+  <div class="upgrader-glow-orb upgrader-orb-1"></div>
+  <div class="upgrader-glow-orb upgrader-orb-2"></div>
+
+  <div class="upgrader-inner reveal">
+
+    <!-- Left: copy -->
+    <div class="upgrader-copy">
+
+      <div class="upgrader-eyebrow">
+        <span class="upgrader-new-badge">New</span>
+        <span class="upgrader-eyebrow-text">Multi-Agent Intelligence</span>
+      </div>
+
+      <h2 class="upgrader-heading">
+        SRS <span class="upgrader-gradient">Upgrader</span>
+      </h2>
+
+      <p class="upgrader-desc">
+        Upload an existing PDF or DOCX specification. Three debating AI agents
+        parse, critique, and rewrite your requirements — eliminating ambiguity,
+        passive voice, conflicts, and IEEE&nbsp;830 violations automatically.
+      </p>
+
+      <!-- Pipeline steps -->
+      <div class="upgrader-pipeline">
+        <div class="pipeline-node">
+          <div class="pipeline-node-icon">📂</div>
+          <div class="pipeline-node-label">Upload</div>
+        </div>
+        <div class="pipeline-connector">
+          <div class="pipeline-connector-line"></div>
+          <div class="pipeline-connector-dot"></div>
+        </div>
+        <div class="pipeline-node">
+          <div class="pipeline-node-icon">🔍</div>
+          <div class="pipeline-node-label">Parse</div>
+        </div>
+        <div class="pipeline-connector">
+          <div class="pipeline-connector-line"></div>
+          <div class="pipeline-connector-dot"></div>
+        </div>
+        <div class="pipeline-node">
+          <div class="pipeline-node-icon">🔬</div>
+          <div class="pipeline-node-label">Analyse</div>
+        </div>
+        <div class="pipeline-connector">
+          <div class="pipeline-connector-line"></div>
+          <div class="pipeline-connector-dot"></div>
+        </div>
+        <div class="pipeline-node pipeline-node--accent">
+          <div class="pipeline-node-icon">⚔️</div>
+          <div class="pipeline-node-label">Debate</div>
+        </div>
+        <div class="pipeline-connector">
+          <div class="pipeline-connector-line"></div>
+          <div class="pipeline-connector-dot"></div>
+        </div>
+        <div class="pipeline-node">
+          <div class="pipeline-node-icon">📤</div>
+          <div class="pipeline-node-label">Export</div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="upgrader-cta">
+        {% if is_logged_in %}
+          <a class="upgrader-btn-primary" href="/srs-upgrader">
+            <span class="upgrader-btn-icon">⚡</span>
+            Open SRS Upgrader
+            <span class="upgrader-btn-arrow">→</span>
+          </a>
+        {% else %}
+          <a class="upgrader-btn-primary" href="/login?next=/srs-upgrader">
+            <span class="upgrader-btn-icon">🔒</span>
+            Sign in to Upgrade
+            <span class="upgrader-btn-arrow">→</span>
+          </a>
+          <span class="upgrader-cta-note">Free with your account</span>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Right: feature cards -->
+    <div class="upgrader-cards">
+
+      <div class="upgrader-card upgrader-card--1 reveal delay-1">
+        <div class="ucard-icon">🕸️</div>
+        <div class="ucard-body">
+          <div class="ucard-title">Requirement Graph</div>
+          <div class="ucard-desc">NetworkX dependency graph — spots conflicts and duplicates visually.</div>
+        </div>
+        <div class="ucard-glow"></div>
+      </div>
+
+      <div class="upgrader-card upgrader-card--2 reveal delay-2">
+        <div class="ucard-icon">⚔️</div>
+        <div class="ucard-body">
+          <div class="ucard-title">Multi-Agent Debate</div>
+          <div class="ucard-desc">Conservative, Aggressive &amp; IEEE-strict agents argue over the best rewrite.</div>
+        </div>
+        <div class="ucard-glow"></div>
+      </div>
+
+      <div class="upgrader-card upgrader-card--3 reveal delay-3">
+        <div class="ucard-icon">🔗</div>
+        <div class="ucard-body">
+          <div class="ucard-title">Traceability Matrix</div>
+          <div class="ucard-desc">Full RTM export — every old requirement mapped to its upgraded version.</div>
+        </div>
+        <div class="ucard-glow"></div>
+      </div>
+
+      <div class="upgrader-card upgrader-card--4 reveal delay-1">
+        <div class="ucard-icon">📊</div>
+        <div class="ucard-body">
+          <div class="ucard-title">Quality Dashboard</div>
+          <div class="ucard-desc">Readability scores, ambiguity flags, and severity ratings per requirement.</div>
+        </div>
+        <div class="ucard-glow"></div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<hr class="section-divider">
 
 <!-- ── FEATURES ────────────────────────────────────────── -->
 <section id="features" class="features-section">
@@ -174,6 +309,18 @@
       <div class="faq-answer" role="region">
         <div class="faq-answer-inner">
           Yes — Google OAuth is supported. Click "Continue with Google" on the login page for instant access.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item reveal delay-3">
+      <button class="faq-question" aria-expanded="false">
+        What is the SRS Upgrader?
+        <span class="faq-chevron">▾</span>
+      </button>
+      <div class="faq-answer" role="region">
+        <div class="faq-answer-inner">
+          The SRS Upgrader accepts an existing PDF or DOCX specification and runs it through a multi-agent pipeline — parsing requirements, detecting quality issues, running a three-agent debate, and exporting an upgraded document with a full traceability matrix.
         </div>
       </div>
     </div>

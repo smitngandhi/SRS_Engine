@@ -115,3 +115,8 @@ async def download_srs(doc_id: str, user=Depends(require_user)):
         filename=file_path.name,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     )
+
+
+@router.get("/srs-upgrader")
+async def srs_upgrader(request: Request):
+    return _render(request, "pages/srs_upgrader.html")
