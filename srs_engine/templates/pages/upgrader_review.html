@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}SRS Review | SRS_Engine{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', path='upgrader_page.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='upgrader_review.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="review-page">
+
+  <!-- ── Page header ──────────────────────────────────── -->
+  <div class="up-header reveal">
+    <div class="up-step-pill">
+      <span class="up-step-dot"></span>
+      Step 02 · Analyse &amp; Upgrade
+    </div>
+    <h1 class="up-title">
+      Review your <span class="gradient-text">SRS Analysis</span>
+    </h1>
+    <p class="up-desc">
+      Each section has been scored against IEEE&nbsp;830. Answer the questions
+      for flagged sections, then review the AI-generated upgrades side-by-side.
+    </p>
+  </div>
+
+  <!-- ── Analyse trigger (shown before analysis runs) ── -->
+  <div class="rv-analyse-panel reveal delay-1" id="rvAnalysePanel">
+    <div class="rv-analyse-inner">
+      <div class="rv-analyse-icon">🔬</div>
+      <div class="rv-analyse-text">
+        <div class="rv-analyse-title">Ready to analyse</div>
+        <div class="rv-analyse-sub">
+          File: <span id="rvFilename">—</span>
+        </div>
+      </div>
+      <button class="up-btn-upload rv-btn-analyse" id="rvAnalyseBtn" style="width:auto;padding:12px 28px">
+        <span>⚡</span>
+        <span id="rvAnalyseBtnLabel">Analyse SRS</span>
+      </button>
+    </div>
+    <div class="up-progress" id="rvProgress" style="margin-top:14px">
+      <div class="up-progress-fill" id="rvProgressFill"></div>
+    </div>
+    <div class="up-status" id="rvStatus"></div>
+  </div>
+
+  <!-- ── Summary bar (shown after analysis) ──────────── -->
+  <div class="rv-summary-bar" id="rvSummaryBar" style="display:none">
+    <div class="rv-summary-stat" id="rvStatTotal">
+      <span class="rv-summary-val">—</span>
+      <span class="rv-summary-label">Sections</span>
+    </div>
+    <div class="rv-summary-stat rv-stat-good" id="rvStatKept">
+      <span class="rv-summary-val">—</span>
+      <span class="rv-summary-label">Passed</span>
+    </div>
+    <div class="rv-summary-stat rv-stat-warn" id="rvStatFlag">
+      <span class="rv-summary-val">—</span>
+      <span class="rv-summary-label">Flagged</span>
+    </div>
+    <div class="rv-summary-stat rv-stat-done" id="rvStatDone">
+      <span class="rv-summary-val">—</span>
+      <span class="rv-summary-label">Accepted</span>
+    </div>
+  </div>
+
+  <!-- ── Section cards list ────────────────────────────── -->
+  <div class="rv-sections" id="rvSections" style="display:none"></div>
+
+  <!-- ── Q&A Modal ─────────────────────────────────────── -->
+  <div class="rv-modal-backdrop" id="rvQaBackdrop" style="display:none">
+    <div class="rv-modal" id="rvQaModal">
+      <div class="rv-modal-header">
+        <div class="rv-modal-title" id="rvQaTitle">Answer Questions</div>
+        <button class="rv-modal-close" id="rvQaClose">✕</button>
+      </div>
+      <div class="rv-modal-body" id="rvQaBody"></div>
+      <div class="rv-modal-footer">
+        <button class="rv-btn-secondary" id="rvQaCancel">Cancel</button>
+        <button class="up-btn-upload rv-btn-submit-qa" id="rvQaSubmit" style="width:auto;padding:10px 24px">
+          <span>💬</span> Submit Answers
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    // Pass file_id from server to JS
+    window.UPGRADE_FILE_ID = "{{ file_id }}";
+    window.UPGRADE_FILENAME = "{{ filename }}";
+  </script>
+  <script src="{{ url_for('static', path='upgrader_review.js') }}"></script>
+{% endblock %}

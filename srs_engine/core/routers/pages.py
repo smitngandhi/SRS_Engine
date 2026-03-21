@@ -28,7 +28,7 @@ def _render(request: Request, template: str, **ctx):
         template, {
             "request": request,
             "is_logged_in": _is_logged_in(request),
-            "user": request.session.get("display_name"),  # ← add this
+            "user": request.session.get("display_name"),
             **ctx
         }
     )
@@ -81,14 +81,13 @@ async def get_my_documents(user=Depends(require_user)):
     documents = []
     for file in sorted(user_dir.glob("*.docx"), key=os.path.getmtime, reverse=True):
         stat = file.stat()
-        # strip the _SRS.docx suffix to get back the project name
         project_name = file.stem.replace("_SRS", "").replace("_", " ")
 
         documents.append({
-            "id": file.stem,           # e.g. "MyApp_SRS"  — used in download URL
+            "id": file.stem,
             "project_name": project_name,
             "filename": file.name,
-            "created_at": stat.st_mtime,  # Unix timestamp → JS new Date() handles it
+            "created_at": stat.st_mtime,
             "size_kb": round(stat.st_size / 1024, 1),
         })
 
@@ -101,7 +100,6 @@ async def download_srs(doc_id: str, user=Depends(require_user)):
     """Download a specific SRS .docx — scoped to the logged-in user."""
     user_id = str(user.get("_id"))
 
-    # Security: doc_id must not contain path traversal
     if "/" in doc_id or "\\" in doc_id or ".." in doc_id:
         raise HTTPException(status_code=400, detail="Invalid document ID")
 
@@ -117,6 +115,38 @@ async def download_srs(doc_id: str, user=Depends(require_user)):
     )
 
 
+# ── SRS Upgrader pages ────────────────────────────────────────
+
 @router.get("/srs-upgrader")
 async def srs_upgrader(request: Request):
+    """Step 1: Upload page."""
     return _render(request, "pages/srs_upgrader.html")
+
+
+@router.get("/srs-upgrader/review/{file_id}")
+async def srs_upgrader_review(file_id: str, request: Request, user=Depends(require_user)):
+    """Step 2: Analysis, Q&A, and diff review for a parsed SRS file."""
+    from srs_engine.core.services.upload_service import list_uploads
+
+    user_id = str(user.get("_id"))
+
+    # Security: block path traversal
+    if "/" in file_id or "\\" in file_id or ".." in file_id:
+        raise HTTPException(status_code=400, detail="Invalid file ID")
+
+    # Resolve original filename for display in the template
+    uploads = await list_uploads(user_id)
+    record = next((u for u in uploads if u["file_id"] == file_id), None)
+
+    if not record:
+        raise HTTPException(
+            status_code=404,
+            detail="File not found. Upload and parse it first.",
+        )
+
+    return _render(
+        request,
+        "pages/upgrader_review.html",
+        file_id=file_id,
+        filename=record["original_filename"],
+    )

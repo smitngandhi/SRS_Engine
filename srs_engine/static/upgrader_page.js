@@ -243,6 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function triggerParse(fileId, btn) {
     const resultPanel = document.getElementById(`parse-result-${fileId}`);
+    
     if (!resultPanel) return;
 
     // Lock button
@@ -270,6 +271,17 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.innerHTML = '<span>✓</span> Parsed';
       btn.style.borderColor = 'rgba(0,229,201,0.4)';
       btn.style.color = 'var(--accent)';
+      const analyseBtn = document.createElement('button');
+      analyseBtn.className = 'up-btn-parse';
+      analyseBtn.style.marginTop = '10px';
+      analyseBtn.style.background = 'rgba(79,142,255,0.1)';
+      analyseBtn.style.borderColor = 'rgba(79,142,255,0.3)';
+      analyseBtn.style.color = 'var(--primary)';
+      analyseBtn.innerHTML = '<span>⬆</span> Analyse & Upgrade';
+      analyseBtn.addEventListener('click', () => {
+        window.location.href = `/srs-upgrader/review/${fileId}`;
+      });
+      btn.parentElement.appendChild(analyseBtn);
 
     } catch (err) {
       resultPanel.innerHTML = `

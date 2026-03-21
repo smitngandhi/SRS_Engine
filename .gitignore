@@ -212,3 +212,5 @@ generated_images/
 venv/
 generated_srs/
 user_uploads/
+upgrade_sessions/
+parsed_docs/

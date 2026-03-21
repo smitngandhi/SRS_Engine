@@ -4,4 +4,4 @@ from .pages import router as pages_router
 from .srs_api import router as srs_router
 from .upload_router import router as upload_router
 from .parse_router import router as parse_router
-
+from .upgrade_router import router as upgrade_router
