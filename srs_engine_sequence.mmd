@@ -1,0 +1,170 @@
+sequenceDiagram
+    autonumber
+
+    participant BR as 🌐 Browser
+    participant FA as ⚡ FastAPI
+    participant DB as 🗄️ MongoDB
+    participant RQ as 🐇 RabbitMQ
+    participant WK as ⚙️ Worker
+
+    %% ═══════════════════════════════════════════════════
+    %% SECTION 1 — FORM SUBMIT
+    %% ═══════════════════════════════════════════════════
+
+    Note over BR,WK: ── PHASE 1 · USER SUBMITS SRS FORM ──────────────────────────────────────
+
+    BR->>FA: POST /api/srs/generate_srs<br/>(full SRS form payload: project_name, features, domain, etc.)
+
+    FA->>DB: INSERT srs_jobs<br/>{ job_id: UUID, user_id, status: "pending",<br/>  progress: 0, current_step: "Queued", payload: {...} }
+
+    DB-->>FA: ack — job_id returned
+
+    FA->>RQ: PUBLISH { job_id }<br/>queue: srs_generation · delivery_mode: PERSISTENT
+
+    FA-->>BR: HTTP 200 · { job_id, status: "pending",<br/>message: "SRS generation started" }  ← returns in ~50 ms
+
+    Note over BR,FA: ✅ HTTP request complete in ~50 ms.<br/>Server is NOT blocked. User sees job_id immediately.
+
+    %% ═══════════════════════════════════════════════════
+    %% SECTION 2 — SSE STREAM
+    %% ═══════════════════════════════════════════════════
+
+    Note over BR,WK: ── PHASE 2 · BROWSER OPENS SSE STREAM (Job Tracker page) ───────────────
+
+    BR->>FA: GET /api/srs/job/{job_id}/status/stream<br/>(EventSource — text/event-stream — connection stays open)
+
+    activate FA
+
+    FA->>DB: poll — SELECT srs_jobs WHERE job_id = ?  (every 1 second)
+    DB-->>FA: { status: "pending", progress: 0 }
+    FA-->>BR: data: { status: "pending", progress: 0%,<br/>         current_step: "Queued — waiting for a worker" }
+
+    %% ═══════════════════════════════════════════════════
+    %% SECTION 3 — WORKER PICKS UP JOB
+    %% ═══════════════════════════════════════════════════
+
+    Note over BR,WK: ── PHASE 3 · WORKER CONSUMES JOB FROM RABBITMQ ────────────────────────
+
+    RQ->>WK: DELIVER { job_id }<br/>(prefetch_count=1 — one job per worker at a time)
+
+    activate WK
+
+    WK->>DB: FIND srs_jobs { job_id }<br/>→ fetch full SRS payload dict
+
+    DB-->>WK: job document + complete SRS form payload
+
+    WK->>DB: UPDATE { status: "processing", progress: 5%,<br/>          current_step: "Loading AI agents" }
+
+    FA->>DB: poll
+    DB-->>FA: { status: "processing", progress: 5% }
+    FA-->>BR: data: { status: "processing", progress: 5%,<br/>         step: "Loading AI agents" }
+
+    %% ═══════════════════════════════════════════════════
+    %% SECTION 4 — PHASE 1 AGENTS
+    %% ═══════════════════════════════════════════════════
+
+    Note over BR,WK: ── PHASE 4 · AI AGENTS — PHASE 1  (5 parallel agents) ─────────────────
+
+    Note over WK: create_technical_srs_agent() loads:<br/>Introduction · Overall Description · System Features<br/>External Interfaces · Non-Functional Requirements
+
+    WK->>DB: UPDATE { progress: 10%,<br/>          current_step: "Generating core sections…" }
+
+    FA->>DB: poll
+    DB-->>FA: { progress: 10% }
+    FA-->>BR: data: { progress: 10%, step: "Generating core sections…" }
+
+    WK->>DB: UPDATE { progress: 20%,<br/>          current_step: "Phase 1 agents running (5 parallel)" }
+
+    FA->>DB: poll
+    DB-->>FA: { progress: 20% }
+    FA-->>BR: data: { progress: 20%, step: "Phase 1 agents running" }
+
+    Note over WK: ⏳ asyncio.sleep(60s)<br/>API rate-limit gap between Phase 1 and Phase 2.<br/>Worker sleeps — NO HTTP threads are blocked.
+
+    WK->>DB: UPDATE { progress: 35%,<br/>          current_step: "Phase 1 complete" }
+
+    FA->>DB: poll
+    DB-->>FA: { progress: 35% }
+    FA-->>BR: data: { progress: 35%, step: "Phase 1 complete" }
+
+    %% ═══════════════════════════════════════════════════
+    %% SECTION 5 — PHASE 2 AGENTS
+    %% ═══════════════════════════════════════════════════
+
+    Note over BR,WK: ── PHASE 5 · AI AGENTS — PHASE 2  (Glossary + Assumptions) ─────────────
+
+    WK->>DB: UPDATE { progress: 55%,<br/>          current_step: "Generating Glossary and Assumptions" }
+
+    FA->>DB: poll
+    DB-->>FA: { progress: 55% }
+    FA-->>BR: data: { progress: 55%, step: "Generating Glossary and Assumptions" }
+
+    WK->>DB: UPDATE { progress: 60%,<br/>          current_step: "Phase 2 complete — all sections generated" }
+
+    FA->>DB: poll
+    DB-->>FA: { progress: 60% }
+    FA-->>BR: data: { progress: 60%, step: "All sections generated" }
+
+    %% ═══════════════════════════════════════════════════
+    %% SECTION 6 — DIAGRAMS + DOCX
+    %% ═══════════════════════════════════════════════════
+
+    Note over BR,WK: ── PHASE 6 · RENDER 4 MERMAID DIAGRAMS → BUILD .docx ─────────────────
+
+    WK->>DB: UPDATE { progress: 75%,<br/>          current_step: "Rendering architecture diagrams (×4)" }
+
+    FA->>DB: poll
+    DB-->>FA: { progress: 75% }
+    FA-->>BR: data: { progress: 75%, step: "Rendering architecture diagrams" }
+
+    Note over WK: render_mermaid_png() ×4:<br/>User Interfaces · Hardware Interfaces<br/>Software Interfaces · Communication Interfaces
+
+    WK->>DB: UPDATE { progress: 90%,<br/>          current_step: "Building Word document (.docx)" }
+
+    FA->>DB: poll
+    DB-->>FA: { progress: 90% }
+    FA-->>BR: data: { progress: 90%, step: "Building Word document" }
+
+    WK->>DB: UPDATE { status: "completed", progress: 100%,<br/>          current_step: "Completed",<br/>          result_path: "./generated_srs/{user_id}/{project}_SRS.docx",<br/>          completed_at: now() }
+
+    %% ═══════════════════════════════════════════════════
+    %% SECTION 7 — COMPLETION
+    %% ═══════════════════════════════════════════════════
+
+    Note over BR,WK: ── PHASE 7 · JOB COMPLETE · SSE CLOSES · EMAIL SENT · ACK ──────────────
+
+    FA->>DB: poll
+    DB-->>FA: { status: "completed", progress: 100%, result_path }
+    FA-->>BR: data: { status: "completed", progress: 100%,<br/>         result_path: "…/Project_SRS.docx" }
+
+    deactivate FA
+
+    Note over BR: EventSource.close() called in job_tracker.js<br/>SSE stream terminates.<br/>⬇ Download button appears on job card.
+
+    WK->>DB: FIND users { user_id }<br/>→ fetch email + display_name for notification
+
+    DB-->>WK: { email, display_name }
+
+    Note over WK: send_srs_complete_email()<br/>via SMTP · run_in_threadpool (non-blocking)<br/>Email failure does NOT mark job as failed.
+
+    WK->>RQ: ACK — message permanently removed from queue
+
+    deactivate WK
+
+    %% ═══════════════════════════════════════════════════
+    %% SECTION 8 — FAILURE PATH
+    %% ═══════════════════════════════════════════════════
+
+    Note over BR,WK: ── PHASE 8 · FAILURE PATH (if pipeline raises an exception) ─────────────
+
+    Note over WK: generate_srs() raises an unhandled exception<br/>Worker catches it in handle_job() try/except block
+
+    WK->>DB: UPDATE { status: "failed",<br/>          current_step: "Failed",<br/>          error: str(exc),<br/>          completed_at: now() }
+
+    FA->>DB: poll
+    DB-->>FA: { status: "failed", error: "…" }
+    FA-->>BR: data: { status: "failed",<br/>         error: "Pipeline error message" }
+
+    Note over BR: SSE stream closes automatically.<br/>❌ Retry button shown on job card.<br/>Error message displayed on card.
+
+    WK->>RQ: NACK (requeue=False)<br/>→ message moved to dead-letter queue<br/>→ no retry loop, no infinite requeue

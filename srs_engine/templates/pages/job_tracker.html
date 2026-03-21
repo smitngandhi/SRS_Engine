@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}My Jobs | SRS_Engine{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', path='job_tracker.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="tracker-layout">
+
+  <!-- ── PAGE HEADER ──────────────────────────────────── -->
+  <div class="tracker-header">
+    <div class="tracker-header-left">
+      <span class="section-label">Your workspace</span>
+      <h1 class="tracker-title">Generation Jobs</h1>
+      <p class="tracker-sub">Real-time status for all your SRS generation tasks.</p>
+    </div>
+    <div class="tracker-header-right">
+      <a href="/srs-generator" class="btn btn-primary">
+        <span>⚡</span> New SRS
+      </a>
+    </div>
+  </div>
+
+  <!-- ── STATS STRIP ──────────────────────────────────── -->
+  <div class="stats-strip" id="statsStrip">
+    <div class="stat-pill" id="statAll">
+      <span class="stat-pill-num" id="countAll">—</span>
+      <span class="stat-pill-label">Total</span>
+    </div>
+    <div class="stat-pill stat-pill--active" id="statActive">
+      <span class="stat-pill-dot"></span>
+      <span class="stat-pill-num" id="countActive">—</span>
+      <span class="stat-pill-label">Active</span>
+    </div>
+    <div class="stat-pill stat-pill--done" id="statDone">
+      <span class="stat-pill-num" id="countDone">—</span>
+      <span class="stat-pill-label">Completed</span>
+    </div>
+    <div class="stat-pill stat-pill--fail" id="statFail">
+      <span class="stat-pill-num" id="countFail">—</span>
+      <span class="stat-pill-label">Failed</span>
+    </div>
+  </div>
+
+  <!-- ── FILTER TABS ───────────────────────────────────── -->
+  <div class="filter-tabs" id="filterTabs">
+    <button class="filter-tab active" data-filter="all">All Jobs</button>
+    <button class="filter-tab" data-filter="pending">Pending</button>
+    <button class="filter-tab" data-filter="processing">Processing</button>
+    <button class="filter-tab" data-filter="completed">Completed</button>
+    <button class="filter-tab" data-filter="failed">Failed</button>
+  </div>
+
+  <!-- ── JOB GRID ─────────────────────────────────────── -->
+  <div class="jobs-grid" id="jobsGrid">
+    <!-- Skeleton loaders shown on first load -->
+    <div class="job-card job-skeleton"></div>
+    <div class="job-card job-skeleton"></div>
+    <div class="job-card job-skeleton"></div>
+  </div>
+
+  <!-- ── EMPTY STATE ───────────────────────────────────── -->
+  <div class="jobs-empty" id="jobsEmpty" style="display:none;">
+    <div class="jobs-empty-icon">📭</div>
+    <p class="jobs-empty-title">No jobs here</p>
+    <p class="jobs-empty-sub">When you generate an SRS document, it'll appear here with live progress.</p>
+    <a href="/srs-generator" class="btn btn-primary" style="margin-top:20px;">Start generating →</a>
+  </div>
+
+  <!-- ── ERROR STATE ───────────────────────────────────── -->
+  <div class="jobs-error" id="jobsError" style="display:none;">
+    <span>⚠️</span>
+    <span id="jobsErrorMsg">Failed to load jobs.</span>
+    <button class="btn btn-link" onclick="loadJobs()">Retry</button>
+  </div>
+
+</div>
+
+<!-- ── JOB CARD TEMPLATE (hidden, cloned by JS) ──────── -->
+<template id="jobCardTemplate">
+  <div class="job-card" data-job-id="">
+    <div class="job-card-top">
+      <div class="job-icon">📄</div>
+      <div class="job-status-badge" data-status=""></div>
+      <div class="job-menu-btn" title="Options">⋯</div>
+    </div>
+
+    <div class="job-name"></div>
+
+    <div class="job-step-row">
+      <span class="job-step-label">Current step</span>
+      <span class="job-step-text"></span>
+    </div>
+
+    <div class="job-progress-wrap">
+      <div class="job-progress-track">
+        <div class="job-progress-fill"></div>
+      </div>
+      <span class="job-progress-pct"></span>
+    </div>
+
+    <div class="job-meta-row">
+      <span class="job-created"></span>
+      <span class="job-elapsed"></span>
+    </div>
+
+    <div class="job-actions"></div>
+  </div>
+</template>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', path='job_tracker.js') }}"></script>
+{% endblock %}

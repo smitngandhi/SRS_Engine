@@ -1,15 +1,5 @@
 from __future__ import annotations
 
-"""
-SRS_Engine FastAPI entrypoint.
-
-This module was refactored to register routers from `srs_engine/core/routers/`,
-set up centralized logging, configure MongoDB, and enable cookie sessions.
-
-The legacy monolithic implementation is preserved below (disabled) to avoid
-deleting existing code while keeping runtime behavior clean and production-ready.
-"""
-
 from contextlib import asynccontextmanager
 from dotenv import find_dotenv, load_dotenv
 from fastapi import FastAPI
@@ -22,19 +12,48 @@ from srs_engine.core.config import get_settings
 from srs_engine.core.db.mongo import init_mongo
 from srs_engine.core.logging import get_logger
 from srs_engine.core.logging.config import setup_logging
-from srs_engine.core.routers import auth_router, contact_router, pages_router, srs_router , upload_router, parse_router , upgrade_router
+from srs_engine.core.queue.rabbitmq import connect_rabbitmq, disconnect_rabbitmq, get_rabbitmq_manager
+from srs_engine.core.routers import (
+    auth_router,
+    contact_router,
+    pages_router,
+    srs_router,
+    upload_router,
+    parse_router,
+    upgrade_router,
+)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Initialize MongoDB
     settings = get_settings()
     logger = get_logger("srs_engine.main")
-    logger.info("Initializing MongoDB connection")
+
+    # ── MongoDB ────────────────────────────────────────────────────────
+    logger.info("Startup | Initializing MongoDB connection")
     await init_mongo(app, settings)
+
+    # ── RabbitMQ ───────────────────────────────────────────────────────
+    logger.info("Startup | Connecting to RabbitMQ")
+    try:
+        await connect_rabbitmq()
+        # Expose the manager on app.state so routers can reach it via
+        # request.app.state.rabbitmq  (same pattern as session_service)
+        app.state.rabbitmq = get_rabbitmq_manager()
+        logger.info("Startup | RabbitMQ ready")
+    except Exception as exc:
+        # Log the error but do NOT crash the app — endpoints that require
+        # the queue will fail gracefully and return 503 instead of taking
+        # the whole process down.
+        logger.error(f"Startup | RabbitMQ connection failed | error={exc}")
+        app.state.rabbitmq = None
+
     yield
-    # Shutdown: Cleanup if needed
-    logger.info("Shutting down SRS_Engine")
+
+    # ── Shutdown ───────────────────────────────────────────────────────
+    logger.info("Shutdown | Disconnecting RabbitMQ")
+    await disconnect_rabbitmq()
+    logger.info("Shutdown | SRS_Engine stopped")
 
 
 def create_app() -> FastAPI:
@@ -43,7 +62,7 @@ def create_app() -> FastAPI:
 
     setup_logging(log_dir=settings.log_dir, log_level=settings.log_level)
     logger = get_logger("srs_engine.main")
-    logger.info("Starting SRS_Engine")
+    logger.info("Creating SRS_Engine application")
 
     app = FastAPI(lifespan=lifespan)
 

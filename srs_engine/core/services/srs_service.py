@@ -1,8 +1,25 @@
 from __future__ import annotations
 
+"""
+core/services/srs_service.py
+
+SRS generation service layer.
+
+Phase 3 changes:
+  - generate_srs() preserved for the worker. Router no longer calls it.
+  - Router calls JobRepo.create_job() + publish_srs_job() instead.
+
+Phase 4 changes:
+  - generate_srs() now accepts an optional `on_progress` async callback:
+      async def on_progress(progress: int, step: str) -> None
+    The router never passes it so existing behaviour is 100% unchanged.
+    The worker passes it to get granular progress updates into MongoDB.
+"""
+
 import asyncio
 import json
 import uuid
+from collections.abc import Awaitable, Callable
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -61,6 +78,14 @@ from srs_engine.utils.srs_document_generator import generate_srs_document
 logger = get_context_logger(__name__)
 today = datetime.today().strftime("%m/%d/%Y")
 
+# Type alias for the optional progress callback the worker supplies
+ProgressCallback = Callable[[int, str], Awaitable[None]]
+
+
+async def _noop_progress(progress: int, step: str) -> None:
+    """Default no-op callback — used when no progress reporting is needed."""
+    pass
+
 
 async def create_technical_srs_agent():
     first_agent = SequentialAgent(
@@ -75,7 +100,7 @@ async def create_technical_srs_agent():
                     create_technical_srs_external_interfaces_agent(),
                     create_technical_srs_nfr_agent(),
                 ],
-                description="This agent handles the generation of the Introduction and Overall Description sections of the SRS document.",
+                description="Handles Introduction, Overall Description, System Features, External Interfaces, and NFR sections.",
             )
         ],
     )
@@ -89,7 +114,7 @@ async def create_technical_srs_agent():
                     create_technical_srs_glossary_agent(),
                     create_technical_srs_assumptions_agent(),
                 ],
-                description="This agent handles the generation of the Glossary and Assumptions sections of the SRS document.",
+                description="Handles Glossary and Assumptions sections.",
             )
         ],
     )
@@ -104,15 +129,15 @@ def get_session_service(app: Any) -> InMemorySessionService:
 async def enhance_problem_statement(app: Any, input_data: Any, user_id: str) -> dict[str, Any]:
     """Enhance problem statement using AI."""
     session_id = str(uuid.uuid4())
-    
+
     async with async_log_context(session_id=session_id, user_id=user_id):
         logger.info("enhance_problem_statement | START | input validation")
-        
+
         try:
             inputs = input_data.dict()
             project_name = inputs["project_name"]
             problem_statement = inputs["problem_statement"]
-            
+
             logger.info(
                 f"enhance_problem_statement | Input received | "
                 f"project={project_name} | stmt_len={len(problem_statement)}"
@@ -129,12 +154,9 @@ async def enhance_problem_statement(app: Any, input_data: Any, user_id: str) -> 
             logger.debug("enhance_problem_statement | Session created")
 
             enhance_agent = create_enhance_problem_statement_agent()
-            logger.debug("enhance_problem_statement | Agent created")
-            
             runner = await create_runner(enhance_agent, project_name, session_service_stateful)
             prompt = await create_enhance_prompt(project_name, problem_statement)
-            logger.debug("enhance_problem_statement | Runner created, calling agent")
-            
+
             response = await generated_response(runner, user_id, session_id, prompt)
             logger.debug("enhance_problem_statement | Agent response received")
 
@@ -180,16 +202,16 @@ async def enhance_problem_statement(app: Any, input_data: Any, user_id: str) -> 
 async def auto_generate_section(app: Any, input_data: Any, user_id: str) -> dict[str, Any]:
     """Auto-generate a section (features or user flow) using AI."""
     session_id = str(uuid.uuid4())
-    
+
     async with async_log_context(session_id=session_id, user_id=user_id):
         logger.info("auto_generate_section | START | input validation")
-        
+
         try:
             inputs = input_data.dict()
             project_name = inputs["project_name"]
             problem_statement = inputs["problem_statement"]
             section_type = inputs["section_type"]
-            
+
             logger.info(
                 f"auto_generate_section | Input received | "
                 f"project={project_name} | section={section_type}"
@@ -205,15 +227,11 @@ async def auto_generate_section(app: Any, input_data: Any, user_id: str) -> dict
 
             session_service_stateful = get_session_service(app)
             await create_session(session_service_stateful, project_name, user_id, session_id, initial_state)
-            logger.debug("auto_generate_section | Session created")
 
             agent = create_auto_generate_agent(internal_section_type)
-            logger.debug("auto_generate_section | Agent created")
-            
             runner = await create_runner(agent, project_name, session_service_stateful)
             prompt = await create_prompt()
-            logger.debug("auto_generate_section | Runner created, calling agent")
-            
+
             response = await generated_response(runner, user_id, session_id, prompt)
             logger.debug("auto_generate_section | Agent response received")
 
@@ -230,7 +248,7 @@ async def auto_generate_section(app: Any, input_data: Any, user_id: str) -> dict
                         raise ValueError("'core_features' must be a list")
                     if len(data["core_features"]) < 4:
                         raise ValueError("Must have at least 4 features")
-                    
+
                     logger.info(
                         f"auto_generate_section | SUCCESS | "
                         f"section=features | feature_count={len(data['core_features'])}"
@@ -243,7 +261,7 @@ async def auto_generate_section(app: Any, input_data: Any, user_id: str) -> dict
                     raise ValueError("'primary_user_flow' must be a string")
                 if len(data["primary_user_flow"]) < 100:
                     raise ValueError("User flow must be at least 100 characters")
-                
+
                 logger.info(
                     f"auto_generate_section | SUCCESS | "
                     f"section=flow | flow_len={len(data['primary_user_flow'])}"
@@ -256,7 +274,7 @@ async def auto_generate_section(app: Any, input_data: Any, user_id: str) -> dict
             except ValueError as e:
                 logger.error(f"auto_generate_section | Validation Error | {str(e)}")
                 raise HTTPException(status_code=500, detail=f"Invalid response format: {str(e)}")
-                
+
         except HTTPException:
             raise
         except Exception as e:
@@ -264,97 +282,111 @@ async def auto_generate_section(app: Any, input_data: Any, user_id: str) -> dict
             raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
 
 
-async def generate_srs(app: Any, srs_data: Any, user_id: str) -> dict[str, Any]:
-    """Generate complete SRS document with all sections and diagrams."""
+# ---------------------------------------------------------------------------
+# Core generation pipeline — called by the worker, NOT by the router
+# ---------------------------------------------------------------------------
+
+async def generate_srs(
+    app: Any,
+    srs_data: Any,
+    user_id: str,
+    on_progress: ProgressCallback | None = None,
+) -> dict[str, Any]:
+    """
+    Generate complete SRS document with all sections and diagrams.
+
+    NOTE: No longer called by the FastAPI router. Called by the worker process.
+
+    Args:
+        app:         Object with .state.session_service_stateful.
+                     Worker passes a types.SimpleNamespace; FastAPI passes request.app.
+        srs_data:    SRSRequest instance or plain dict with the full payload.
+        user_id:     String user identifier.
+        on_progress: Optional async def(progress: int, step: str) -> None.
+                     Worker supplies this to write progress to MongoDB.
+                     Defaults to a no-op so callers without progress reporting
+                     are unaffected.
+    """
+    _progress = on_progress or _noop_progress
     session_id = str(uuid.uuid4())
-    
+
     async with async_log_context(session_id=session_id, user_id=user_id):
         logger.info("generate_srs | START | Comprehensive SRS generation requested")
-        
+
         try:
-            inputs = srs_data.dict()
+            inputs = srs_data.dict() if hasattr(srs_data, "dict") else srs_data
             project_name = inputs["project_identity"]["project_name"]
             author_list = inputs["project_identity"]["author"]
             organization_name = inputs["project_identity"]["organization"]
-            
+
             logger.info(f"generate_srs | Project info | project={project_name} | org={organization_name}")
 
             initial_state = {"user_inputs": inputs}
-
             session_service_stateful = get_session_service(app)
             await create_session(session_service_stateful, project_name, user_id, session_id, initial_state)
-            logger.debug("generate_srs | Session created")
 
+            # ── Phase 1 ────────────────────────────────────────────────
             logger.info("generate_srs | PHASE 1 START | Loading 7 AI agents (5 parallel)...")
+            await _progress(10, "Loading AI agents")
+
             first_agent, second_agent = await create_technical_srs_agent()
-            logger.debug("generate_srs | Agents created | agent_count=7 (5+2)")
-            
             runner = await create_runner(first_agent, project_name, session_service_stateful)
             prompt = await create_prompt()
-            logger.debug("generate_srs | Phase 1 runner created")
 
+            await _progress(20, "Generating core sections (Introduction, Features, NFR …)")
             logger.info("generate_srs | PHASE 1 IN PROGRESS | Running first 5 parallel agents...")
             await generated_response(runner, user_id, session_id, prompt)
             session = await get_session(session_service_stateful, project_name, user_id, session_id)
-            logger.info("generate_srs | PHASE 1 COMPLETE | First agent group finished")
+            logger.info("generate_srs | PHASE 1 COMPLETE")
 
-            logger.debug("generate_srs | Waiting 20 seconds before phase 2...")
-            # Preserve original behavior (60s wait) without blocking the event loop
+            # ── Inter-phase wait ───────────────────────────────────────
+            logger.debug("generate_srs | Waiting 60 seconds before phase 2...")
             await asyncio.sleep(60)
-            logger.debug("generate_srs | Wait period complete")
 
-            logger.info("generate_srs | PHASE 2 START | Running final 2 parallel agents (Glossary, Assumptions)...")
+            # ── Phase 2 ────────────────────────────────────────────────
+            await _progress(55, "Generating Glossary and Assumptions")
+            logger.info("generate_srs | PHASE 2 START | Running final 2 parallel agents...")
             second_runner = await create_runner(second_agent, project_name, session_service_stateful)
             await generated_response(second_runner, user_id, session_id, prompt)
             session = await get_session(session_service_stateful, project_name, user_id, session_id)
-            logger.info("generate_srs | PHASE 2 COMPLETE | All agent generation done")
+            logger.info("generate_srs | PHASE 2 COMPLETE")
 
-            logger.debug("generate_srs | Extracting and merging all sections...")
+            # ── Extract sections ───────────────────────────────────────
             introduction_section = clean_and_parse_json(session.state.get("introduction_section", {}))
             overall_description_section = clean_and_parse_json(session.state.get("overall_description_section", {}))
             system_features_section = clean_and_parse_json(session.state.get("system_features_section", {}))
             external_interfaces_section = clean_interface_diagrams(
                 clean_and_parse_json(session.state.get("external_interfaces_section", {}))
             )
-            logger.debug("generate_srs | First 4 sections merged")
 
+            # ── Phase 3 — diagrams ─────────────────────────────────────
+            await _progress(75, "Rendering architecture diagrams")
             logger.info("generate_srs | PHASE 3 START | Generating 4 architecture diagrams...")
+
             base_dir = Path("./srs_engine/generated_images") / project_name
             base_dir.mkdir(parents=True, exist_ok=True)
 
             image_paths = {
-                "user_interfaces": base_dir / f"{user_id}/{project_name}_user_interfaces_diagram.png",
-                "hardware_interfaces": base_dir / f"{user_id}/{project_name}_hardware_interfaces_diagram.png",
-                "software_interfaces": base_dir / f"{user_id}/{project_name}_software_interfaces_diagram.png",
+                "user_interfaces":          base_dir / f"{user_id}/{project_name}_user_interfaces_diagram.png",
+                "hardware_interfaces":      base_dir / f"{user_id}/{project_name}_hardware_interfaces_diagram.png",
+                "software_interfaces":      base_dir / f"{user_id}/{project_name}_software_interfaces_diagram.png",
                 "communication_interfaces": base_dir / f"{user_id}/{project_name}_communication_interfaces_diagram.png",
             }
 
-            logger.debug("generate_srs | Rendering diagram 1/4 (User Interfaces)...")
-            render_mermaid_png(external_interfaces_section["user_interfaces"]["interface_diagram"]["code"], image_paths["user_interfaces"])
-            logger.debug("generate_srs | Rendered diagram 1/4 ✓")
-            
-            logger.debug("generate_srs | Rendering diagram 2/4 (Hardware Interfaces)...")
-            render_mermaid_png(external_interfaces_section["hardware_interfaces"]["interface_diagram"]["code"], image_paths["hardware_interfaces"])
-            logger.debug("generate_srs | Rendered diagram 2/4 ✓")
-            
-            logger.debug("generate_srs | Rendering diagram 3/4 (Software Interfaces)...")
-            render_mermaid_png(external_interfaces_section["software_interfaces"]["interface_diagram"]["code"], image_paths["software_interfaces"])
-            logger.debug("generate_srs | Rendered diagram 3/4 ✓")
-            
-            logger.debug("generate_srs | Rendering diagram 4/4 (Communication Interfaces)...")
-            render_mermaid_png(
-                external_interfaces_section["communication_interfaces"]["interface_diagram"]["code"],
-                image_paths["communication_interfaces"],
-            )
-            logger.debug("generate_srs | Rendered diagram 4/4 ✓")
+            render_mermaid_png(external_interfaces_section["user_interfaces"]["interface_diagram"]["code"],          image_paths["user_interfaces"])
+            render_mermaid_png(external_interfaces_section["hardware_interfaces"]["interface_diagram"]["code"],      image_paths["hardware_interfaces"])
+            render_mermaid_png(external_interfaces_section["software_interfaces"]["interface_diagram"]["code"],      image_paths["software_interfaces"])
+            render_mermaid_png(external_interfaces_section["communication_interfaces"]["interface_diagram"]["code"], image_paths["communication_interfaces"])
             logger.info("generate_srs | PHASE 3 COMPLETE | All 4 diagrams generated")
 
-            nfr_section = clean_and_parse_json(session.state.get("nfr_section", {}))
-            glossary_section = clean_and_parse_json(session.state.get("glossary_section", {}))
+            nfr_section         = clean_and_parse_json(session.state.get("nfr_section", {}))
+            glossary_section    = clean_and_parse_json(session.state.get("glossary_section", {}))
             assumptions_section = clean_and_parse_json(session.state.get("assumptions_section", {}))
-            logger.debug("generate_srs | Final 3 sections extracted")
 
+            # ── Phase 4 — document ─────────────────────────────────────
+            await _progress(90, "Building Word document")
             logger.info("generate_srs | PHASE 4 START | Creating Word document (.docx)...")
+
             output_path = f"./srs_engine/generated_srs/{user_id}/{project_name}_SRS.docx"
             Path("./srs_engine/generated_srs").mkdir(exist_ok=True)
             Path(f"./srs_engine/generated_srs/{user_id}").mkdir(exist_ok=True)
@@ -374,14 +406,10 @@ async def generate_srs(app: Any, srs_data: Any, user_id: str) -> dict[str, Any]:
                 organization=organization_name,
             )
             logger.info(f"generate_srs | PHASE 4 COMPLETE | Document created | path={generated_path}")
-
             logger.info("generate_srs | SUCCESS | Full SRS generation completed!")
+
             return {"srs_document_path": generated_path}
-            
+
         except Exception as e:
             logger.error(f"generate_srs | FAILED | error={str(e)}", exc_info=True)
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error generating SRS: {str(e)}"
-            )
-
+            raise

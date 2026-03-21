@@ -150,3 +150,24 @@ async def srs_upgrader_review(file_id: str, request: Request, user=Depends(requi
         file_id=file_id,
         filename=record["original_filename"],
     )
+
+@router.get("/jobs")
+async def jobs_page(request: Request):
+    """
+    Render the job tracker page.
+    If user is not logged in, redirect to login page (HTML redirect, not JSON).
+    Uses request.session directly to avoid returning a JSON 401.
+    """
+    user_id = request.session.get("user_id")
+    if not user_id:
+        # Hard redirect — never returns JSON to the browser
+        return RedirectResponse(url="/login?next=/jobs", status_code=302)
+ 
+    return request.app.state.templates.TemplateResponse(
+        "pages/job_tracker.html",
+        {
+            "request":      request,
+            "is_logged_in": True,
+        },
+    )
+ 

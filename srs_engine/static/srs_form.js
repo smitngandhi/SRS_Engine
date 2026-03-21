@@ -413,7 +413,7 @@ document.getElementById('srsForm')?.addEventListener('submit', async (e) => {
 
     // Clear saved draft on success
     sessionStorage.removeItem('srs_form_draft');
-    alert('✅ SRS generated successfully! Check My Documents on the home page.');
+    window.location.href = '/jobs';
 
   } catch (err) {
     console.error('Submission error:', err);

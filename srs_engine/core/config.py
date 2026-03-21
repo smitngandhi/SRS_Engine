@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from dotenv import load_dotenv , find_dotenv
+from dotenv import load_dotenv, find_dotenv
+
 load_dotenv(find_dotenv())
+
 
 def _env(name: str, default: str | None = None) -> str | None:
     val = os.getenv(name)
@@ -38,7 +40,14 @@ class Settings:
     log_level: str = (_env("LOG_LEVEL", "INFO") or "INFO").upper()
     log_dir: str = _env("LOG_DIR", "./logs") or "./logs"
 
+    # RabbitMQ
+    rabbitmq_host: str = _env("RABBITMQ_HOST", "localhost") or "localhost"
+    rabbitmq_port: int = int(_env("RABBITMQ_PORT", "5672") or "5672")
+    rabbitmq_user: str = _env("RABBITMQ_USER", "guest") or "guest"
+    rabbitmq_password: str = _env("RABBITMQ_PASSWORD", "guest") or "guest"
+    rabbitmq_vhost: str = _env("RABBITMQ_VHOST", "/") or "/"
+    rabbitmq_srs_queue: str = _env("RABBITMQ_SRS_QUEUE", "srs_generation") or "srs_generation"
+
 
 def get_settings() -> Settings:
     return Settings()
-

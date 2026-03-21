@@ -44,3 +44,4 @@ python-docx
 mammoth 
 pytesseract 
 pdf2image
+aio_pika
