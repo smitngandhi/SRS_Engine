@@ -4,6 +4,8 @@
 
 {% block head %}
   <link rel="stylesheet" href="{{ url_for('static', path='srs_form.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='traces.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='generation-view.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -60,337 +62,327 @@
     </div>
   </aside>
 
-  <!-- ── MAIN FORM ────────────────────────────────────── -->
-  <main class="srs-main">
-    <form id="srsForm">
-
-      <!-- STEP 1: Project Identity -->
-      <div class="form-step active" data-step="1">
-        <div class="step-header">
-          <span class="step-tag">Step 01</span>
-          <h1 class="step-title">Project Identity</h1>
-          <p class="step-desc">Tell us about your project — who's building it and what it's for.</p>
-        </div>
-
-        <div class="fields-grid">
-          <div class="field-group full">
-            <label class="field-label required" for="project_name">Project Name</label>
-            <input class="field-input" type="text" id="project_name" name="project_name"
-              placeholder="e.g. Customer Churn Prediction System" required />
-          </div>
-
-          <div class="field-group full">
-            <label class="field-label required" for="author">Author(s)</label>
-            <textarea class="field-input" id="author" name="author" rows="3"
-              placeholder="Enter one name per line:&#10;Jane Doe&#10;Mark Felix" required></textarea>
-            <span class="field-hint">Enter one name per line.</span>
-          </div>
-
-          <div class="field-group full">
-            <label class="field-label required" for="organization">Organization</label>
-            <input class="field-input" type="text" id="organization" name="organization"
-              placeholder="e.g. TechCorp Solutions" required />
-          </div>
-
-          <div class="field-group full">
-            <div class="label-row">
-              <label class="field-label required" for="problem_statement">Problem Statement</label>
-              <button type="button" id="enhanceProblemBtn" class="inline-btn">✨ Enhance</button>
-            </div>
-            <textarea class="field-input" id="problem_statement" name="problem_statement" rows="3"
-              placeholder="e.g. Predict customers likely to leave the service to reduce churn" required></textarea>
-            <div id="problemStatus" class="field-status"></div>
-            <span class="field-hint">💡 Fill in Project Name to enable enhancement</span>
-          </div>
-
-          <div class="field-group full">
-            <label class="field-label required">Target Users</label>
-            <div class="chip-group" id="targetUsersGroup">
-              <label class="chip-label"><input type="checkbox" name="target_users" value="Admin"><span>Admin</span></label>
-              <label class="chip-label"><input type="checkbox" name="target_users" value="End User"><span>End User</span></label>
-              <label class="chip-label"><input type="checkbox" name="target_users" value="Manager"><span>Manager</span></label>
-              <label class="chip-label"><input type="checkbox" name="target_users" value="Analyst"><span>Analyst</span></label>
-              <label class="chip-label"><input type="checkbox" name="target_users" value="Customer"><span>Customer</span></label>
-              <label class="chip-label"><input type="checkbox" name="target_users" value="Other" id="target_users_other_check"><span>Other</span></label>
-            </div>
-            <input class="field-input" type="text" id="target_users_custom" placeholder="Specify other user type" style="display:none; margin-top:10px;" />
-          </div>
+  <!-- ── MAIN CONTENT AREA ─────────────────────────────── -->
+  <main class="form-main" id="mainContent">
+    
+    <!-- Live Generation View - Initially Hidden -->
+    <div class="generation-view" id="generationView" style="display: none;">
+      <div class="generation-header">
+        <h2 class="generation-title">🚀 Generating Your SRS Document</h2>
+        <div class="generation-status">
+          <span class="status-dot" id="generationStatusDot"></span>
+          <span id="generationStatusLabel">Initializing...</span>
         </div>
       </div>
-
-      <!-- STEP 2: System Context -->
-      <div class="form-step" data-step="2">
-        <div class="step-header">
-          <span class="step-tag">Step 02</span>
-          <h1 class="step-title">System Context</h1>
-          <p class="step-desc">Define the application type, domain, and relevant industry standards.</p>
+      
+      <div class="generation-timeline" id="generationTimeline">
+        <!-- Timeline will be populated dynamically -->
+      </div>
+      
+      <div class="generation-progress">
+        <div class="progress-track">
+          <div class="progress-fill" id="generationProgressFill"></div>
         </div>
+        <div class="progress-text" id="generationProgressText">Starting...</div>
+      </div>
+      
+      <div class="generation-details" id="generationDetails">
+        <!-- Current agent/tool details will be shown here -->
+      </div>
+    </div>
 
-        <div class="fields-grid">
-          <div class="field-group half">
-            <label class="field-label required" for="application_type">Application Type</label>
-            <select class="field-input" id="application_type" name="application_type" required>
-              <option value="">Select type...</option>
-              <option value="Web Application">Web Application</option>
-              <option value="Mobile Application">Mobile Application</option>
-              <option value="Backend Service">Backend Service</option>
-              <option value="AI/ML System">AI/ML System</option>
-              <option value="Desktop Application">Desktop Application</option>
-            </select>
+    <!-- Original SRS Form - Will be hidden during generation -->
+    <div class="form-container" id="formContainer">
+      <form id="srsForm" class="srs-form">
+        <!-- STEP 1: Project Identity -->
+        <div class="form-step active" data-step="1">
+          <div class="step-header">
+            <span class="step-tag">Step 01</span>
+            <h1 class="step-title">Project Identity</h1>
+            <p class="step-desc">Tell us about your project — who's building it and what it's for.</p>
           </div>
 
-          <div class="field-group half">
-            <label class="field-label required" for="domain">Domain / Industry</label>
-            <select class="field-input" id="domain" name="domain" required>
-              <option value="">Select domain...</option>
-              <option value="Other">General</option>
-              <option value="Healthcare">Healthcare & Medical Devices</option>
-              <option value="Finance">Financial Services & Fintech</option>
-              <option value="Aerospace">Aerospace & Aviation</option>
-              <option value="Automotive">Automotive</option>
-              <option value="Telecom">Telecommunications</option>
-              <option value="Energy">Energy & Utilities</option>
-              <option value="E-commerce">E-commerce & Retail</option>
-              <option value="Education">Education</option>
-            </select>
-            <input class="field-input" type="text" id="domain_custom" placeholder="Specify domain" style="display:none; margin-top:10px;" />
-          </div>
+          <div class="fields-grid">
+            <div class="field-group full">
+              <label class="field-label required" for="project_name">Project Name</label>
+              <input class="field-input" type="text" id="project_name" name="project_name"
+                placeholder="e.g. Customer Churn Prediction System" required />
+            </div>
 
-          <!-- Domain Info Panel -->
-          <div class="field-group full" id="domainInfoSection" style="display:none;">
-            <div class="domain-panel">
-              <h3 class="domain-panel-title" id="domainTitle"></h3>
-              <div class="domain-standards">
-                <div class="domain-section-label">📋 Regulatory Standards <span style="font-size:0.7rem;opacity:0.6">(hover for details)</span></div>
-                <div class="standards-chips" id="standardsList"></div>
+            <div class="field-group full">
+              <label class="field-label required" for="author">Author(s)</label>
+              <textarea class="field-input" id="author" name="author" rows="3"
+                placeholder="Enter one name per line:&#10;Jane Doe&#10;Mark Felix" required></textarea>
+              <span class="field-hint">Enter one name per line.</span>
+            </div>
+
+            <div class="field-group full">
+              <label class="field-label required" for="organization">Organization</label>
+              <input class="field-input" type="text" id="organization" name="organization"
+                placeholder="e.g. TechCorp Solutions" required />
+            </div>
+
+            <div class="field-group full">
+              <div class="label-row">
+                <label class="field-label required" for="problem_statement">Problem Statement</label>
+                <button type="button" id="enhanceProblemBtn" class="inline-btn">✨ Enhance</button>
               </div>
-              <div class="domain-sections">
-                <div class="domain-section-label">📄 Domain-Specific SRS Sections <span style="font-size:0.7rem;opacity:0.6">(click to expand)</span></div>
-                <div id="sectionsList" class="sections-list-inner"></div>
+              <textarea class="field-input" id="problem_statement" name="problem_statement" rows="3"
+                placeholder="e.g. Predict customers likely to leave the service to reduce churn" required></textarea>
+              <div id="problemStatus" class="field-status"></div>
+              <span class="field-hint">💡 Fill in Project Name to enable enhancement</span>
+            </div>
+
+            <div class="field-group full">
+              <label class="field-label required">Target Users</label>
+              <div class="chip-group" id="targetUsersGroup">
+                <label class="chip-label"><input type="checkbox" name="target_users" value="Admin"><span>Admin</span></label>
+                <label class="chip-label"><input type="checkbox" name="target_users" value="End User"><span>End User</span></label>
+                <label class="chip-label"><input type="checkbox" name="target_users" value="Manager"><span>Manager</span></label>
+                <label class="chip-label"><input type="checkbox" name="target_users" value="Analyst"><span>Analyst</span></label>
+                <label class="chip-label"><input type="checkbox" name="target_users" value="Customer"><span>Customer</span></label>
+                <label class="chip-label"><input type="checkbox" name="target_users" value="Other" id="target_users_other_check"><span>Other</span></label>
               </div>
-              <div class="common-sections-strip">
-                <div class="common-strip-label">✅ Common Sections (included in all domains)</div>
-                <div class="common-sections-grid" id="commonSectionsList"></div>
+              <input class="field-input" type="text" id="target_users_custom" placeholder="Specify other user type" style="display:none; margin-top:10px;" />
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: System Context -->
+        <div class="form-step" data-step="2">
+          <div class="step-header">
+            <span class="step-tag">Step 02</span>
+            <h1 class="step-title">System Context</h1>
+            <p class="step-desc">Define the application type, domain, and relevant industry standards.</p>
+          </div>
+
+          <div class="fields-grid">
+            <div class="field-group half">
+              <label class="field-label required" for="application_type">Application Type</label>
+              <select class="field-input" id="application_type" name="application_type" required>
+                <option value="">Select type...</option>
+                <option value="Web Application">Web Application</option>
+                <option value="Mobile Application">Mobile Application</option>
+                <option value="Backend Service">Backend Service</option>
+                <option value="AI/ML System">AI/ML System</option>
+                <option value="Desktop Application">Desktop Application</option>
+              </select>
+            </div>
+
+            <div class="field-group half">
+              <label class="field-label required" for="domain">Domain / Industry</label>
+              <select class="field-input" id="domain" name="domain" required>
+                <option value="">Select domain...</option>
+                <option value="Other">General</option>
+                <option value="Healthcare">Healthcare & Medical Devices</option>
+                <option value="Finance">Financial Services & Fintech</option>
+                <option value="Aerospace">Aerospace & Aviation</option>
+                <option value="Automotive">Automotive</option>
+                <option value="Telecom">Telecommunications</option>
+                <option value="Energy">Energy & Utilities</option>
+                <option value="E-commerce">E-commerce & Retail</option>
+                <option value="Education">Education</option>
+              </select>
+              <input class="field-input" type="text" id="domain_custom" placeholder="Specify domain" style="display:none; margin-top:10px;" />
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: Functional Scope -->
+        <div class="form-step" data-step="3">
+          <div class="step-header">
+            <span class="step-tag">Step 03</span>
+            <h1 class="step-title">Functional Scope</h1>
+            <p class="step-desc">Describe what the system does — features and user workflows.</p>
+          </div>
+
+          <div class="fields-grid">
+            <div class="field-group full">
+              <div class="label-row">
+                <label class="field-label required" for="core_features">Core Features</label>
+                <button type="button" id="autoGenerateFeaturesBtn" class="inline-btn">✨ Auto-Generate</button>
               </div>
-              <div class="domain-note" id="infoNote"></div>
+              <textarea class="field-input" id="core_features" name="core_features" rows="5"
+                placeholder="e.g. User authentication, dashboard analytics, data upload&#10;(one per line or comma-separated)" required></textarea>
+              <div id="featuresStatus" class="field-status"></div>
+              <span class="field-hint">List each feature on a new line or separate with commas.</span>
+            </div>
+
+            <div class="field-group full">
+              <div class="label-row">
+                <label class="field-label" for="primary_user_flow">Primary User Flow</label>
+                <button type="button" id="autoGenerateFlowBtn" class="inline-btn">✨ Auto-Generate</button>
+              </div>
+              <textarea class="field-input" id="primary_user_flow" name="primary_user_flow" rows="4"
+                placeholder="e.g. User logs in → uploads data → views prediction results"></textarea>
+              <div id="flowStatus" class="field-status"></div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- STEP 3: Functional Scope -->
-      <div class="form-step" data-step="3">
-        <div class="step-header">
-          <span class="step-tag">Step 03</span>
-          <h1 class="step-title">Functional Scope</h1>
-          <p class="step-desc">Describe what the system does — features and user workflows.</p>
-        </div>
+        <!-- STEP 4: Non-Functional -->
+        <div class="form-step" data-step="4">
+          <div class="step-header">
+            <span class="step-tag">Step 04</span>
+            <h1 class="step-title">Non-Functional Requirements</h1>
+            <p class="step-desc">Define scale and performance expectations for the system.</p>
+          </div>
 
-        <div class="fields-grid">
-          <div class="field-group full">
-            <div class="label-row">
-              <label class="field-label required" for="core_features">Core Features</label>
-              <button type="button" id="autoGenerateFeaturesBtn" class="inline-btn">✨ Auto-Generate</button>
+          <div class="fields-grid">
+            <div class="field-group half">
+              <label class="field-label required" for="expected_user_scale">Expected User Scale</label>
+              <select class="field-input" id="expected_user_scale" name="expected_user_scale" required>
+                <option value="">Select scale...</option>
+                <option value="<100">Less than 100 users</option>
+                <option value="100-1k">100 – 1,000 users</option>
+                <option value="1k-100k">1,000 – 100,000 users</option>
+                <option value=">100k">More than 100,000 users</option>
+              </select>
             </div>
-            <textarea class="field-input" id="core_features" name="core_features" rows="5"
-              placeholder="e.g. User authentication, dashboard analytics, data upload&#10;(one per line or comma-separated)" required></textarea>
-            <div id="featuresStatus" class="field-status"></div>
-            <span class="field-hint">List each feature on a new line or separate with commas.</span>
-          </div>
 
-          <div class="field-group full">
-            <div class="label-row">
-              <label class="field-label" for="primary_user_flow">Primary User Flow</label>
-              <button type="button" id="autoGenerateFlowBtn" class="inline-btn">✨ Auto-Generate</button>
-            </div>
-            <textarea class="field-input" id="primary_user_flow" name="primary_user_flow" rows="4"
-              placeholder="e.g. User logs in → uploads data → views prediction results"></textarea>
-            <div id="flowStatus" class="field-status"></div>
-          </div>
-          <span class="field-hint" style="margin-top:-8px;">💡 Fill in Project Name and Problem Statement to enable auto-generation.</span>
-        </div>
-      </div>
-
-      <!-- STEP 4: Non-Functional -->
-      <div class="form-step" data-step="4">
-        <div class="step-header">
-          <span class="step-tag">Step 04</span>
-          <h1 class="step-title">Non-Functional Requirements</h1>
-          <p class="step-desc">Define scale and performance expectations for the system.</p>
-        </div>
-
-        <div class="fields-grid">
-          <div class="field-group half">
-            <label class="field-label required" for="expected_user_scale">Expected User Scale</label>
-            <select class="field-input" id="expected_user_scale" name="expected_user_scale" required>
-              <option value="">Select scale...</option>
-              <option value="<100">Less than 100 users</option>
-              <option value="100-1k">100 – 1,000 users</option>
-              <option value="1k-100k">1,000 – 100,000 users</option>
-              <option value=">100k">More than 100,000 users</option>
-            </select>
-          </div>
-
-          <div class="field-group half">
-            <label class="field-label required" for="performance_expectation">Performance Expectation</label>
-            <select class="field-input" id="performance_expectation" name="performance_expectation" required>
-              <option value="">Select level...</option>
-              <option value="Normal">Normal</option>
-              <option value="High">High</option>
-              <option value="Real-time">Real-time</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- STEP 5: Security & Compliance -->
-      <div class="form-step" data-step="5">
-        <div class="step-header">
-          <span class="step-tag">Step 05</span>
-          <h1 class="step-title">Security & Compliance</h1>
-          <p class="step-desc">Specify authentication needs and regulatory compliance requirements.</p>
-        </div>
-
-        <div class="fields-grid">
-          <div class="field-group half">
-            <label class="field-label required">Authentication Required?</label>
-            <div class="radio-group">
-              <label class="radio-chip"><input type="radio" name="authentication_required" value="true" required><span>Yes</span></label>
-              <label class="radio-chip"><input type="radio" name="authentication_required" value="false"><span>No</span></label>
-            </div>
-          </div>
-
-          <div class="field-group half">
-            <label class="field-label required">Handles Sensitive Data?</label>
-            <div class="radio-group">
-              <label class="radio-chip"><input type="radio" name="sensitive_data_handling" value="true" required><span>Yes</span></label>
-              <label class="radio-chip"><input type="radio" name="sensitive_data_handling" value="false"><span>No</span></label>
-            </div>
-          </div>
-
-          <div class="field-group full">
-            <label class="field-label">Compliance Requirements</label>
-            <div class="chip-group">
-              <label class="chip-label"><input type="checkbox" name="compliance_requirements" value="None"><span>None</span></label>
-              <label class="chip-label"><input type="checkbox" name="compliance_requirements" value="GDPR"><span>GDPR</span></label>
-              <label class="chip-label"><input type="checkbox" name="compliance_requirements" value="HIPAA"><span>HIPAA</span></label>
-              <label class="chip-label"><input type="checkbox" name="compliance_requirements" value="PCI-DSS"><span>PCI-DSS</span></label>
-              <label class="chip-label"><input type="checkbox" name="compliance_requirements" value="Other" id="compliance_other_check"><span>Other</span></label>
-            </div>
-            <input class="field-input" type="text" id="compliance_custom" placeholder="Specify compliance requirement" style="display:none; margin-top:10px;" />
-          </div>
-        </div>
-      </div>
-
-      <!-- STEP 6: Technical Preferences -->
-      <div class="form-step" data-step="6">
-        <div class="step-header">
-          <span class="step-tag">Step 06</span>
-          <h1 class="step-title">Technical Preferences</h1>
-          <p class="step-desc">Optional technology stack preferences for the generated SRS.</p>
-        </div>
-
-        <div class="fields-grid">
-          <div class="field-group third">
-            <label class="field-label" for="preferred_backend">Backend Technology</label>
-            <select class="field-input" id="preferred_backend" name="preferred_backend">
-              <option value="">Select backend...</option>
-              <option value="Python">Python</option>
-              <option value="Java">Java</option>
-              <option value="Node.js">Node.js</option>
-              <option value="Go">Go</option>
-              <option value="Any">Any</option>
-            </select>
-          </div>
-
-          <div class="field-group third">
-            <label class="field-label" for="database_preference">Database Preference</label>
-            <select class="field-input" id="database_preference" name="database_preference">
-              <option value="">Select database...</option>
-              <option value="SQL">SQL (Relational)</option>
-              <option value="NoSQL">NoSQL</option>
-              <option value="Any">Any</option>
-            </select>
-          </div>
-
-          <div class="field-group third">
-            <label class="field-label" for="deployment_preference">Deployment</label>
-            <select class="field-input" id="deployment_preference" name="deployment_preference">
-              <option value="">Select deployment...</option>
-              <option value="Cloud">Cloud</option>
-              <option value="On-Premise">On-Premise</option>
-              <option value="Hybrid">Hybrid</option>
-              <option value="Any">Any</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- STEP 7: Output Control -->
-      <div class="form-step" data-step="7">
-        <div class="step-header">
-          <span class="step-tag">Step 07</span>
-          <h1 class="step-title">Output Control</h1>
-          <p class="step-desc">Choose how detailed and comprehensive your SRS document should be.</p>
-        </div>
-
-        <div class="fields-grid">
-          <div class="field-group full">
-            <label class="field-label required" for="srs_detail_level">SRS Detail Level</label>
-            <div class="detail-cards" id="detailCards">
-              <label class="detail-card">
-                <input type="radio" name="srs_detail_level" value="High-level" required>
-                <div class="detail-card-inner">
-                  <div class="detail-card-icon">📋</div>
-                  <div class="detail-card-title">High-level</div>
-                  <div class="detail-card-desc">Overview and key requirements — quick and concise.</div>
-                </div>
-              </label>
-              <label class="detail-card">
-                <input type="radio" name="srs_detail_level" value="Technical">
-                <div class="detail-card-inner">
-                  <div class="detail-card-icon">⚙️</div>
-                  <div class="detail-card-title">Technical</div>
-                  <div class="detail-card-desc">Detailed specifications for engineering teams.</div>
-                </div>
-              </label>
-              <label class="detail-card">
-                <input type="radio" name="srs_detail_level" value="Enterprise-grade">
-                <div class="detail-card-inner">
-                  <div class="detail-card-icon">🏢</div>
-                  <div class="detail-card-title">Enterprise-grade</div>
-                  <div class="detail-card-desc">Comprehensive documentation for full compliance.</div>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <!-- Summary preview -->
-          <div class="field-group full">
-            <div class="review-panel" id="reviewPanel">
-              <div class="review-title">📄 Ready to Generate</div>
-              <div class="review-grid" id="reviewGrid"></div>
+            <div class="field-group half">
+              <label class="field-label required" for="performance_expectation">Performance Expectation</label>
+              <select class="field-input" id="performance_expectation" name="performance_expectation" required>
+                <option value="">Select level...</option>
+                <option value="Normal">Normal</option>
+                <option value="High">High</option>
+                <option value="Real-time">Real-time</option>
+              </select>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- ── STEP NAVIGATION ──────────────────────────── -->
-      <div class="step-controls">
-        <button type="button" class="btn btn-outline" id="prevBtn" style="display:none;">← Back</button>
-        <div class="step-dots" id="stepDots"></div>
-        <button type="button" class="btn btn-primary" id="nextBtn">Continue →</button>
-        <button type="submit" class="btn btn-primary" id="submitBtn" style="display:none;">
-          ⚡ Generate SRS
-        </button>
-      </div>
+        <!-- STEP 5: Security & Compliance -->
+        <div class="form-step" data-step="5">
+          <div class="step-header">
+            <span class="step-tag">Step 05</span>
+            <h1 class="step-title">Security & Compliance</h1>
+            <p class="step-desc">Specify authentication needs and regulatory compliance requirements.</p>
+          </div>
 
-    </form>
+          <div class="fields-grid">
+            <div class="field-group half">
+              <label class="field-label required">Authentication Required?</label>
+              <div class="radio-group">
+                <label class="radio-chip"><input type="radio" name="authentication_required" value="true" required><span>Yes</span></label>
+                <label class="radio-chip"><input type="radio" name="authentication_required" value="false"><span>No</span></label>
+              </div>
+            </div>
+
+            <div class="field-group half">
+              <label class="field-label required">Handles Sensitive Data?</label>
+              <div class="radio-group">
+                <label class="radio-chip"><input type="radio" name="sensitive_data_handling" value="true" required><span>Yes</span></label>
+                <label class="radio-chip"><input type="radio" name="sensitive_data_handling" value="false"><span>No</span></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 6: Technical Preferences -->
+        <div class="form-step" data-step="6">
+          <div class="step-header">
+            <span class="step-tag">Step 06</span>
+            <h1 class="step-title">Technical Preferences</h1>
+            <p class="step-desc">Optional technology stack preferences for the generated SRS.</p>
+          </div>
+
+          <div class="fields-grid">
+            <div class="field-group third">
+              <label class="field-label" for="preferred_backend">Backend Technology</label>
+              <select class="field-input" id="preferred_backend" name="preferred_backend">
+                <option value="">Select backend...</option>
+                <option value="Python">Python</option>
+                <option value="Java">Java</option>
+                <option value="Node.js">Node.js</option>
+                <option value="Go">Go</option>
+                <option value="Any">Any</option>
+              </select>
+            </div>
+
+            <div class="field-group third">
+              <label class="field-label" for="database_preference">Database Preference</label>
+              <select class="field-input" id="database_preference" name="database_preference">
+                <option value="">Select database...</option>
+                <option value="SQL">SQL (Relational)</option>
+                <option value="NoSQL">NoSQL</option>
+                <option value="Any">Any</option>
+              </select>
+            </div>
+
+            <div class="field-group third">
+              <label class="field-label" for="deployment_preference">Deployment</label>
+              <select class="field-input" id="deployment_preference" name="deployment_preference">
+                <option value="">Select deployment...</option>
+                <option value="Cloud">Cloud</option>
+                <option value="On-Premise">On-Premise</option>
+                <option value="Hybrid">Hybrid</option>
+                <option value="Any">Any</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 7: Output Control -->
+        <div class="form-step" data-step="7">
+          <div class="step-header">
+            <span class="step-tag">Step 07</span>
+            <h1 class="step-title">Output Control</h1>
+            <p class="step-desc">Choose how detailed and comprehensive your SRS document should be.</p>
+          </div>
+
+          <div class="fields-grid">
+            <div class="field-group full">
+              <label class="field-label required" for="srs_detail_level">SRS Detail Level</label>
+              <div class="detail-cards" id="detailCards">
+                <label class="detail-card">
+                  <input type="radio" name="srs_detail_level" value="High-level" required>
+                  <div class="detail-card-inner">
+                    <div class="detail-card-icon">📋</div>
+                    <div class="detail-card-title">High-level</div>
+                    <div class="detail-card-desc">Overview and key requirements — quick and concise.</div>
+                  </div>
+                </label>
+                <label class="detail-card">
+                  <input type="radio" name="srs_detail_level" value="Technical">
+                  <div class="detail-card-inner">
+                    <div class="detail-card-icon">⚙️</div>
+                    <div class="detail-card-title">Technical</div>
+                    <div class="detail-card-desc">Detailed specifications for engineering teams.</div>
+                  </div>
+                </label>
+                <label class="detail-card">
+                  <input type="radio" name="srs_detail_level" value="Enterprise-grade">
+                  <div class="detail-card-inner">
+                    <div class="detail-card-icon">🏢</div>
+                    <div class="detail-card-title">Enterprise-grade</div>
+                    <div class="detail-card-desc">Comprehensive documentation for full compliance.</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── STEP NAVIGATION ──────────────────────────── -->
+        <div class="step-controls">
+          <button type="button" class="btn btn-outline" id="prevBtn" style="display:none;">← Back</button>
+          <div class="step-dots" id="stepDots"></div>
+          <button type="button" class="btn btn-primary" id="nextBtn">Continue →</button>
+          <button type="submit" class="btn btn-primary" id="submitBtn" style="display:none;">
+            ⚡ Generate SRS
+          </button>
+        </div>
+      </form>
+    </div>
   </main>
 </div>
+
 {% endblock %}
 
 {% block scripts %}
   <script src="{{ url_for('static', path='domain-data.js') }}"></script>
   <script src="{{ url_for('static', path='srs_form.js') }}"></script>
+  <script src="{{ url_for('static', path='traces.js') }}"></script>
+  <script src="{{ url_for('static', path='generation-view.js') }}"></script>
 {% endblock %}

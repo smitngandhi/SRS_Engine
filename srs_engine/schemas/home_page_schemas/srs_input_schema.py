@@ -126,6 +126,7 @@ class SRSRequest(BaseModel):
     security_and_compliance: SecurityAndCompliance
     technical_preferences: TechnicalPreferences
     output_control: OutputControl
+    session_id: Optional[str] = Field(None, description="Session ID for tracing")
     
     class Config:
         json_schema_extra = {

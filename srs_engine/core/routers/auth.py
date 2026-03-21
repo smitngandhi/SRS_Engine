@@ -12,7 +12,7 @@ from urllib.parse import quote
 from srs_engine.core.auth.google_oauth import init_google_oauth
 from srs_engine.core.auth.passwords import hash_password, verify_password
 from srs_engine.core.config import get_settings
-from srs_engine.core.db.mongo import get_db
+from srs_engine.core.db.mongo import get_db, is_db_available
 from srs_engine.core.db.user_repo import UserRepo
 from srs_engine.core.logging import get_logger
 
@@ -91,6 +91,10 @@ async def login(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     try:
+        # Check if database is available
+        if not is_db_available(request):
+            return _redirect_error("/login", "Database not available. Please start MongoDB to use authentication.")
+
         username = username.strip()
         if not username or not password:
             return _redirect_error("/login", "Username and password are required.")
@@ -125,6 +129,10 @@ async def register(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     try:
+        # Check if database is available
+        if not is_db_available(request):
+            return _redirect_error("/login", "Database not available. Please start MongoDB to use authentication.")
+
         username = username.strip()
         email    = email.strip()
 
@@ -229,6 +237,10 @@ async def google_login(request: Request):
 
 @router.get("/auth/google/callback")
 async def google_callback(request: Request, db: AsyncIOMotorDatabase = Depends(get_db)):
+    # Check if database is available
+    if not is_db_available(request):
+        return _redirect_error("/login", "Database not available. Please start MongoDB to use authentication.")
+
     client = oauth.create_client("google")
     if not client:
         raise HTTPException(status_code=500, detail="Google OAuth client not available")

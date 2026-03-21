@@ -51,12 +51,18 @@ const domainCustomInput = document.getElementById('domain_custom');
 
 domainSelect?.addEventListener('change', function () {
   const val = this.value;
-  domainCustomInput.style.display = val === 'Other' ? 'block' : 'none';
+  if (domainCustomInput) {
+    domainCustomInput.style.display = val === 'Other' ? 'block' : 'none';
+  }
   if (val && typeof domainData !== 'undefined' && domainData[val]) {
     renderDomainPanel(val);
-    domainInfoSection.style.display = 'block';
+    if (domainInfoSection) {
+      domainInfoSection.style.display = 'block';
+    }
   } else {
-    domainInfoSection.style.display = 'none';
+    if (domainInfoSection) {
+      domainInfoSection.style.display = 'none';
+    }
   }
 });
 
@@ -64,19 +70,26 @@ function renderDomainPanel(key) {
   const d = domainData[key];
   if (!d) return;
 
-  document.getElementById('domainTitle').innerHTML =
-    `<span style="margin-right:8px">${d.icon}</span>${d.title}`;
+  const domainTitleEl = document.getElementById('domainTitle');
+  if (domainTitleEl) {
+    domainTitleEl.innerHTML = `<span style="margin-right:8px">${d.icon}</span>${d.title}`;
+  }
 
-  document.getElementById('standardsList').innerHTML = d.standards.map(s => {
-    const desc = d.standardDescriptions?.[s] || '';
-    return `<span class="standard-badge" data-tooltip="${desc}">${s}</span>`;
-  }).join('');
+  const standardsListEl = document.getElementById('standardsList');
+  if (standardsListEl) {
+    standardsListEl.innerHTML = d.standards.map(s => {
+      const desc = d.standardDescriptions?.[s] || '';
+      return `<span class="standard-badge" data-tooltip="${desc}">${s}</span>`;
+    }).join('');
+  }
 
-  const secList = document.getElementById('sectionsList');
-  secList.innerHTML = d.sections.map(sec => renderSection(sec)).join('');
-  secList.querySelectorAll('.sec-toggle').forEach(btn => {
-    btn.addEventListener('click', () => btn.closest('.section-accordion-item').classList.toggle('open'));
-  });
+  const secListEl = document.getElementById('sectionsList');
+  if (secListEl) {
+    secListEl.innerHTML = d.sections.map(sec => renderSection(sec)).join('');
+    secListEl.querySelectorAll('.sec-toggle').forEach(btn => {
+      btn.addEventListener('click', () => btn.closest('.section-accordion-item').classList.toggle('open'));
+    });
+  }
 
   const commonEl = document.getElementById('commonSectionsList');
   if (commonEl && typeof commonSections !== 'undefined') {
@@ -87,9 +100,13 @@ function renderDomainPanel(key) {
       </div>`).join('');
   }
 
-  document.getElementById('infoNote').textContent = d.note;
+  const infoNoteEl = document.getElementById('infoNote');
+  if (infoNoteEl) {
+    infoNoteEl.textContent = d.note;
+  }
 
-  document.getElementById('standardsList').querySelectorAll('[data-tooltip]').forEach(el => {
+  const standardsListTooltips = document.querySelectorAll('#standardsList [data-tooltip]');
+  standardsListTooltips.forEach(el => {
     el.addEventListener('mouseenter', showTooltip);
     el.addEventListener('mouseleave', hideTooltip);
   });
@@ -391,7 +408,45 @@ document.getElementById('srsForm')?.addEventListener('submit', async (e) => {
   submitBtn.disabled    = true;
   submitBtn.textContent = '⏳ Generating SRS...';
 
+  // Show generation view and connect to traces immediately
+  if (window.generationView) {
+    window.generationView.show();
+  }
+
+  // Generate a session ID for tracing
+  const traceSessionId = 'srs-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+  
+  // Connect to traces before starting generation
+  console.log('Checking for window.traceViz:', window.traceViz);
+  console.log('Checking for window.generationView:', window.generationView);
+  
+  if (window.traceViz) {
+    console.log('Connecting traces before generation for session:', traceSessionId);
+    
+    // Override trace event handler to update generation view
+    const originalHandleEvent = window.traceViz.handleTraceEvent.bind(window.traceViz);
+    window.traceViz.handleTraceEvent = (event) => {
+      console.log('Trace event received:', event);
+      // Forward to generation view
+      if (window.generationView) {
+        window.generationView.handleTraceEvent(event);
+      }
+      // Also call original handler for any traces panel functionality
+      originalHandleEvent(event);
+    };
+    
+    // Start connection immediately
+    console.log('Initiating WebSocket connection...');
+    window.traceViz.connect(traceSessionId);
+  } else {
+    console.error('window.traceViz not available! WebSocket connection will not work.');
+    console.log('Available window properties:', Object.keys(window).filter(k => k.includes('trace')));
+  }
+
   try {
+    // Add session_id to payload for tracing
+    payload.session_id = traceSessionId;
+    
     const res = await fetch('/generate_srs', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -418,6 +473,11 @@ document.getElementById('srsForm')?.addEventListener('submit', async (e) => {
   } catch (err) {
     console.error('Submission error:', err);
     alert(`❌ Failed to generate SRS: ${err.message}`);
+    
+    // Hide generation view and show form on error
+    if (window.generationView) {
+      window.generationView.hide();
+    }
   } finally {
     submitBtn.disabled    = false;
     submitBtn.textContent = origText;

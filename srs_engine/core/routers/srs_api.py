@@ -43,5 +43,13 @@ async def generate_srs(
     user=Depends(require_user),
 ):
     user_id = str(user.get("_id"))
-    return await generate_srs_service(request.app, srs_data, user_id=user_id)
+    
+    # Get session_id from request body or generate new one
+    session_id = None
+    if hasattr(srs_data, 'session_id') and srs_data.session_id:
+        session_id = srs_data.session_id
+    elif hasattr(request, 'query_params') and 'session_id' in request.query_params:
+        session_id = request.query_params['session_id']
+    
+    return await generate_srs_service(request.app, srs_data, user_id=user_id, session_id=session_id)
 

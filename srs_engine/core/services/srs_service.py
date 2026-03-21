@@ -44,6 +44,7 @@ from srs_engine.core.logging import (
     set_session_id,
     set_user_id,
 )
+from srs_engine.core.tracing import trace_manager
 from srs_engine.utils.globals import (
     clean_and_parse_json,
     clean_interface_diagrams,
@@ -264,9 +265,11 @@ async def auto_generate_section(app: Any, input_data: Any, user_id: str) -> dict
             raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
 
 
-async def generate_srs(app: Any, srs_data: Any, user_id: str) -> dict[str, Any]:
+async def generate_srs(app: Any, srs_data: Any, user_id: str, session_id: Optional[str] = None) -> dict[str, Any]:
     """Generate complete SRS document with all sections and diagrams."""
-    session_id = str(uuid.uuid4())
+    # Use provided session_id or generate a new one
+    if session_id is None:
+        session_id = str(uuid.uuid4())
     
     async with async_log_context(session_id=session_id, user_id=user_id):
         logger.info("generate_srs | START | Comprehensive SRS generation requested")
@@ -285,9 +288,18 @@ async def generate_srs(app: Any, srs_data: Any, user_id: str) -> dict[str, Any]:
             await create_session(session_service_stateful, project_name, user_id, session_id, initial_state)
             logger.debug("generate_srs | Session created")
 
+            # Phase 1: Start workflow with 5 parallel agents
+            phase1_agents = ["introduction", "overall_description", "system_features", "external_interfaces", "nfr"]
+            await trace_manager.emit_workflow_start(session_id, phase=1, agents=phase1_agents)
+            
             logger.info("generate_srs | PHASE 1 START | Loading 7 AI agents (5 parallel)...")
             first_agent, second_agent = await create_technical_srs_agent()
             logger.debug("generate_srs | Agents created | agent_count=7 (5+2)")
+            
+            # Execute individual agents with trace events
+            for agent_name in phase1_agents:
+                await trace_manager.emit_agent_start(session_id, agent_name)
+                logger.debug(f"generate_srs | Agent started | {agent_name}")
             
             runner = await create_runner(first_agent, project_name, session_service_stateful)
             prompt = await create_prompt()
@@ -297,17 +309,39 @@ async def generate_srs(app: Any, srs_data: Any, user_id: str) -> dict[str, Any]:
             await generated_response(runner, user_id, session_id, prompt)
             session = await get_session(session_service_stateful, project_name, user_id, session_id)
             logger.info("generate_srs | PHASE 1 COMPLETE | First agent group finished")
+            
+            # Mark phase 1 agents as completed
+            for agent_name in phase1_agents:
+                await trace_manager.emit_agent_complete(session_id, agent_name, f"{agent_name}_section")
+            
+            await trace_manager.emit_workflow_complete(session_id, phase=1)
 
             logger.debug("generate_srs | Waiting 20 seconds before phase 2...")
             # Preserve original behavior (60s wait) without blocking the event loop
             await asyncio.sleep(60)
             logger.debug("generate_srs | Wait period complete")
 
+            # Phase 2: Start workflow with 2 parallel agents
+            phase2_agents = ["glossary", "assumptions"]
+            await trace_manager.emit_workflow_start(session_id, phase=2, agents=phase2_agents)
+
             logger.info("generate_srs | PHASE 2 START | Running final 2 parallel agents (Glossary, Assumptions)...")
+            
+            # Execute phase 2 agents with trace events
+            for agent_name in phase2_agents:
+                await trace_manager.emit_agent_start(session_id, agent_name)
+                logger.debug(f"generate_srs | Agent started | {agent_name}")
+            
             second_runner = await create_runner(second_agent, project_name, session_service_stateful)
             await generated_response(second_runner, user_id, session_id, prompt)
             session = await get_session(session_service_stateful, project_name, user_id, session_id)
             logger.info("generate_srs | PHASE 2 COMPLETE | All agent generation done")
+            
+            # Mark phase 2 agents as completed
+            for agent_name in phase2_agents:
+                await trace_manager.emit_agent_complete(session_id, agent_name, f"{agent_name}_section")
+            
+            await trace_manager.emit_workflow_complete(session_id, phase=2)
 
             logger.debug("generate_srs | Extracting and merging all sections...")
             introduction_section = clean_and_parse_json(session.state.get("introduction_section", {}))
@@ -318,36 +352,52 @@ async def generate_srs(app: Any, srs_data: Any, user_id: str) -> dict[str, Any]:
             )
             logger.debug("generate_srs | First 4 sections merged")
 
+            # Phase 3: Generate architecture diagrams
+            await trace_manager.emit_workflow_start(session_id, phase=3, agents=["diagram_generator"])
+            
             logger.info("generate_srs | PHASE 3 START | Generating 4 architecture diagrams...")
             base_dir = Path("./srs_engine/generated_images") / project_name
-            base_dir.mkdir(parents=True, exist_ok=True)
+            user_dir = base_dir / user_id
+            user_dir.mkdir(parents=True, exist_ok=True)
 
             image_paths = {
-                "user_interfaces": base_dir / f"{user_id}/{project_name}_user_interfaces_diagram.png",
-                "hardware_interfaces": base_dir / f"{user_id}/{project_name}_hardware_interfaces_diagram.png",
-                "software_interfaces": base_dir / f"{user_id}/{project_name}_software_interfaces_diagram.png",
-                "communication_interfaces": base_dir / f"{user_id}/{project_name}_communication_interfaces_diagram.png",
+                "user_interfaces": user_dir / f"{project_name}_user_interfaces_diagram.png",
+                "hardware_interfaces": user_dir / f"{project_name}_hardware_interfaces_diagram.png",
+                "software_interfaces": user_dir / f"{project_name}_software_interfaces_diagram.png",
+                "communication_interfaces": user_dir / f"{project_name}_communication_interfaces_diagram.png",
             }
 
-            logger.debug("generate_srs | Rendering diagram 1/4 (User Interfaces)...")
-            render_mermaid_png(external_interfaces_section["user_interfaces"]["interface_diagram"]["code"], image_paths["user_interfaces"])
-            logger.debug("generate_srs | Rendered diagram 1/4 ✓")
+            # Generate diagrams with trace events
+            diagrams = [
+                ("user_interfaces", "User Interfaces"),
+                ("hardware_interfaces", "Hardware Interfaces"),
+                ("software_interfaces", "Software Interfaces"),
+                ("communication_interfaces", "Communication Interfaces")
+            ]
             
-            logger.debug("generate_srs | Rendering diagram 2/4 (Hardware Interfaces)...")
-            render_mermaid_png(external_interfaces_section["hardware_interfaces"]["interface_diagram"]["code"], image_paths["hardware_interfaces"])
-            logger.debug("generate_srs | Rendered diagram 2/4 ✓")
+            for i, (diagram_key, diagram_name) in enumerate(diagrams, 1):
+                await trace_manager.emit_tool_execution(
+                    session_id, 
+                    f"render_mermaid_png_{diagram_key}", 
+                    "running",
+                    {"diagram_name": diagram_name, "progress": f"{i}/4"}
+                )
+                
+                logger.debug(f"generate_srs | Rendering diagram {i}/4 ({diagram_name})...")
+                render_mermaid_png(
+                    external_interfaces_section[diagram_key]["interface_diagram"]["code"], 
+                    image_paths[diagram_key]
+                )
+                logger.debug(f"generate_srs | Rendered diagram {i}/4 ✓")
+                
+                await trace_manager.emit_tool_execution(
+                    session_id, 
+                    f"render_mermaid_png_{diagram_key}", 
+                    "completed",
+                    {"diagram_name": diagram_name, "progress": f"{i}/4"}
+                )
             
-            logger.debug("generate_srs | Rendering diagram 3/4 (Software Interfaces)...")
-            render_mermaid_png(external_interfaces_section["software_interfaces"]["interface_diagram"]["code"], image_paths["software_interfaces"])
-            logger.debug("generate_srs | Rendered diagram 3/4 ✓")
-            
-            logger.debug("generate_srs | Rendering diagram 4/4 (Communication Interfaces)...")
-            render_mermaid_png(
-                external_interfaces_section["communication_interfaces"]["interface_diagram"]["code"],
-                image_paths["communication_interfaces"],
-            )
-            logger.debug("generate_srs | Rendered diagram 4/4 ✓")
-            logger.info("generate_srs | PHASE 3 COMPLETE | All 4 diagrams generated")
+            await trace_manager.emit_workflow_complete(session_id, phase=3)
 
             nfr_section = clean_and_parse_json(session.state.get("nfr_section", {}))
             glossary_section = clean_and_parse_json(session.state.get("glossary_section", {}))
@@ -355,6 +405,10 @@ async def generate_srs(app: Any, srs_data: Any, user_id: str) -> dict[str, Any]:
             logger.debug("generate_srs | Final 3 sections extracted")
 
             logger.info("generate_srs | PHASE 4 START | Creating Word document (.docx)...")
+            
+            await trace_manager.emit_workflow_start(session_id, phase=4, agents=["document_generator"])
+            await trace_manager.emit_tool_execution(session_id, "generate_srs_document", "running")
+            
             output_path = f"./srs_engine/generated_srs/{user_id}/{project_name}_SRS.docx"
             Path("./srs_engine/generated_srs").mkdir(exist_ok=True)
             Path(f"./srs_engine/generated_srs/{user_id}").mkdir(exist_ok=True)
@@ -373,10 +427,13 @@ async def generate_srs(app: Any, srs_data: Any, user_id: str) -> dict[str, Any]:
                 authors=author_list,
                 organization=organization_name,
             )
+            
+            await trace_manager.emit_tool_execution(session_id, "generate_srs_document", "completed", {"document_path": generated_path})
+            await trace_manager.emit_workflow_complete(session_id, phase=4)
             logger.info(f"generate_srs | PHASE 4 COMPLETE | Document created | path={generated_path}")
 
             logger.info("generate_srs | SUCCESS | Full SRS generation completed!")
-            return {"srs_document_path": generated_path}
+            return {"srs_document_path": generated_path, "session_id": session_id}
             
         except Exception as e:
             logger.error(f"generate_srs | FAILED | error={str(e)}", exc_info=True)
