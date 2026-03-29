@@ -42,7 +42,10 @@ class UserRepo:
             "username": username,
             "email": email,
             "password_hash": password_hash,
-            "google_sub": None,
+            # "google_sub": None  <-- REMOVED: storing None here caused
+            # E11000 duplicate key errors because the sparse unique index
+            # still indexes explicit null values. Omitting the field entirely
+            # means the sparse index skips this document completely.
             "display_name": display_name or username,
             "is_active": True,
             "created_at": _now(),
