@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Project Buckets | SRS_Engine{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', path='project_buckets.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='diagram_studio.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="buckets-layout">
+  <!-- LEFT PANEL: Project List -->
+  <aside class="buckets-sidebar">
+    <div class="sidebar-header">
+      <h2>Your Projects</h2>
+    </div>
+    <div id="project-list" class="project-list">
+      <div class="muted" style="padding: 16px;">Loading projects...</div>
+    </div>
+  </aside>
+
+  <!-- RIGHT PANEL: Project Details -->
+  <main class="buckets-main">
+    <div id="project-details" class="project-details" style="display: none;">
+      
+      <div class="detail-header">
+        <h1 id="detail-title">Project Name</h1>
+      </div>
+
+      <div class="detail-section">
+        <h3>Project Summary</h3>
+        <div id="detail-summary" class="summary-box"></div>
+      </div>
+
+      <div class="detail-section">
+        <h3>Generated SRS Documents</h3>
+        <div id="detail-srs-list" class="docs-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));"></div>
+        <div id="detail-srs-empty" class="muted" style="display: none;">No SRS documents found for this project.</div>
+      </div>
+
+      <div class="detail-section">
+        <h3>Generated Diagrams</h3>
+        <div id="detail-diagrams-grid" class="diagram-cards-grid"></div>
+        <div id="detail-diagrams-empty" class="muted" style="display: none; margin-bottom: 24px;">No diagrams found for this project.</div>
+        
+        <h4 style="margin-bottom: 12px;">Generate New Diagram</h4>
+        <div class="glass-panel" style="padding: 16px;">
+          <form id="generate-diagram-form">
+            <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+              <select id="diagram-type" class="field-input" style="width: auto;">
+                <option value="flowchart">Flowchart</option>
+                <option value="sequence">Sequence Diagram</option>
+                <option value="erd">ER Diagram</option>
+                <option value="class">Class Diagram</option>
+                <option value="custom">Custom / Auto</option>
+              </select>
+            </div>
+            <textarea id="diagram-prompt" class="field-input" rows="3"
+              placeholder="Describe the diagram you want to generate. Context from your project's latest SRS is automatically included."
+              required></textarea>
+            <div style="display: flex; justify-content: flex-end; margin-top: 12px; align-items: center; gap: 16px;">
+              <span id="generate-diagram-status" class="muted"></span>
+              <button type="submit" class="btn btn-primary" id="btn-generate-diagram">Generate Diagram</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="project-empty-state" class="empty-state">
+      <div class="empty-icon">🗂️</div>
+      <h2>Select a project</h2>
+      <p class="muted">Choose a project from the left panel to view its summary, documents, and diagrams.</p>
+    </div>
+  </main>
+</div>
+
+<!-- Diagram Viewer Modal Overlay -->
+<div id="diagram-modal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px);">
+  <div style="background:var(--bg-primary, #0f1117); border:1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius:12px; width:100%; max-width:1000px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 16px 48px rgba(0,0,0,0.5);">
+    <div style="padding:16px 20px; border-bottom:1px solid var(--border-color, rgba(255,255,255,0.1)); display:flex; justify-content:space-between; align-items:center;">
+      <h3 id="modal-diagram-title" style="margin:0; font-size:1.1rem; color: #e2e8f0;">Diagram</h3>
+      <button id="modal-diagram-close" style="background:none; border:none; color:#94a3b8; font-size:1.5rem; cursor:pointer; line-height:1; padding:0;">&times;</button>
+    </div>
+    <div id="modal-diagram-content" style="flex:1; overflow:auto; padding:24px; display:flex; justify-content:center; align-items:center; min-height:400px; background:#090b10;">
+      <!-- SVG injected here -->
+    </div>
+    <div style="padding:16px 20px; border-top:1px solid var(--border-color, rgba(255,255,255,0.1)); display:flex; justify-content:flex-end; background:rgba(255,255,255,0.02);">
+      <a id="modal-diagram-download" class="btn btn-primary" href="#" download="diagram.svg" style="text-decoration:none;">⬇ Download SVG</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="{{ url_for('static', path='site.js') }}"></script>
+  <script src="{{ url_for('static', path='project_buckets.js') }}"></script>
+{% endblock %}

@@ -170,4 +170,15 @@ async def jobs_page(request: Request):
             "is_logged_in": True,
         },
     )
+
+@router.get("/project-buckets")
+async def project_buckets_page(request: Request):
+    """
+    Render the Project Buckets page.
+    """
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return RedirectResponse(url="/login?next=/project-buckets", status_code=302)
+    
+    return _render(request, "pages/project_buckets.html")
  

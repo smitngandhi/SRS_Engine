@@ -1,0 +1,268 @@
+/* project_buckets.css */
+
+.buckets-layout {
+  display: flex;
+  height: calc(100vh - 72px);
+  margin-top: -32px;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-color);
+}
+
+.buckets-sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  background: var(--bg-secondary);
+  z-index: 10;
+}
+
+.sidebar-header h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.project-list {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 8px;
+}
+
+.project-item {
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.project-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+}
+
+.project-item.active {
+  background: rgba(79, 142, 255, 0.1);
+  border-color: rgba(79, 142, 255, 0.2);
+  color: var(--primary);
+}
+
+.project-item-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.project-item-meta {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.buckets-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 40px;
+  background: var(--bg-primary);
+  scroll-behavior: smooth;
+}
+
+.empty-state {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.detail-header {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.detail-header h1 {
+  font-size: 2rem;
+  margin: 0;
+  background: linear-gradient(90deg, #fff, #a0b2d6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.detail-section {
+  margin-bottom: 40px;
+}
+
+.detail-section h3 {
+  font-size: 1.2rem;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.summary-box {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  line-height: 1.6;
+}
+
+.summary-feature {
+  display: inline-block;
+  background: rgba(79, 142, 255, 0.1);
+  color: #a3c2ff;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+
+/* ── Diagram cards grid ─────────────────────────────────────────────────── */
+.diagram-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.diagram-card {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  text-decoration: none;
+  color: inherit;
+}
+
+.diagram-card:hover {
+  border-color: #00e5cc;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 229, 204, 0.1);
+}
+
+/* ── Thumbnail ──────────────────────────────────────────────────────────── */
+.diagram-preview-thumb {
+  width: 100%;
+  height: 150px;
+  background: #0d1117;
+  border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.diagram-thumb-icon {
+  font-size: 2rem;
+  opacity: 0.3;
+}
+
+/* SVG fills the thumb, no white backgrounds */
+.diagram-preview-thumb svg {
+  width: 100% !important;
+  height: 100% !important;
+  background: transparent !important;
+  display: block;
+}
+
+.diagram-preview-thumb svg > rect:first-child,
+.diagram-preview-thumb svg rect.background {
+  fill: transparent !important;
+}
+
+.diagram-preview-thumb .node rect,
+.diagram-preview-thumb .node circle,
+.diagram-preview-thumb .node ellipse,
+.diagram-preview-thumb .node polygon {
+  fill: #0f1117 !important;
+  stroke: #00e5cc !important;
+}
+
+.diagram-preview-thumb .edgeLabel rect,
+.diagram-preview-thumb .edgeLabel {
+  background: transparent !important;
+  fill: transparent !important;
+}
+
+.diagram-preview-thumb .flowchart-link,
+.diagram-preview-thumb path.path {
+  stroke: #00e5cc !important;
+}
+
+.diagram-preview-thumb marker path,
+.diagram-preview-thumb .arrowheadPath {
+  fill: #00e5cc !important;
+  stroke: #00e5cc !important;
+}
+
+/* ── Card body ──────────────────────────────────────────────────────────── */
+.diagram-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary, #e2e8f0);
+  padding: 10px 12px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.diagram-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 12px 12px;
+  align-items: center;
+}
+
+.diagram-type-badge {
+  background: rgba(0, 229, 204, 0.1);
+  color: #00e5cc;
+  border: 1px solid rgba(0, 229, 204, 0.2);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.diagram-versions-count {
+  font-size: 0.78rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.doc-date {
+  font-size: 0.78rem;
+  color: var(--text-secondary, #94a3b8);
+  margin-left: auto;
+}

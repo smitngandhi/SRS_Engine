@@ -176,4 +176,64 @@ function escHtml(str) {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-document.addEventListener('DOMContentLoaded', loadDocuments);
+document.addEventListener('DOMContentLoaded', () => {
+  loadDocuments();
+  loadDiagrams();
+});
+
+/* ── My Diagrams loader ─────────────────────────────── */
+const DIAGRAM_TYPE_ICONS = {
+  flowchart: '🔀', sequence: '🔁', erd: '🗄️', class: '🏛️', custom: '✨',
+};
+
+async function loadDiagrams() {
+  const grid  = document.getElementById('diagramsGrid');
+  const empty = document.getElementById('diagramsEmpty');
+  if (!grid) return; // not on home page / not logged in
+
+  try {
+    const res = await fetch('/api/diagrams/recent');
+    if (!res.ok) throw new Error(res.statusText);
+    const diagrams = await res.json();
+
+    grid.innerHTML = '';
+
+    if (!diagrams.length) {
+      if (empty) empty.style.display = 'block';
+      return;
+    }
+
+    if (empty) empty.style.display = 'none';
+
+    diagrams.forEach((d, i) => {
+      const current = d.current_version;
+      const date = new Date(d.updated_at).toLocaleDateString('en-GB', {
+        day: '2-digit', month: 'short', year: 'numeric',
+      });
+      const icon = DIAGRAM_TYPE_ICONS[d.diagram_type] || '🗺️';
+      const hasThumb = current && current.svg_path;
+      const thumbHtml = hasThumb
+        ? `<img src="${escHtml(current.svg_path)}?t=${Date.now()}" alt="diagram preview" loading="lazy" />`
+        : icon;
+
+      const card = document.createElement('a');
+      card.className = `diagram-card reveal delay-${(i % 3) + 1}`;
+      card.href = `/diagrams`;
+      card.innerHTML = `
+        <div class="diagram-preview-thumb">${thumbHtml}</div>
+        <div class="diagram-name">${escHtml(d.project_name)}</div>
+        <div class="diagram-meta">
+          <span class="diagram-type-badge">${escHtml(d.diagram_type)}</span>
+          <span class="diagram-versions-count">${d.versions.length} version${d.versions.length !== 1 ? 's' : ''}</span>
+          <span class="doc-date">${date}</span>
+        </div>
+      `;
+      grid.appendChild(card);
+      revealObserver.observe(card);
+    });
+
+  } catch (err) {
+    // Silently fail — section just stays hidden
+    console.warn('loadDiagrams error:', err);
+  }
+}
