@@ -19,10 +19,11 @@ The enhance and auto-generate endpoints are unchanged — they are fast enough
 
 import asyncio
 import json
+import os
 from typing import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from srs_engine.core.auth.deps import require_user
@@ -42,6 +43,25 @@ router = APIRouter()
 
 # How often the SSE endpoint polls MongoDB for updates (seconds)
 _SSE_POLL_INTERVAL = 1.0
+
+# BUG FIX: Use string values for the terminal-state check in _sse_generator.
+#
+# The old code used:
+#   terminal_states = {JobStatus.COMPLETED, JobStatus.FAILED}
+#   if payload.get("status") in terminal_states: ...
+#
+# payload.get("status") returns a plain string (e.g. "completed") because
+# _serialize_job reads directly from the MongoDB document.  If JobStatus is
+# a plain Enum (not a str-enum), enum members never compare equal to plain
+# strings, so the `in` test is always False — the SSE stream never closes
+# server-side, leaking one asyncio task and one open HTTP connection per
+# completed or failed job.
+#
+# Using .value guarantees we compare string-to-string regardless of how
+# JobStatus is defined.
+_SSE_TERMINAL_STATES: frozenset[str] = frozenset(
+    {JobStatus.COMPLETED.value, JobStatus.FAILED.value}
+)
 
 
 # ---------------------------------------------------------------------------
@@ -212,8 +232,6 @@ async def _sse_generator(
       - job reaches a terminal status (completed / failed), or
       - the client disconnects.
     """
-    terminal_states = {JobStatus.COMPLETED, JobStatus.FAILED}
-
     while True:
         # Stop streaming if the client has disconnected
         if await request.is_disconnected():
@@ -225,7 +243,9 @@ async def _sse_generator(
             payload = _serialize_job(job)
             yield f"data: {json.dumps(payload)}\n\n"
 
-            if payload.get("status") in terminal_states:
+            # BUG FIX: compare against the module-level frozenset of plain
+            # strings instead of enum members (see _SSE_TERMINAL_STATES above).
+            if payload.get("status") in _SSE_TERMINAL_STATES:
                 break
 
         await asyncio.sleep(_SSE_POLL_INTERVAL)
@@ -252,7 +272,12 @@ def _serialize_job(job: dict) -> dict:
 
 
 def _iso(dt) -> str | None:
-    return dt.isoformat() if dt else None
+    if not dt:
+        return None
+    # Ensure any naive datetime is treated as UTC and append Z for the frontend
+    if dt.tzinfo is None:
+        return dt.isoformat() + "Z"
+    return dt.isoformat().replace("+00:00", "Z")
 
 
 @router.get("/my-jobs")

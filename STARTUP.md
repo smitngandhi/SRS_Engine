@@ -98,7 +98,7 @@ Startup | RabbitMQ ready
 
 ```bash
 cd C:\SRS_Engine
-python -m srs_engine.worker
+python -m srs_engine.worker_manager
 ```
 
 **You should see:**

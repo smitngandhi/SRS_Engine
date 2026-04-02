@@ -50,9 +50,12 @@ async def init_mongo(app: Any, settings: Settings) -> None:
 
         logger.info("MongoDB | Indexes declared for [users, srs_jobs]")
 
-    except Exception:
-        logger.exception("MongoDB | Failed creating indexes")
-
+    except Exception as e:
+        # Ignore annoying IndexOptionsConflict error for google_sub unless it's a real crash
+        if "IndexOptionsConflict" in str(e) or "Index already exists" in str(e):
+            logger.warning(f"MongoDB | Index conflict skipped (safe to ignore): {e}")
+        else:
+            logger.exception("MongoDB | Failed creating indexes")
 
 def get_db(request: Request) -> AsyncIOMotorDatabase:
     return request.app.state.mongo_db  # type: ignore[attr-defined]

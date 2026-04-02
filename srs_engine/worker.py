@@ -54,16 +54,13 @@ logger = get_logger("srs_engine.worker")
 
 
 # ---------------------------------------------------------------------------
-# MongoDB bootstrap (worker-owned connection, not via FastAPI app.state)
+# MongoDB bootstrap (global connection pool for worker)
 # ---------------------------------------------------------------------------
 
-def _make_db():
-    """
-    Create a Motor client and return the database.
-    Called once at worker startup and reused for all jobs.
-    """
-    client = AsyncIOMotorClient(settings.mongodb_uri)
-    return client[settings.mongodb_db]
+client = AsyncIOMotorClient(settings.mongodb_uri)
+db = client[settings.mongodb_db]
+job_repo = JobRepo(db)
+user_repo = UserRepo(db)
 
 
 # ---------------------------------------------------------------------------
@@ -114,10 +111,6 @@ async def handle_job(job_id: str) -> None:
     RabbitMQ. Exceptions here cause the consumer to NACK the message
     (requeue=False) so it moves to the dead-letter queue.
     """
-    db = _make_db()
-    job_repo = JobRepo(db)
-    user_repo = UserRepo(db)
-
     logger.info(f"Worker | Job received | job_id={job_id}")
 
     # ── 1. Fetch job from MongoDB ──────────────────────────────────────
@@ -237,8 +230,13 @@ async def _notify_user(
 # ---------------------------------------------------------------------------
 
 async def main() -> None:
-    logger.info("Worker | Starting up | queue=%s", settings.rabbitmq_srs_queue)
-    await run_consumer(handle_job)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--timeout", type=int, default=None, help="Idle timeout in seconds before exiting.")
+    args = parser.parse_args()
+
+    logger.info("Worker | Starting up | queue=%s | timeout=%s", settings.rabbitmq_srs_queue, args.timeout)
+    await run_consumer(handle_job, timeout=args.timeout)
 
 
 if __name__ == "__main__":

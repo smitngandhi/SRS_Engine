@@ -406,6 +406,36 @@ async def generate_srs(
                 organization=organization_name,
             )
             logger.info(f"generate_srs | PHASE 4 COMPLETE | Document created | path={generated_path}")
+
+            # ── Phase 5 — save JSON + build RAG index (NEW for upgrader) ──
+            await _progress(95, "Saving section data for upgrader")
+            logger.info("generate_srs | PHASE 5 START | Saving sections JSON + building RAG index")
+            try:
+                all_sections = {
+                    "domain": "technical",
+                    "project_name": project_name,
+                    "introduction_section": introduction_section,
+                    "overall_description_section": overall_description_section,
+                    "system_features_section": system_features_section,
+                    "external_interfaces_section": external_interfaces_section,
+                    "nfr_section": nfr_section,
+                    "glossary_section": glossary_section,
+                    "assumptions_section": assumptions_section,
+                }
+                _save_generated_srs_json(
+                    user_id=user_id,
+                    project_name=project_name,
+                    sections=all_sections,
+                    authors=author_list,
+                    organization=organization_name,
+                    docx_path=output_path,
+                )
+                _build_rag_index_safe(all_sections, user_id, project_name)
+                logger.info("generate_srs | PHASE 5 COMPLETE | Sections JSON + RAG index saved")
+            except Exception as e:
+                # Non-fatal — SRS generation still succeeds even if upgrader data fails
+                logger.warning(f"generate_srs | PHASE 5 WARNING | Failed to save upgrader data: {e}")
+
             logger.info("generate_srs | SUCCESS | Full SRS generation completed!")
 
             return {"srs_document_path": generated_path}
@@ -413,3 +443,103 @@ async def generate_srs(
         except Exception as e:
             logger.error(f"generate_srs | FAILED | error={str(e)}", exc_info=True)
             raise
+
+
+# ── Upgrader helpers (save JSON + RAG) ────────────────────────────────────────
+
+def _save_generated_srs_json(
+    user_id: str,
+    project_name: str,
+    sections: dict,
+    authors: list,
+    organization: str,
+    docx_path: str,
+) -> None:
+    """
+    Save _sections.json and _meta.json alongside the generated .docx.
+    Called after generate_srs_document() succeeds.
+
+    BUG FIX: The previous implementation recorded version 1 in the metadata
+    but pointed its 'sections_backup' at the live _sections.json file and its
+    'docx_backup' at the live _SRS.docx.  Because _create_version_backup uses
+    len(versions)+1 to pick the next version number, the first user-triggered
+    rebuild would also try to create version 1 (collision), leaving two v1
+    entries in the list and making restore_version fail for v1 (it expected a
+    _sections_v1.json file that never existed).
+
+    Fix: actually copy the freshly-generated files to _sections_v1.json /
+    _SRS_v1.docx right here so the initial metadata entry is self-consistent
+    with what every subsequent version entry looks like.
+    """
+    import shutil
+
+    base_dir = Path(f"./srs_engine/generated_srs/{user_id}")
+    base_dir.mkdir(parents=True, exist_ok=True)
+
+    # ── Save live sections JSON ────────────────────────────────────────────────
+    sections_path = base_dir / f"{project_name}_sections.json"
+    with open(sections_path, "w", encoding="utf-8") as f:
+        json.dump(sections, f, indent=2, ensure_ascii=False)
+
+    # ── Create v1 backup files (the real fix) ─────────────────────────────────
+    sections_v1_name = f"{project_name}_sections_v1.json"
+    docx_v1_name = f"{project_name}_SRS_v1.docx"
+
+    shutil.copy2(str(sections_path), str(base_dir / sections_v1_name))
+
+    docx_src = Path(docx_path)
+    docx_backed_up = False
+    if docx_src.exists():
+        shutil.copy2(str(docx_src), str(base_dir / docx_v1_name))
+        docx_backed_up = True
+
+    # ── Save meta JSON ─────────────────────────────────────────────────────────
+    meta = {
+        "project_name": project_name,
+        "domain": sections.get("domain", "technical"),
+        "authors": authors if isinstance(authors, list) else [authors],
+        "organization": organization,
+        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "docx_path": docx_path,
+        "modified_sections": [],
+        "section_keys": [
+            "introduction_section",
+            "overall_description_section",
+            "system_features_section",
+            "external_interfaces_section",
+            "nfr_section",
+            "glossary_section",
+            "assumptions_section",
+        ],
+        # v1 now points at real backup files, not the live files.
+        "versions": [
+            {
+                "version": 1,
+                "comment": "Initial generation",
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "sections_backup": sections_v1_name,
+                "docx_backup": docx_v1_name if docx_backed_up else None,
+            }
+        ],
+    }
+    meta_path = base_dir / f"{project_name}_meta.json"
+    with open(meta_path, "w", encoding="utf-8") as f:
+        json.dump(meta, f, indent=2, ensure_ascii=False)
+
+    logger.info(f"_save_generated_srs_json | Saved sections + meta for {project_name}")
+
+
+def _build_rag_index_safe(sections: dict, user_id: str, project_name: str) -> None:
+    """
+    Build FAISS RAG index. Non-fatal: logs warning if deps are missing.
+    """
+    try:
+        from srs_engine.utils.srs_rag_index import build_rag_index
+        build_rag_index(sections, user_id, project_name)
+    except ImportError:
+        logger.warning(
+            "_build_rag_index_safe | FAISS/sentence-transformers not installed — "
+            "RAG index not built. Install with: pip install faiss-cpu sentence-transformers"
+        )
+    except Exception as e:
+        logger.warning(f"_build_rag_index_safe | Failed to build RAG index: {e}")

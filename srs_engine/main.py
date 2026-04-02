@@ -21,6 +21,7 @@ from srs_engine.core.routers import (
     upload_router,
     parse_router,
     upgrade_router,
+    generated_upgrade_router,
 )
 
 
@@ -85,6 +86,7 @@ def create_app() -> FastAPI:
     app.include_router(upload_router)
     app.include_router(parse_router)
     app.include_router(upgrade_router)
+    app.include_router(generated_upgrade_router)
 
     return app
 

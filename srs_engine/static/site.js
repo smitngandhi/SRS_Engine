@@ -153,8 +153,14 @@ async function loadDocuments() {
           <span class="doc-size">${doc.size_kb} KB</span>
         </div>
         <div class="doc-actions">
-          <a class="btn btn-secondary" href="/api/download-srs/${escHtml(doc.id)}" download>
-            ⬇ Download
+          <a class="btn-action btn-primary" href="/srs-section-upgrader?project_id=${escHtml(doc.id)}">
+            ✨ Upgrade
+          </a>
+          <a class="btn-action btn-secondary" href="/srs-history?project_id=${escHtml(doc.id)}">
+            🕒 History
+          </a>
+          <a class="btn-action btn-download" href="/api/download-srs/${escHtml(doc.id)}" download title="Download .docx">
+            ⬇
           </a>
         </div>
       `;

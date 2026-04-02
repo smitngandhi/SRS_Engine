@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Request , Depends
-from srs_engine.core.auth.deps import require_user
-from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
 import os
+import re
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+
+from srs_engine.core.auth.deps import require_user
 
 router = APIRouter()
 
@@ -68,6 +69,7 @@ async def srs_generator(request: Request):
     print("Rendering SRS Generator page")
     return _render(request, "pages/srs_generator.html")
 
+
 # ── GET /api/my-documents ─────────────────────────────────────
 @router.get("/api/my-documents")
 async def get_my_documents(user=Depends(require_user)):
@@ -78,10 +80,27 @@ async def get_my_documents(user=Depends(require_user)):
     if not user_dir.exists():
         return []
 
+    # BUG FIX: The original glob("*.docx") matched ALL docx files in the
+    # directory, including versioned backup files created by the upgrader
+    # (e.g. ProjectName_SRS_v1.docx, ProjectName_SRS_v2.docx).  Those
+    # backups then appeared as phantom documents in the UI with garbled
+    # names like "ProjectName v1".
+    #
+    # Fix: glob only the primary SRS files (*_SRS.docx) and additionally
+    # skip any file whose name matches the versioned-backup pattern
+    # (*_SRS_v<number>.docx) so that nothing slips through.
+    _backup_pattern = re.compile(r"_SRS_v\d+\.docx$", re.IGNORECASE)
+
+    raw_files = [
+        f for f in user_dir.glob("*_SRS.docx")
+        if not _backup_pattern.search(f.name)
+    ]
+
     documents = []
-    for file in sorted(user_dir.glob("*.docx"), key=os.path.getmtime, reverse=True):
+    for file in sorted(raw_files, key=os.path.getmtime, reverse=True):
         stat = file.stat()
-        project_name = file.stem.replace("_SRS", "").replace("_", " ")
+        # stem e.g. "MyProject_SRS" → project name "MyProject"
+        project_name = file.stem.removesuffix("_SRS").replace("_", " ")
 
         documents.append({
             "id": file.stem,
@@ -123,6 +142,26 @@ async def srs_upgrader(request: Request):
     return _render(request, "pages/srs_upgrader.html")
 
 
+# ── Generated SRS Upgrader pages ──────────────────────────────
+
+@router.get("/srs-generated-upgrader")
+async def srs_generated_upgrader(request: Request):
+    """Pick a generated SRS document to upgrade."""
+    return _render(request, "pages/srs_generated_upgrader.html")
+
+
+@router.get("/srs-section-upgrader")
+async def srs_section_upgrader(request: Request):
+    """Upgrade individual sections of a generated SRS document."""
+    return _render(request, "pages/srs_section_upgrader.html")
+
+
+@router.get("/srs-history")
+async def srs_history(request: Request):
+    """View version history and restore old versions of a project."""
+    return _render(request, "pages/srs_history.html")
+
+
 @router.get("/srs-upgrader/review/{file_id}")
 async def srs_upgrader_review(file_id: str, request: Request, user=Depends(require_user)):
     """Step 2: Analysis, Q&A, and diff review for a parsed SRS file."""
@@ -162,7 +201,7 @@ async def jobs_page(request: Request):
     if not user_id:
         # Hard redirect — never returns JSON to the browser
         return RedirectResponse(url="/login?next=/jobs", status_code=302)
- 
+
     return request.app.state.templates.TemplateResponse(
         "pages/job_tracker.html",
         {
@@ -170,4 +209,3 @@ async def jobs_page(request: Request):
             "is_logged_in": True,
         },
     )
- 

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}SRS Generated Upgrader — SRS Engine{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='generated_upgrader.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="gu-page">
+  <a href="/home" class="gu-back-link">← Back to Home</a>
+  <h1>Upgrade Generated SRS</h1>
+  <p class="subtitle">Select a generated SRS document to upgrade its sections with AI</p>
+
+  <!-- Loading state -->
+  <div id="loading-state">
+    <div class="gu-loading-overlay">
+      <div class="gu-spinner gu-spinner-lg"></div>
+      <div class="loading-text">Loading your documents…</div>
+    </div>
+  </div>
+
+  <!-- Empty state (hidden by default) -->
+  <div id="empty-state" style="display:none;">
+    <div class="gu-empty">
+      <div class="gu-empty-icon">📄</div>
+      <h3>No generated SRS documents found</h3>
+      <p>Generate an SRS document first, then come back here to upgrade it.</p>
+      <a href="/srs-generator" class="gu-btn gu-btn-primary" style="margin-top:1rem;">
+        Go to SRS Generator
+      </a>
+    </div>
+  </div>
+
+  <!-- Document grid -->
+  <div id="doc-grid" class="gu-card-grid"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='generated_upgrader.js') }}"></script>
+{% endblock %}

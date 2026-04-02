@@ -45,3 +45,8 @@ mammoth
 pytesseract 
 pdf2image
 aio_pika
+
+# Generated SRS Upgrader
+faiss-cpu
+sentence-transformers
+jsonschema

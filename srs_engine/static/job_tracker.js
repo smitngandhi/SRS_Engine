@@ -7,7 +7,7 @@
  *   GET  /job/{job_id}/status/stream    → SSE stream
  *
  * /my-jobs is used instead of /jobs to avoid conflicting with the
- * GET /jobs page route registered in pages_router.
+ * GET /jobs HTML page route registered in pages_router.
  */
 
 const TERMINAL = new Set(['completed', 'failed']);
@@ -168,21 +168,31 @@ function updateStepText(card, job) {
 function updateElapsed(card, job) {
     const el = card.querySelector('.job-elapsed');
     if (job.completed_at) {
-        const dur = new Date(job.completed_at) - new Date(job.created_at); el.textContent = `Completed in ${formatMs(dur)}`;
+        const dur = new Date(job.completed_at) - new Date(job.created_at);
+        el.textContent = `Completed in ${formatMs(dur)}`;
     } else if (job.status === 'processing' || job.status === 'pending') {
-        const age = Date.now() - new Date(job.created_at); el.textContent = `Started ${formatMs(age)} ago`;
+        const age = Date.now() - new Date(job.created_at);
+        el.textContent = `Started ${formatMs(age)} ago`;
     } else {
         el.textContent = '';
     }
 }
 
+/**
+ * BUG FIX: The old code used job.job_id (a MongoDB UUID) as the doc_id,
+ * which never matched any file on disk. The /api/download-srs/{doc_id}
+ * endpoint looks for ./generated_srs/{user_id}/{doc_id}.docx, and the
+ * file is named {project_name}_SRS.docx — so doc_id must be
+ * "{project_name}_SRS".
+ */
 function renderActions(card, job) {
     const container = card.querySelector('.job-actions');
     container.innerHTML = '';
 
-    if (job.status === 'completed' && job.result_path) {
+    if (job.status === 'completed') {
         container.appendChild(makeBtn('⬇ Download', 'btn-secondary', () => {
-            window.location.href = `/download-srs?path=${encodeURIComponent(job.result_path)}`;
+            const docId = encodeURIComponent(`${job.project_name}_SRS`);
+            window.location.href = `/api/download-srs/${docId}`;
         }));
     }
     if (job.status === 'failed') {
