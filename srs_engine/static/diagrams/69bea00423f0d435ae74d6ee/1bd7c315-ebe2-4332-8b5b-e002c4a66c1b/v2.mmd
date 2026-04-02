@@ -1,0 +1,10 @@
+flowchart LR
+    A[Data Collection] -->|Gather customer data| B[Data Preprocessing]
+    B -->|Clean and transform data| C[Feature Engineering]
+    C -->|Extract relevant features| D[Model Training]
+    D -->|Train predictive model| E[Model Evaluation]
+    E -->|Assess model performance| F[Hyperparameter Tuning]
+    F -->|Optimize model parameters| D
+    D -->|Deploy trained model| G[Prediction]
+    G -->|Generate customer predictions| H[Model Monitoring]
+    H -->|Track model performance| E

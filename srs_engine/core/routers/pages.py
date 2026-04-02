@@ -181,4 +181,15 @@ async def project_buckets_page(request: Request):
         return RedirectResponse(url="/login?next=/project-buckets", status_code=302)
     
     return _render(request, "pages/project_buckets.html")
+
+@router.get("/document-navigator")
+async def document_navigator_page(request: Request):
+    """
+    Render the new Agentic Document Navigator page.
+    """
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return RedirectResponse(url="/login?next=/document-navigator", status_code=302)
+    
+    return _render(request, "pages/document_navigator.html")
  

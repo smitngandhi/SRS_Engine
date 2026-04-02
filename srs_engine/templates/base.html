@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,6 +8,7 @@
   <link rel="stylesheet" href="{{ url_for('static', path='site.css') }}">
   {% block head %}{% endblock %}
 </head>
+
 <body>
   <header class="site-header">
     <div class="nav-left">
@@ -19,16 +21,17 @@
         <a href="/home#contact">Contact</a>
         <a href="/jobs">My Jobs</a>
         <a href="/project-buckets">Projects</a>
+        <a href="/document-navigator">Doc Navigator</a>
         <a href="/diagrams">Diagrams</a>
       </nav>
     </div>
     <div class="nav-right">
       {% set display_name = request.session.get('display_name') %}
       {% if display_name %}
-        <div class="user-chip" title="Logged in user">{{ display_name }}</div>
-        <a class="btn btn-link" href="/auth/logout">Logout</a>
+      <div class="user-chip" title="Logged in user">{{ display_name }}</div>
+      <a class="btn btn-link" href="/auth/logout">Logout</a>
       {% else %}
-        <a class="btn btn-link" href="/login">Login</a>
+      <a class="btn btn-link" href="/login">Login</a>
       {% endif %}
     </div>
   </header>
@@ -44,4 +47,5 @@
   <script src="{{ url_for('static', path='site.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
+
 </html>

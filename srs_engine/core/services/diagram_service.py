@@ -223,15 +223,41 @@ def _render_svg(mermaid_code: str, disk_path: Path) -> None:
 
 # ── LLM call ──────────────────────────────────────────────────────────────────
 
-async def generate_mermaid_code(prompt: str, diagram_type: str, project_name: str) -> str:
-    """Call Groq LLM to generate Mermaid syntax from a natural-language prompt."""
+async def generate_mermaid_code(
+    prompt: str,
+    diagram_type: str,
+    project_name: str,
+    context_str: str = "",
+    error_feedback: str = "",
+) -> str:
+    """
+    Call Groq LLM to generate Mermaid syntax from a natural-language prompt.
+
+    context_str  – structured Page-Index text built by the router from selected docs.
+    error_feedback – previous Mermaid parse error (used for retry attempts).
+    """
     system_prompt = SYSTEM_PROMPTS.get(diagram_type, SYSTEM_PROMPTS["custom"])
-    user_message = (
-        f"Project: {project_name}\n"
-        f"Diagram type: {diagram_type}\n"
-        f"Requirement: {prompt}\n\n"
-        f"Generate the Mermaid diagram code now."
-    )
+
+    # ── Build user message sections ───────────────────────────────────────────
+    parts = [
+        f"Project: {project_name}",
+        f"Diagram type: {diagram_type}",
+    ]
+
+    if context_str:
+        parts.append(context_str)
+
+    parts.append(f"Requirement: {prompt}")
+
+    if error_feedback:
+        parts.append(
+            f"\n⚠️ IMPORTANT: Your previous attempt had this Mermaid parse error:\n"
+            f"{error_feedback}\n"
+            f"Fix the syntax issue and return corrected Mermaid code only."
+        )
+
+    parts.append("\nGenerate the Mermaid diagram code now.")
+    user_message = "\n".join(parts)
 
     model = os.environ.get("GROQ_MODEL", "groq/meta-llama/llama-4-scout-17b-16e-instruct")
 
@@ -258,10 +284,20 @@ async def generate_mermaid_code(prompt: str, diagram_type: str, project_name: st
 # ── Public service functions ──────────────────────────────────────────────────
 
 async def create_diagram(
-    db: Any, user_id: str, project_name: str, prompt: str, diagram_type: str
+    db: Any,
+    user_id: str,
+    project_name: str,
+    prompt: str,
+    diagram_type: str,
+    context_str: str = "",
+    error_feedback: str = "",
 ) -> DiagramOut:
     """Generate + render + persist a new diagram."""
-    mermaid_code = await generate_mermaid_code(prompt, diagram_type, project_name)
+    mermaid_code = await generate_mermaid_code(
+        prompt, diagram_type, project_name,
+        context_str=context_str,
+        error_feedback=error_feedback,
+    )
 
     repo = DiagramRepo(db)
 
@@ -300,7 +336,13 @@ async def create_diagram(
 
 
 async def regenerate_diagram(
-    db: Any, user_id: str, diagram_id: str, prompt: str, diagram_type: str
+    db: Any,
+    user_id: str,
+    diagram_id: str,
+    prompt: str,
+    diagram_type: str,
+    context_str: str = "",
+    error_feedback: str = "",
 ) -> DiagramOut:
     """Generate a new version from a new prompt and add it to the existing diagram."""
     repo = DiagramRepo(db)
@@ -308,7 +350,11 @@ async def regenerate_diagram(
     if not existing:
         raise HTTPException(status_code=404, detail="Diagram not found")
 
-    mermaid_code = await generate_mermaid_code(prompt, diagram_type, existing["project_name"])
+    mermaid_code = await generate_mermaid_code(
+        prompt, diagram_type, existing["project_name"],
+        context_str=context_str,
+        error_feedback=error_feedback,
+    )
     version_number = len(existing["versions"]) + 1
 
     disk_path = _svg_disk_path(user_id, diagram_id, version_number)

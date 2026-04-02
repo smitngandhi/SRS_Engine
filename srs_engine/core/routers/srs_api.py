@@ -305,8 +305,8 @@ async def list_projects(
         if proj_name not in project_map or project_map[proj_name]["summary"] is None:
             payload = job.get("payload", {})
             summary = {
-                "problem_statement": payload.get("problem_statement", ""),
-                "features": payload.get("features", [])
+                "problem_statement": payload.get("project_identity", {}).get("problem_statement", ""),
+                "features": [{"title": f, "description": ""} for f in payload.get("functional_scope", {}).get("core_features", [])]
             }
             project_map[proj_name] = {
                 "project_name": proj_name,
@@ -315,4 +315,4 @@ async def list_projects(
                 "updated_at": job.get("created_at")
             }
             
-    return list(project_map.values())
+    return list(project_map.values())

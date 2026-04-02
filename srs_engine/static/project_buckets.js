@@ -2,23 +2,23 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   const elements = {
-    list:          document.getElementById('project-list'),
-    details:       document.getElementById('project-details'),
-    emptyState:    document.getElementById('project-empty-state'),
-    title:         document.getElementById('detail-title'),
-    summary:       document.getElementById('detail-summary'),
-    srsList:       document.getElementById('detail-srs-list'),
-    srsEmpty:      document.getElementById('detail-srs-empty'),
-    diagramsGrid:  document.getElementById('detail-diagrams-grid'),
+    list: document.getElementById('project-list'),
+    details: document.getElementById('project-details'),
+    emptyState: document.getElementById('project-empty-state'),
+    title: document.getElementById('detail-title'),
+    summary: document.getElementById('detail-summary'),
+    srsList: document.getElementById('detail-srs-list'),
+    srsEmpty: document.getElementById('detail-srs-empty'),
+    diagramsGrid: document.getElementById('detail-diagrams-grid'),
     diagramsEmpty: document.getElementById('detail-diagrams-empty'),
-    form:          document.getElementById('generate-diagram-form'),
-    diagramType:   document.getElementById('diagram-type'),
+    form: document.getElementById('generate-diagram-form'),
+    diagramType: document.getElementById('diagram-type'),
     diagramPrompt: document.getElementById('diagram-prompt'),
-    btnGenerate:   document.getElementById('btn-generate-diagram'),
-    statusText:    document.getElementById('generate-diagram-status'),
+    btnGenerate: document.getElementById('btn-generate-diagram'),
+    statusText: document.getElementById('generate-diagram-status'),
   };
 
-  let allProjects  = [];
+  let allProjects = [];
   let allDocuments = [];
   let currentProject = null;
 
@@ -29,18 +29,18 @@ document.addEventListener('DOMContentLoaded', () => {
       startOnLoad: false,
       theme: 'base',
       themeVariables: {
-        background:          'transparent',
-        mainBkg:             '#0f1117',
-        nodeBorder:          '#00e5cc',
-        nodeTextColor:       '#e2e8f0',
+        background: 'transparent',
+        mainBkg: '#0f1117',
+        nodeBorder: '#00e5cc',
+        nodeTextColor: '#e2e8f0',
         edgeLabelBackground: '#0d1117',
-        lineColor:           '#00e5cc',
-        fontFamily:          "'Inter','Segoe UI',sans-serif",
-        fontSize:            '11px',
+        lineColor: '#00e5cc',
+        fontFamily: "'Inter','Segoe UI',sans-serif",
+        fontSize: '11px',
       },
       flowchart: { curve: 'basis', useMaxWidth: true, htmlLabels: false },
-      sequence:  { useMaxWidth: true },
-      er:        { useMaxWidth: true },
+      sequence: { useMaxWidth: true },
+      er: { useMaxWidth: true },
     });
   }
 
@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!mermaidCode || typeof mermaid === 'undefined') return;
     try {
       initMermaidForThumbs();
-      const uid     = `thumb-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const uid = `thumb-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const { svg } = await mermaid.render(uid, mermaidCode);
       container.innerHTML = svg;
 
@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/my-documents'),
       ]);
       if (!projRes.ok || !docsRes.ok) throw new Error('Failed to fetch data');
-      allProjects  = await projRes.json();
+      allProjects = await projRes.json();
       allDocuments = await docsRes.json();
       renderProjectList();
     } catch (err) {
@@ -103,11 +103,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const sorted = [...allProjects].sort((a, b) => (b.updated_at || 0) - (a.updated_at || 0));
 
     sorted.forEach(proj => {
-      const div     = document.createElement('div');
+      const div = document.createElement('div');
       const isActive = currentProject?.project_name === proj.project_name;
       div.className = `project-item${isActive ? ' active' : ''}`;
 
-      const hasDocs  = allDocuments.some(d => d.project_name === proj.project_name);
+      const hasDocs = allDocuments.some(d => d.project_name === proj.project_name);
       const metaText = proj.summary ? 'Has SRS summary' : (hasDocs ? 'Has documents' : 'Diagrams only');
 
       div.innerHTML = `
@@ -125,8 +125,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderProjectList();
 
     elements.emptyState.style.display = 'none';
-    elements.details.style.display    = 'block';
-    elements.title.textContent        = proj.project_name || 'Untitled Project';
+    elements.details.style.display = 'block';
+    elements.title.textContent = proj.project_name || 'Untitled Project';
 
     // Summary
     if (proj.summary?.problem_statement || proj.summary?.features?.length) {
@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.srsEmpty.style.display = docs.length ? 'none' : 'block';
     docs.forEach(doc => {
       const dateStr = new Date(doc.created_at * 1000).toLocaleDateString();
-      const card    = document.createElement('div');
+      const card = document.createElement('div');
       card.className = 'doc-card';
       card.innerHTML = `
         <div class="doc-icon">📄</div>
@@ -159,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="doc-actions">
           <a class="btn btn-link" href="/api/download-srs/${doc.id}" download>Download</a>
+          <a class="btn btn-primary" href="/document-navigator?doc_id=${doc.id}" style="font-size: 0.75rem; padding: 4px 8px;">Chat</a>
         </div>`;
       elements.srsList.appendChild(card);
     });
@@ -173,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   async function loadDiagrams(projectName) {
-    elements.diagramsGrid.innerHTML    = '<div class="muted" style="padding:8px;">Loading diagrams…</div>';
+    elements.diagramsGrid.innerHTML = '<div class="muted" style="padding:8px;">Loading diagrams…</div>';
     elements.diagramsEmpty.style.display = 'none';
 
     try {
@@ -189,14 +190,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       diagrams.forEach((d, i) => {
-        const v    = d.versions[d.versions.length - 1]; // latest version
+        const v = d.versions[d.versions.length - 1]; // latest version
         const icon = DIAGRAM_TYPE_ICONS[d.diagram_type] || '🗺️';
         const thumbId = `bucket-thumb-${d.diagram_id}`;
 
         const card = document.createElement('a');
         card.className = 'diagram-card';
-        card.href      = `javascript:void(0)`;
-        card.onclick   = (e) => {
+        card.href = `javascript:void(0)`;
+        card.onclick = (e) => {
           e.preventDefault();
           if (v && v.svg_path) openDiagramModal(d.project_name, v.svg_path);
         };
@@ -236,12 +237,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const payload = {
       project_name: currentProject.project_name,
-      prompt:       elements.diagramPrompt.value.trim(),
+      prompt: elements.diagramPrompt.value.trim(),
       diagram_type: elements.diagramType.value,
     };
     if (!payload.prompt) return;
 
-    elements.btnGenerate.disabled    = true;
+    elements.btnGenerate.disabled = true;
     elements.btnGenerate.textContent = 'Navigating…';
 
     const params = new URLSearchParams({
@@ -249,16 +250,16 @@ document.addEventListener('DOMContentLoaded', () => {
       type: payload.diagram_type,
       prompt: payload.prompt
     });
-    
+
     window.location.href = `/diagrams?${params.toString()}`;
   });
 
   /* ── Diagram Viewer Modal ─────────────────────────────────────────────── */
   const diagramModal = document.getElementById('diagram-modal');
-  const modalTitle   = document.getElementById('modal-diagram-title');
+  const modalTitle = document.getElementById('modal-diagram-title');
   const modalContent = document.getElementById('modal-diagram-content');
-  const modalClose   = document.getElementById('modal-diagram-close');
-  const modalDownload= document.getElementById('modal-diagram-download');
+  const modalClose = document.getElementById('modal-diagram-close');
+  const modalDownload = document.getElementById('modal-diagram-download');
 
   if (modalClose && diagramModal) {
     modalClose.onclick = () => diagramModal.style.display = 'none';
@@ -271,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!diagramModal) return;
     modalTitle.textContent = title + ' Diagram';
     modalContent.innerHTML = `<img src="${svgPath}?t=${Date.now()}" style="max-width:100%; max-height:100%; object-fit:contain; display:block;" alt="Diagram" />`;
-    modalDownload.href     = svgPath;
+    modalDownload.href = svgPath;
     diagramModal.style.display = 'flex';
   }
 
@@ -279,13 +280,13 @@ document.addEventListener('DOMContentLoaded', () => {
   function escHtml(str) {
     if (!str) return '';
     return String(str).replace(/[&<>'"]/g, c =>
-      ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[c])
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c])
     );
   }
 
   function relativeTime(isoString) {
     if (!isoString) return 'unknown';
-    const date     = new Date(isoString + 'Z');
+    const date = new Date(isoString + 'Z');
     const diffDays = Math.round((date - new Date()) / 86400000);
     if (diffDays === 0) return 'today';
     return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(diffDays, 'day');

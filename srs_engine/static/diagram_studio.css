@@ -95,7 +95,8 @@
 }
 
 .studio-panel-title span.dot {
-  width: 7px; height: 7px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 8px var(--accent);
@@ -111,9 +112,18 @@
   gap: 16px;
 }
 
-.studio-panel-body::-webkit-scrollbar { width: 4px; }
-.studio-panel-body::-webkit-scrollbar-track { background: transparent; }
-.studio-panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.studio-panel-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.studio-panel-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.studio-panel-body::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
 
 /* ── Left panel: controls ─────────────────────────────────────────────────── */
 .ctrl-label {
@@ -200,8 +210,14 @@
   box-shadow: 0 0 16px rgba(79, 142, 255, 0.15);
 }
 
-.type-chip-icon { font-size: 1.15rem; }
-.type-chip-label { font-size: 0.72rem; letter-spacing: 0.05em; }
+.type-chip-icon {
+  font-size: 1.15rem;
+}
+
+.type-chip-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+}
 
 .btn-generate {
   width: 100%;
@@ -224,7 +240,7 @@
 
 .btn-generate:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 0 40px var(--glow), 0 8px 24px rgba(0,0,0,0.3);
+  box-shadow: 0 0 40px var(--glow), 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .btn-generate:disabled {
@@ -234,18 +250,30 @@
 }
 
 .spinner {
-  width: 16px; height: 16px;
-  border: 2px solid rgba(255,255,255,0.35);
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
   display: none;
 }
 
-.btn-generate.loading .spinner { display: block; }
-.btn-generate.loading .btn-label { display: flex; align-items: center; gap: 8px; }
+.btn-generate.loading .spinner {
+  display: block;
+}
 
-@keyframes spin { to { transform: rotate(360deg); } }
+.btn-generate.loading .btn-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* ── Center panel: preview ─────────────────────────────────────────────────── */
 .preview-wrap {
@@ -276,17 +304,27 @@
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
-.preview-empty p { font-size: 0.95rem; opacity: 0.6; }
+.preview-empty p {
+  font-size: 0.95rem;
+  opacity: 0.6;
+}
 
 .preview-svg-wrap {
   background: #fff;
   border-radius: 14px;
   padding: 20px;
-  box-shadow: 0 8px 48px rgba(0,0,0,0.4);
+  box-shadow: 0 8px 48px rgba(0, 0, 0, 0.4);
   max-width: 100%;
   display: none;
 }
@@ -311,21 +349,29 @@
   z-index: 10;
 }
 
-.preview-loading.active { display: flex; }
+.preview-loading.active {
+  display: flex;
+}
 
 .preview-loading-spinner {
-  width: 44px; height: 44px;
+  width: 44px;
+  height: 44px;
   border: 3px solid rgba(79, 142, 255, 0.25);
   border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin 0.9s linear infinite;
 }
 
-.preview-loading p { color: var(--muted); font-size: 0.9rem; }
+.preview-loading p {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
 
 .preview-bar {
   position: absolute;
-  bottom: 0; left: 0; right: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
   padding: 10px 20px;
   background: rgba(6, 9, 15, 0.8);
   backdrop-filter: blur(8px);
@@ -361,7 +407,9 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  height: 100%;
+  height: 300px;
+  /* Default height, controlled by JS resizer */
+  flex-shrink: 0;
 }
 
 .code-textarea {
@@ -377,18 +425,19 @@
   line-height: 1.7;
   resize: none;
   outline: none;
-  min-height: 200px;
-  max-height: 320px;
 }
 
-.code-textarea::placeholder { color: var(--muted); opacity: 0.45; }
+.code-textarea::placeholder {
+  color: var(--muted);
+  opacity: 0.45;
+}
 
 .code-actions {
   display: flex;
   gap: 8px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--border);
-  background: rgba(0,0,0,0.2);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 /* ── Version history ──────────────────────────────────────────────────────── */
@@ -398,9 +447,18 @@
   padding: 12px 16px;
 }
 
-.versions-wrap::-webkit-scrollbar { width: 4px; }
-.versions-wrap::-webkit-scrollbar-track { background: transparent; }
-.versions-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.versions-wrap::-webkit-scrollbar {
+  width: 4px;
+}
+
+.versions-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.versions-wrap::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
 
 .version-empty {
   color: var(--muted);
@@ -420,7 +478,7 @@
   margin-bottom: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  background: rgba(0,0,0,0.18);
+  background: rgba(0, 0, 0, 0.18);
 }
 
 .version-item:hover {
@@ -434,7 +492,8 @@
 }
 
 .version-badge {
-  width: 30px; height: 30px;
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
   background: linear-gradient(135deg, rgba(79, 142, 255, 0.2), rgba(0, 229, 201, 0.1));
   border: 1px solid rgba(79, 142, 255, 0.2);
@@ -448,7 +507,10 @@
   flex-shrink: 0;
 }
 
-.version-info { flex: 1; min-width: 0; }
+.version-info {
+  flex: 1;
+  min-width: 0;
+}
 
 .version-prompt {
   font-size: 0.82rem;
@@ -479,7 +541,7 @@
   backdrop-filter: blur(16px);
   color: var(--text);
   font-size: 0.9rem;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   z-index: 999;
   transform: translateY(20px);
   opacity: 0;
@@ -488,9 +550,20 @@
   max-width: 340px;
 }
 
-.studio-toast.show { transform: translateY(0); opacity: 1; }
-.studio-toast.success { border-color: rgba(0, 229, 201, 0.4); color: var(--accent); }
-.studio-toast.error { border-color: rgba(255, 80, 80, 0.4); color: #ff8080; }
+.studio-toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.studio-toast.success {
+  border-color: rgba(0, 229, 201, 0.4);
+  color: var(--accent);
+}
+
+.studio-toast.error {
+  border-color: rgba(255, 80, 80, 0.4);
+  color: #ff8080;
+}
 
 /* ── Home page — My Diagrams section ─────────────────────────────────────── */
 .diagram-card {
@@ -512,7 +585,9 @@
 .diagram-card::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--primary), transparent);
   opacity: 0;
@@ -525,7 +600,9 @@
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4), 0 0 32px var(--glow);
 }
 
-.diagram-card:hover::before { opacity: 1; }
+.diagram-card:hover::before {
+  opacity: 1;
+}
 
 .diagram-preview-thumb {
   width: 100%;
@@ -597,15 +674,18 @@
     height: auto;
     overflow: auto;
   }
+
   .studio-panel {
     border-right: none;
     border-bottom: 1px solid var(--border);
   }
+
   .studio-panel:last-child {
     border-left: none;
     border-bottom: none;
   }
 }
+
 #previewSvgWrap {
   width: 100%;
   height: 100%;
@@ -621,6 +701,7 @@
   height: 100% !important;
   background: transparent !important;
 }
+
 /* ─────────────────────────────────────────────────────────────────────────
    ADD THESE RULES TO YOUR diagram_studio.css
    They fix: white background on mermaid SVG + small diagram size
@@ -633,12 +714,14 @@
   overflow: auto;
   min-height: 500px;
   background: transparent;
+  display: flex;
+  flex-direction: column;
 }
 
 .preview-svg-wrap {
   width: 100%;
   height: 100%;
-  min-height: 500px;
+  flex: 1;
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -663,99 +746,56 @@
 }
 
 /* Mermaid injects a <rect class="background"> as the first child */
-#previewSvgWrap svg > rect:first-child,
+#previewSvgWrap svg>rect:first-child,
 #previewSvgWrap svg rect.background {
   fill: transparent !important;
 }
 
-/* Cluster boxes sometimes get white fills */
-#previewSvgWrap .cluster rect,
-#previewSvgWrap .label-container {
-  fill: #1a1f2e !important;
-  stroke: #00e5cc !important;
+/* ── UI Tabs for Middle Panel ────────────────────────────────────────────── */
+.studio-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 20px 0;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10, 16, 35, 0.45);
 }
 
-/* Edge label backgrounds */
-#previewSvgWrap .edgeLabel,
-#previewSvgWrap .edgeLabel rect,
-#previewSvgWrap span.edgeLabel {
-  background: #0d1117 !important;
-  fill: #0d1117 !important;
-  color: #94a3b8 !important;
+.studio-tab {
+  padding: 10px 20px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-/* Node fills */
-#previewSvgWrap .node rect,
-#previewSvgWrap .node circle,
-#previewSvgWrap .node ellipse,
-#previewSvgWrap .node polygon,
-#previewSvgWrap .node path {
-  fill: #0f1117 !important;
-  stroke: #00e5cc !important;
+.studio-tab:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.03);
 }
 
-/* Node text */
-#previewSvgWrap .nodeLabel,
-#previewSvgWrap .node .label {
-  color: #e2e8f0 !important;
+.studio-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
 }
 
-/* Arrow lines */
-#previewSvgWrap .flowchart-link,
-#previewSvgWrap path.path {
-  stroke: #00e5cc !important;
+.tab-content {
+  display: none;
+  flex: 1;
+  height: 100%;
+  flex-direction: column;
 }
 
-/* Arrowheads */
-#previewSvgWrap marker path,
-#previewSvgWrap .arrowheadPath {
-  fill: #00e5cc !important;
-  stroke: #00e5cc !important;
+.tab-content.active {
+  display: flex;
+  z-index: 10;
 }
 
-/* Sequence diagram actors */
-#previewSvgWrap .actor {
-  fill: #1a1f2e !important;
-  stroke: #00e5cc !important;
-}
-#previewSvgWrap text.actor {
-  fill: #e2e8f0 !important;
-}
-
-/* Sequence lifelines */
-#previewSvgWrap line {
-  stroke: #334155 !important;
-}
-
-/* Sequence signals */
-#previewSvgWrap .messageLine0,
-#previewSvgWrap .messageLine1 {
-  stroke: #00e5cc !important;
-}
-
-/* Notes */
-#previewSvgWrap .note {
-  fill: #1e293b !important;
-  stroke: #00e5cc !important;
-}
-#previewSvgWrap .noteText {
-  fill: #e2e8f0 !important;
-}
-
-/* ER diagram entities */
-#previewSvgWrap .er.entityBox {
-  fill: #0f1117 !important;
-  stroke: #00e5cc !important;
-}
-#previewSvgWrap .er.attributeBoxEven {
-  fill: #0f1117 !important;
-}
-#previewSvgWrap .er.attributeBoxOdd {
-  fill: #1a1f2e !important;
-}
-
-/* Class diagram */
-#previewSvgWrap .classBox {
-  fill: #0f1117 !important;
-  stroke: #00e5cc !important;
+.panel-resizer-horizontal:hover,
+.panel-resizer-horizontal.dragging {
+  background: var(--primary);
 }

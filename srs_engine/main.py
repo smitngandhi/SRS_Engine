@@ -22,6 +22,7 @@ from srs_engine.core.routers import (
     parse_router,
     upgrade_router,
     diagram_router,
+    chat_router,
 )
 
 
@@ -87,6 +88,7 @@ def create_app() -> FastAPI:
     app.include_router(parse_router)
     app.include_router(upgrade_router)
     app.include_router(diagram_router)
+    app.include_router(chat_router)
 
     return app
 

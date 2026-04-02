@@ -6,3 +6,4 @@ from .upload_router import router as upload_router
 from .parse_router import router as parse_router
 from .upgrade_router import router as upgrade_router
 from .diagram_router import router as diagram_router
+from .chat_router import router as chat_router

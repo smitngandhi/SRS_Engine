@@ -10,11 +10,20 @@ class DiagramGenerateRequest(BaseModel):
     project_name: str = Field(..., min_length=1, max_length=120)
     prompt: str = Field(..., min_length=5, max_length=2000)
     diagram_type: str = Field(default="flowchart")  # flowchart | sequence | erd | class | custom
+    # Context Selector: optional list of parsed document IDs to use as context
+    selected_document_ids: list[str] = Field(default_factory=list)
+    # Retry loop: previous Mermaid parse error to feed back to the LLM
+    error_feedback: str = Field(default="")
 
 
 class DiagramRegenerateRequest(BaseModel):
     prompt: str = Field(..., min_length=5, max_length=2000)
     diagram_type: str = Field(default="flowchart")
+    # Context Selector: optional list of parsed document IDs to use as context
+    selected_document_ids: list[str] = Field(default_factory=list)
+    # Retry loop: previous Mermaid parse error to feed back to the LLM
+    error_feedback: str = Field(default="")
+
 
 
 class DiagramEditRequest(BaseModel):

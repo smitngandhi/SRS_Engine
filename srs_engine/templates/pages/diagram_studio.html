@@ -3,7 +3,34 @@
 {% block title %}Diagram Studio | SRS_Engine{% endblock %}
 
 {% block head %}
-  <link rel="stylesheet" href="{{ url_for('static', path='diagram_studio.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', path='diagram_studio.css') }}">
+<style>
+  /* ── Diff Panel ── */
+  .diff-toggle-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all .2s;
+  }
+
+  .diff-toggle-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .diff-panel {
+    margin-top: 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    background: #080b10;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -13,12 +40,13 @@
   <!-- ── HEADER ────────────────────────────────────────────────────── -->
   <div class="studio-header">
     <div class="studio-header-left">
-      <h1>🗺️ Diagram Studio</h1>
+      <h1>Diagram Studio</h1>
       <p>Generate, edit, and version Mermaid diagrams from natural-language prompts.</p>
     </div>
     <div class="studio-header-actions">
       <a href="/home#my-diagrams" class="btn btn-outline" style="font-size:0.85rem; padding:8px 16px;">← My Diagrams</a>
-      <button id="downloadBtn" class="btn btn-secondary" style="font-size:0.85rem; padding:8px 16px;" disabled>⬇ Download SVG</button>
+      <button id="downloadBtn" class="btn btn-secondary" style="font-size:0.85rem; padding:8px 16px;" disabled>⬇
+        Download SVG</button>
     </div>
   </div>
 
@@ -41,27 +69,27 @@
         </div>
 
         <!-- Diagram type -->
-        <div>
+        <div style="margin-top:14px;">
           <label class="ctrl-label">Diagram Type</label>
           <div class="type-grid">
             <button class="type-chip active" data-type="flowchart">
-              <span class="type-chip-icon">🔀</span>
+              <span class="type-chip-icon"></span>
               <span class="type-chip-label">Flowchart</span>
             </button>
             <button class="type-chip" data-type="sequence">
-              <span class="type-chip-icon">🔁</span>
+              <span class="type-chip-icon"></span>
               <span class="type-chip-label">Sequence</span>
             </button>
             <button class="type-chip" data-type="erd">
-              <span class="type-chip-icon">🗄️</span>
+              <span class="type-chip-icon"></span>
               <span class="type-chip-label">ER Diagram</span>
             </button>
             <button class="type-chip" data-type="class">
-              <span class="type-chip-icon">🏛️</span>
+              <span class="type-chip-icon"></span>
               <span class="type-chip-label">Class</span>
             </button>
             <button class="type-chip" data-type="custom" style="grid-column: 1 / -1;">
-              <span class="type-chip-icon">✨</span>
+              <span class="type-chip-icon"></span>
               <span class="type-chip-label">Custom / Auto</span>
             </button>
           </div>
@@ -70,26 +98,22 @@
         <!-- Prompt -->
         <div>
           <label class="ctrl-label" for="promptInput">Describe Your Diagram</label>
-          <textarea
-            id="promptInput"
-            class="ctrl-textarea"
-            placeholder="Describe what you want to visualize…"
-            rows="5"
-          ></textarea>
+          <textarea id="promptInput" class="ctrl-textarea" placeholder="Describe what you want to visualize…"
+            rows="4"></textarea>
           <p class="ctrl-hint" id="promptHint">e.g. "User registration and email verification flow"</p>
         </div>
 
         <!-- Actions -->
-        <button id="generateBtn" class="btn-generate">
+        <button id="generateBtn" class="btn-generate" style="margin-top:16px;">
           <div class="spinner"></div>
           <span class="btn-label">
-            <span>⚡</span>
+            <span></span>
             <span>Generate Diagram</span>
           </span>
         </button>
 
         <button id="regenBtn" class="btn btn-outline" style="width:100%; justify-content:center;" disabled>
-          🔄 Regenerate (New Version)
+          Regenerate (New Version)
         </button>
 
       </div>
@@ -98,7 +122,8 @@
     <!-- ── CENTER: Preview ────────────────────────────────────────────── -->
     <div class="studio-panel" style="border-right:none;">
       <div class="studio-panel-header">
-        <span class="studio-panel-title"><span class="dot" style="background:var(--primary); box-shadow: 0 0 8px var(--primary);"></span>Preview</span>
+        <span class="studio-panel-title"><span class="dot"
+            style="background:var(--primary); box-shadow: 0 0 8px var(--primary);"></span>Preview</span>
         <div id="previewMeta" class="preview-diagram-meta" style="display:none;">
           <span class="preview-badge" id="previewBadge">flowchart</span>
           <span style="color:var(--muted); font-size:0.8rem;" id="previewVersion"></span>
@@ -113,11 +138,11 @@
         </div>
 
         <!-- Empty state -->
-        <div class="preview-empty" id="previewEmpty">
+        <!-- <div class="preview-empty" id="previewEmpty">
           <div class="preview-empty-icon">🗺️</div>
           <p>Your diagram preview will appear here.</p>
           <p style="font-size:0.82rem; opacity:0.5; margin-top:4px;">Fill in the controls and click Generate.</p>
-        </div>
+        </div> -->
 
         <!-- Rendered SVG -->
         <div class="preview-svg-wrap" id="previewSvgWrap"></div>
@@ -127,26 +152,37 @@
     <!-- ── RIGHT: Code Editor + Versions ─────────────────────────────── -->
     <div class="studio-panel">
       <div class="studio-panel-header">
-        <span class="studio-panel-title"><span class="dot" style="background:var(--accent); box-shadow: 0 0 8px var(--accent);"></span>Mermaid Code</span>
+        <span class="studio-panel-title"><span class="dot"
+            style="background:var(--accent); box-shadow: 0 0 8px var(--accent);"></span>Mermaid Code</span>
       </div>
 
-      <div class="code-editor-wrap">
-        <textarea
-          id="codeEditor"
-          class="code-textarea"
+      <div class="code-editor-wrap" id="codeEditorWrap">
+        <textarea id="codeEditor" class="code-textarea"
           placeholder="Generated Mermaid code appears here.&#10;You can edit it directly and click Apply Edit."
-          spellcheck="false"
-        ></textarea>
+          spellcheck="false"></textarea>
         <div class="code-actions">
           <button id="applyEditBtn" class="btn btn-secondary" style="flex:1; justify-content:center;" disabled>
-            ✏️ Apply Edit
+            Apply Edit
           </button>
         </div>
       </div>
 
+      <!-- Resizer Splitter -->
+      <div class="panel-resizer-horizontal" id="horizontalResizer"></div>
+
       <!-- Version History -->
       <div class="studio-panel-header" style="border-top: 1px solid var(--border);">
-        <span class="studio-panel-title"><span class="dot" style="background:#a78bfa; box-shadow: 0 0 8px #a78bfa;"></span>Version History</span>
+        <span class="studio-panel-title">
+          <span class="dot" style="background:#a78bfa; box-shadow: 0 0 8px #a78bfa;"></span>Version History
+        </span>
+        <!-- ─ FEATURE: Version Diff toggle ─ -->
+        <button id="diffToggleBtn" class="diff-toggle-btn" title="Compare this version with the previous one">Show
+          Diff</button>
+      </div>
+
+      <!-- ─ FEATURE: Diff Panel ─ -->
+      <div id="diffPanel" class="diff-panel" style="display:none;">
+        <div id="diffContent" style="padding:4px 0;"></div>
       </div>
 
       <div class="versions-wrap" id="versionsList">
@@ -165,6 +201,6 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-  <script src="{{ url_for('static', path='diagram_studio.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="{{ url_for('static', path='diagram_studio.js') }}"></script>
 {% endblock %}
