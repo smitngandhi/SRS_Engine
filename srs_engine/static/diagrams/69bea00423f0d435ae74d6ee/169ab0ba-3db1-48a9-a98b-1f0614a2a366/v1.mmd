@@ -1,0 +1,15 @@
+flowchart LR
+    A[Google Home] -->|Search Request| B[Search Index]
+    B -->|Retrieve Results| C[Results Page]
+    C -->|User Interaction| D[User Query]
+    D -->|Refine Search| B
+    A -->|User Request| E[Authentication]
+    E -->|Verify User| F[User Profile]
+    F -->|Authorized| G[Google Services]
+    G -->|Access| H[Google Apps]
+    A -->|Request| I[Frontend]
+    I -->|Render| C
+    I -->|Request Data| J[Backend]
+    J -->|Process| K[Database]
+    K -->|Retrieve Data| J
+    J -->|Send Data| I

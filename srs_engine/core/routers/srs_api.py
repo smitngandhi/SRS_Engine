@@ -295,3 +295,49 @@ async def list_jobs(
     repo = JobRepo(db)
     jobs = await repo.get_jobs_by_user(user_id, limit=50)
     return [_serialize_job(job) for job in jobs]
+
+
+@router.get("/api/projects")
+async def list_projects(
+    user=Depends(require_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """
+    Returns a unified list of unique project names, along with the latest SRS payload
+    (problem_statement and features) to be used as a summary.
+    """
+    user_id = str(user.get("_id"))
+    
+    # Get all diagram projects to ensure we capture projects that only have diagrams
+    diagram_projects = await db.diagrams.distinct("project_name", {"user_id": user_id})
+    
+    # Get all jobs to extract unique projects and their latest context payload
+    repo = JobRepo(db)
+    jobs = await repo.get_jobs_by_user(user_id, limit=100)
+    
+    project_map = {}
+    
+    # First add all diagram projects with empty payload
+    for proj in diagram_projects:
+        project_map[proj] = {"project_name": proj, "summary": None, "last_updated": 0}
+        
+    # Then overlay job data (newest first, since get_jobs_by_user sorts by created_at DESC)
+    for job in jobs:
+        proj_name = job.get("project_name")
+        if not proj_name:
+            continue
+            
+        if proj_name not in project_map or project_map[proj_name]["summary"] is None:
+            payload = job.get("payload", {})
+            summary = {
+                "problem_statement": payload.get("project_identity", {}).get("problem_statement", ""),
+                "features": [{"title": f, "description": ""} for f in payload.get("functional_scope", {}).get("core_features", [])]
+            }
+            project_map[proj_name] = {
+                "project_name": proj_name,
+                "summary": summary,
+                "job_id": job.get("job_id"),
+                "updated_at": job.get("created_at")
+            }
+            
+    return list(project_map.values())

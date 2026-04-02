@@ -759,3 +759,79 @@ select.field-input option {
   pointer-events: none;
   backdrop-filter: blur(10px);
 }
+
+/* ═══════════════════════════════════════════════════════
+   VALIDATION — add these rules to your srs_form.css
+   ═══════════════════════════════════════════════════════ */
+
+/* Red outline on failing fields / chip groups / select */
+.field-error {
+  outline: 2px solid #e53e3e !important;
+  outline-offset: 2px;
+  border-radius: 6px;
+  animation: error-pulse 0.3s ease;
+}
+
+@keyframes error-pulse {
+  0%   { outline-color: transparent; }
+  50%  { outline-color: #e53e3e; }
+  100% { outline-color: #e53e3e; }
+}
+
+/* Error banner above the nav buttons */
+.step-error-banner {
+  display: none;                          /* hidden by default */
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-radius: 8px;
+  color: #c53030;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  flex-wrap: wrap;
+}
+
+.step-error-banner.visible {
+  display: flex;
+  animation: banner-in 0.2s ease;
+}
+
+@keyframes banner-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+.err-icon {
+  flex-shrink: 0;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+/* Individual field name pills inside the banner */
+.err-pill {
+  display: inline-block;
+  padding: 1px 8px;
+  margin: 1px 3px;
+  background: #fed7d7;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #9b2c2c;
+  white-space: nowrap;
+}
+
+/* Shake animation for the Continue / Generate button */
+@keyframes btn-shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-5px); }
+  40%       { transform: translateX(5px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px); }
+}
+
+.btn-shake {
+  animation: btn-shake 0.4s ease;
+}

@@ -1,0 +1,12 @@
+sequenceDiagram
+    participant Customer as "Customer"
+    participant System as "Customer Prediction System"
+    participant Model as "Prediction Model"
+    participant Database as "Database"
+
+    Customer->>>System: Provides customer data
+    System->>>Database: Retrieves historical customer data
+    Database->>>System: Returns historical customer data
+    System->>>Model: Inputs data into prediction model
+    Model->>>System: Generates prediction
+    System->>>Customer: Outputs prediction result

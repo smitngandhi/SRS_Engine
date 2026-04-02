@@ -4,6 +4,365 @@
 
 {% block head %}
   <link rel="stylesheet" href="{{ url_for('static', path='upgrader.css') }}">
+  <style>
+    /* ══════════════════════════════════════════
+       TOOLS SHOWCASE — bento grid
+    ══════════════════════════════════════════ */
+
+    .tools-section {
+      padding: 100px 32px;
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .tools-section-header {
+      text-align: center;
+      max-width: 580px;
+      margin: 0 auto 64px;
+    }
+
+    /* ── Bento grid ─────────────────────────── */
+    .tools-bento {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-auto-rows: minmax(200px, auto);
+      gap: 14px;
+    }
+
+    /* Layout assignments */
+    .tool-card--generator  { grid-column: 1 / 3; grid-row: 1 / 3; }
+    .tool-card--navigator  { grid-column: 3 / 4; grid-row: 1 / 2; }
+    .tool-card--projects   { grid-column: 3 / 4; grid-row: 2 / 3; }
+    .tool-card--upgrader   { grid-column: 1 / 2; }
+    .tool-card--section    { grid-column: 2 / 3; }
+    .tool-card--diagrams   { grid-column: 3 / 4; }
+
+    /* ── Base card ─────────────────────────── */
+    .tool-card {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      overflow: hidden;
+      text-decoration: none !important;
+      background: var(--panel);
+      backdrop-filter: blur(14px);
+      display: flex;
+      flex-direction: column;
+      padding: 28px 28px 24px;
+      transition: border-color 0.35s, transform 0.35s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s;
+      cursor: pointer;
+    }
+
+    .tool-card:hover {
+      transform: translateY(-5px);
+    }
+
+    /* Top gradient shimmer line */
+    .tool-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: var(--tc-line, linear-gradient(90deg, transparent, rgba(79,142,255,0.5), transparent));
+      opacity: 0;
+      transition: opacity 0.35s;
+    }
+
+    .tool-card:hover::after { opacity: 1; }
+
+    /* Ambient glow overlay */
+    .tool-card-bg {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.45s;
+      pointer-events: none;
+      background: var(--tc-bg, radial-gradient(ellipse 80% 60% at 50% 0%, rgba(79,142,255,0.09), transparent));
+    }
+    .tool-card:hover .tool-card-bg { opacity: 1; }
+
+    /* Content wrapper */
+    .tool-card-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* ── Icon ─────────────────────────────── */
+    .tool-icon {
+      font-size: 1.8rem;
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      border: 1px solid var(--tc-border, rgba(79,142,255,0.2));
+      background: var(--tc-icon-bg, rgba(79,142,255,0.1));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+      transition: transform 0.4s cubic-bezier(0.22,1,0.36,1), box-shadow 0.4s;
+      flex-shrink: 0;
+    }
+    .tool-card:hover .tool-icon {
+      transform: scale(1.12) rotate(-4deg);
+      box-shadow: 0 0 22px var(--tc-glow, rgba(79,142,255,0.35));
+    }
+
+    /* ── Badge ─────────────────────────────── */
+    .tool-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--tc-border, rgba(79,142,255,0.3));
+      background: var(--tc-icon-bg, rgba(79,142,255,0.08));
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--tc-text, var(--primary));
+      margin-bottom: 12px;
+      align-self: flex-start;
+    }
+    .tool-badge::before {
+      content: '';
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 5px currentColor;
+      animation: pulse 2s ease infinite;
+    }
+
+    /* ── Title ─────────────────────────────── */
+    .tool-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.3rem;
+      color: var(--text);
+      margin-bottom: 10px;
+      line-height: 1.2;
+    }
+
+    .tool-card--generator .tool-title { font-size: 1.7rem; }
+
+    /* ── Description ───────────────────────── */
+    .tool-desc {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+      flex: 1;
+    }
+
+    /* ── Feature list (generator only) ─────── */
+    .tool-features {
+      list-style: none;
+      margin: 18px 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .tool-features li {
+      font-size: 0.82rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .tool-features li::before {
+      content: '';
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--tc-text, var(--primary));
+      flex-shrink: 0;
+      box-shadow: 0 0 4px var(--tc-glow, rgba(79,142,255,0.4));
+    }
+
+    /* ── CTA row ─────────────────────────────── */
+    .tool-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--tc-text, var(--primary));
+      font-family: 'Syne', sans-serif;
+      letter-spacing: 0.01em;
+      transition: gap 0.25s;
+    }
+
+    .tool-card:hover .tool-cta { gap: 13px; }
+
+    .tool-cta svg {
+      transition: transform 0.25s cubic-bezier(0.22,1,0.36,1);
+    }
+    .tool-card:hover .tool-cta svg { transform: translateX(4px); }
+
+    /* ── Floating orbs (generator) ──────────── */
+    .tool-orbs {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .tool-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(50px);
+      opacity: 0.18;
+      animation: orbFloat linear infinite;
+    }
+
+    @keyframes orbFloat {
+      0%   { transform: translate(0, 0) scale(1); }
+      33%  { transform: translate(20px, -15px) scale(1.05); }
+      66%  { transform: translate(-10px, 20px) scale(0.97); }
+      100% { transform: translate(0, 0) scale(1); }
+    }
+
+    /* Scan line animation (generator) */
+    @keyframes scanLine {
+      0%   { top: -2px; opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+
+    .tool-scan {
+      position: absolute;
+      left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(79,142,255,0.5), transparent);
+      animation: scanLine 4s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Per-card color themes ──────────────── */
+
+    /* Generator — blue */
+    .tool-card--generator {
+      --tc-bg:      radial-gradient(ellipse 90% 50% at 30% 10%, rgba(79,142,255,0.13), transparent);
+      --tc-line:    linear-gradient(90deg, transparent, rgba(79,142,255,0.6), transparent);
+      --tc-border:  rgba(79,142,255,0.25);
+      --tc-icon-bg: rgba(79,142,255,0.12);
+      --tc-glow:    rgba(79,142,255,0.45);
+      --tc-text:    #6ea9ff;
+    }
+    .tool-card--generator:hover {
+      border-color: rgba(79,142,255,0.35);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 40px rgba(79,142,255,0.18);
+    }
+
+    /* Upload Upgrader — purple */
+    .tool-card--upgrader {
+      --tc-bg:      radial-gradient(ellipse 90% 70% at 50% 0%, rgba(124,58,237,0.14), transparent);
+      --tc-line:    linear-gradient(90deg, transparent, rgba(124,58,237,0.6), transparent);
+      --tc-border:  rgba(124,58,237,0.22);
+      --tc-icon-bg: rgba(124,58,237,0.12);
+      --tc-glow:    rgba(124,58,237,0.4);
+      --tc-text:    #a78bfa;
+    }
+    .tool-card--upgrader:hover {
+      border-color: rgba(124,58,237,0.32);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 40px rgba(124,58,237,0.15);
+    }
+
+    /* Doc Navigator — amber */
+    .tool-card--navigator {
+      --tc-bg:      radial-gradient(ellipse 90% 70% at 50% 0%, rgba(245,158,11,0.12), transparent);
+      --tc-line:    linear-gradient(90deg, transparent, rgba(245,158,11,0.55), transparent);
+      --tc-border:  rgba(245,158,11,0.2);
+      --tc-icon-bg: rgba(245,158,11,0.1);
+      --tc-glow:    rgba(245,158,11,0.38);
+      --tc-text:    #fbbf24;
+    }
+    .tool-card--navigator:hover {
+      border-color: rgba(245,158,11,0.3);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 40px rgba(245,158,11,0.13);
+    }
+
+    /* Section Upgrader — teal */
+    .tool-card--section {
+      --tc-bg:      radial-gradient(ellipse 90% 70% at 50% 0%, rgba(0,229,201,0.11), transparent);
+      --tc-line:    linear-gradient(90deg, transparent, rgba(0,229,201,0.55), transparent);
+      --tc-border:  rgba(0,229,201,0.2);
+      --tc-icon-bg: rgba(0,229,201,0.1);
+      --tc-glow:    rgba(0,229,201,0.38);
+      --tc-text:    #00e5c9;
+    }
+    .tool-card--section:hover {
+      border-color: rgba(0,229,201,0.3);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 40px rgba(0,229,201,0.13);
+    }
+
+    /* Diagrams — pink */
+    .tool-card--diagrams {
+      --tc-bg:      radial-gradient(ellipse 90% 70% at 50% 0%, rgba(236,72,153,0.11), transparent);
+      --tc-line:    linear-gradient(90deg, transparent, rgba(236,72,153,0.55), transparent);
+      --tc-border:  rgba(236,72,153,0.2);
+      --tc-icon-bg: rgba(236,72,153,0.1);
+      --tc-glow:    rgba(236,72,153,0.38);
+      --tc-text:    #f472b6;
+    }
+    .tool-card--diagrams:hover {
+      border-color: rgba(236,72,153,0.3);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 40px rgba(236,72,153,0.13);
+    }
+
+    /* Projects — green */
+    .tool-card--projects {
+      --tc-bg:      radial-gradient(ellipse 90% 70% at 50% 0%, rgba(16,185,129,0.11), transparent);
+      --tc-line:    linear-gradient(90deg, transparent, rgba(16,185,129,0.55), transparent);
+      --tc-border:  rgba(16,185,129,0.2);
+      --tc-icon-bg: rgba(16,185,129,0.1);
+      --tc-glow:    rgba(16,185,129,0.38);
+      --tc-text:    #34d399;
+    }
+    .tool-card--projects:hover {
+      border-color: rgba(16,185,129,0.3);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 40px rgba(16,185,129,0.13);
+    }
+
+    /* ── Responsive ─────────────────────────── */
+    @media (max-width: 900px) {
+      .tools-bento {
+        grid-template-columns: 1fr 1fr;
+        grid-auto-rows: auto;
+      }
+      .tool-card--generator { grid-column: 1 / 3; grid-row: auto; }
+      .tool-card--navigator { grid-column: auto; grid-row: auto; }
+      .tool-card--projects  { grid-column: auto; grid-row: auto; }
+      .tool-card--upgrader  { grid-column: auto; }
+      .tool-card--section   { grid-column: auto; }
+      .tool-card--diagrams  { grid-column: auto; }
+
+      .tool-features { grid-template-columns: 1fr; }
+      .tool-card--generator .tool-title { font-size: 1.4rem; }
+    }
+
+    @media (max-width: 600px) {
+      .tools-bento { grid-template-columns: 1fr; }
+      .tool-card--generator { grid-column: auto; }
+      .tools-section { padding: 70px 20px; }
+    }
+
+    /* ══════════════════════════════════════════
+       UPGRADER EYEBROW — remove unused New badge spacing
+    ══════════════════════════════════════════ */
+    .upgrader-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
@@ -23,7 +382,7 @@
 
   <div class="hero-cta reveal delay-2">
     <a class="btn btn-primary" href="/srs-generator">Open SRS Generator</a>
-    <a class="btn btn-secondary" href="#features">Explore Features</a>
+    <a class="btn btn-secondary" href="#tools">Explore Tools</a>
   </div>
 
   <div class="hero-scroll-hint">
@@ -62,132 +421,141 @@
 <hr class="section-divider">
 {% endif %}
 
-<!-- ── SRS UPGRADER BANNER ──────────────────────────── -->
-<section id="srs-upgrader" class="upgrader-section">
 
-  <div class="upgrader-glow-orb upgrader-orb-1"></div>
-  <div class="upgrader-glow-orb upgrader-orb-2"></div>
 
-  <div class="upgrader-inner reveal">
+<!-- ── TOOLS SHOWCASE ─────────────────────────────────── -->
+<section id="tools" class="tools-section">
 
-    <!-- Left: copy -->
-    <div class="upgrader-copy">
+  <div class="tools-section-header reveal">
+    <span class="section-label">Everything in one place</span>
+    <h2 class="section-heading">Your complete<br>documentation toolkit.</h2>
+    <p class="section-sub" style="margin: 0 auto;">Six specialised tools, one seamless workflow — from first draft to fully compliant specification.</p>
+  </div>
 
-      <div class="upgrader-eyebrow">
-        <span class="upgrader-new-badge">New</span>
-        <span class="upgrader-eyebrow-text">Multi-Agent Intelligence</span>
+  <div class="tools-bento">
+
+    <!-- ── SRS Generator (featured 2×2) ──── -->
+    <a href="/srs-generator" class="tool-card tool-card--generator reveal delay-1">
+      <div class="tool-card-bg"></div>
+
+      <!-- animated scan line -->
+      <div class="tool-scan"></div>
+
+      <!-- floating orbs -->
+      <div class="tool-orbs">
+        <div class="tool-orb" style="width:180px;height:180px;background:rgba(79,142,255,0.35);top:-40px;right:-40px;animation-duration:9s;"></div>
+        <div class="tool-orb" style="width:120px;height:120px;background:rgba(0,229,201,0.2);bottom:20px;left:20px;animation-duration:12s;animation-delay:-4s;"></div>
       </div>
 
-      <h2 class="upgrader-heading">
-        SRS <span class="upgrader-gradient">Upgrader</span>
-      </h2>
+      <div class="tool-card-inner">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div class="tool-icon">⚡</div>
+          <div class="tool-badge">Most Popular</div>
+        </div>
 
-      <p class="upgrader-desc">
-        Upload an existing PDF or DOCX specification. Three debating AI agents
-        parse, critique, and rewrite your requirements — eliminating ambiguity,
-        passive voice, conflicts, and IEEE&nbsp;830 violations automatically.
-      </p>
+        <h3 class="tool-title">SRS Generator</h3>
 
-      <!-- Pipeline steps -->
-      <div class="upgrader-pipeline">
-        <div class="pipeline-node">
-          <div class="pipeline-node-icon">📂</div>
-          <div class="pipeline-node-label">Upload</div>
-        </div>
-        <div class="pipeline-connector">
-          <div class="pipeline-connector-line"></div>
-          <div class="pipeline-connector-dot"></div>
-        </div>
-        <div class="pipeline-node">
-          <div class="pipeline-node-icon">🔍</div>
-          <div class="pipeline-node-label">Parse</div>
-        </div>
-        <div class="pipeline-connector">
-          <div class="pipeline-connector-line"></div>
-          <div class="pipeline-connector-dot"></div>
-        </div>
-        <div class="pipeline-node">
-          <div class="pipeline-node-icon">🔬</div>
-          <div class="pipeline-node-label">Analyse</div>
-        </div>
-        <div class="pipeline-connector">
-          <div class="pipeline-connector-line"></div>
-          <div class="pipeline-connector-dot"></div>
-        </div>
-        <div class="pipeline-node pipeline-node--accent">
-          <div class="pipeline-node-icon">⚔️</div>
-          <div class="pipeline-node-label">Debate</div>
-        </div>
-        <div class="pipeline-connector">
-          <div class="pipeline-connector-line"></div>
-          <div class="pipeline-connector-dot"></div>
-        </div>
-        <div class="pipeline-node">
-          <div class="pipeline-node-icon">📤</div>
-          <div class="pipeline-node-label">Export</div>
+        <p class="tool-desc">
+          Transform your project ideas into a polished, IEEE 830-compliant Software Requirements Specification. Guided form input, AI-enhanced sections, and embedded Mermaid diagrams — all in one click.
+        </p>
+
+        <ul class="tool-features">
+          <li>IEEE 830 structure</li>
+          <li>Domain-aware compliance</li>
+          <li>Auto-generated sections</li>
+          <li>Embedded diagrams</li>
+          <li>Problem statement enhancer</li>
+          <li>3 detail levels</li>
+        </ul>
+
+        <div class="tool-cta">
+          Open Generator
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </div>
       </div>
+    </a>
 
-      <!-- CTA -->
-      <div class="upgrader-cta">
-        {% if is_logged_in %}
-          <a class="upgrader-btn-primary" href="/srs-upgrader">
-            <span class="upgrader-btn-icon">⚡</span>
-            Open SRS Upgrader
-            <span class="upgrader-btn-arrow">→</span>
-          </a>
-        {% else %}
-          <a class="upgrader-btn-primary" href="/login?next=/srs-upgrader">
-            <span class="upgrader-btn-icon">🔒</span>
-            Sign in to Upgrade
-            <span class="upgrader-btn-arrow">→</span>
-          </a>
-          <span class="upgrader-cta-note">Free with your account</span>
-        {% endif %}
-      </div>
-
-    </div>
-
-    <!-- Right: feature cards -->
-    <div class="upgrader-cards">
-
-      <div class="upgrader-card upgrader-card--1 reveal delay-1">
-        <div class="ucard-icon">🕸️</div>
-        <div class="ucard-body">
-          <div class="ucard-title">Requirement Graph</div>
-          <div class="ucard-desc">NetworkX dependency graph — spots conflicts and duplicates visually.</div>
+    <!-- ── Doc Navigator ───────────────────── -->
+    <a href="/document-navigator" class="tool-card tool-card--navigator reveal delay-2">
+      <div class="tool-card-bg"></div>
+      <div class="tool-card-inner">
+        <div class="tool-icon">🗺️</div>
+        <h3 class="tool-title">Doc Navigator</h3>
+        <p class="tool-desc">Agentic document chat — ask questions, extract insights, and navigate complex specs with AI guidance.</p>
+        <div class="tool-cta">
+          Start chatting
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </div>
-        <div class="ucard-glow"></div>
       </div>
+    </a>
 
-      <div class="upgrader-card upgrader-card--2 reveal delay-2">
-        <div class="ucard-icon">⚔️</div>
-        <div class="ucard-body">
-          <div class="ucard-title">Multi-Agent Debate</div>
-          <div class="ucard-desc">Conservative, Aggressive &amp; IEEE-strict agents argue over the best rewrite.</div>
+    <!-- ── Projects ───────────────────────── -->
+    <a href="/project-buckets" class="tool-card tool-card--projects reveal delay-3">
+      <div class="tool-card-bg"></div>
+      <div class="tool-card-inner">
+        <div class="tool-icon">📁</div>
+        <h3 class="tool-title">Projects</h3>
+        <p class="tool-desc">Organise specs, diagrams, and upgrades into project buckets — structured and shareable.</p>
+        <div class="tool-cta">
+          View projects
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </div>
-        <div class="ucard-glow"></div>
       </div>
+    </a>
 
-      <div class="upgrader-card upgrader-card--3 reveal delay-3">
-        <div class="ucard-icon">🔗</div>
-        <div class="ucard-body">
-          <div class="ucard-title">Traceability Matrix</div>
-          <div class="ucard-desc">Full RTM export — every old requirement mapped to its upgraded version.</div>
+    <!-- ── Upload Upgrader ─────────────────── -->
+    <a href="/srs-upgrader" class="tool-card tool-card--upgrader reveal delay-1">
+      <div class="tool-card-bg"></div>
+      <div class="tool-card-inner">
+        <div class="tool-icon">🔬</div>
+        <h3 class="tool-title">Upload Upgrader</h3>
+        <p class="tool-desc">Upload a PDF or DOCX — three debating AI agents eliminate ambiguity, passive voice, and IEEE 830 violations.</p>
+        <div class="tool-cta">
+          Upgrade a doc
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </div>
-        <div class="ucard-glow"></div>
       </div>
+    </a>
 
-      <div class="upgrader-card upgrader-card--4 reveal delay-1">
-        <div class="ucard-icon">📊</div>
-        <div class="ucard-body">
-          <div class="ucard-title">Quality Dashboard</div>
-          <div class="ucard-desc">Readability scores, ambiguity flags, and severity ratings per requirement.</div>
+    <!-- ── Section Upgrader ────────────────── -->
+    <a href="/srs-generated-upgrader" class="tool-card tool-card--section reveal delay-2">
+      <div class="tool-card-bg"></div>
+      <div class="tool-card-inner">
+        <div class="tool-icon">✨</div>
+        <h3 class="tool-title">Section Upgrader</h3>
+        <p class="tool-desc">Upgrade individual sections of generated specs with targeted, AI-powered rewrites and quality scoring.</p>
+        <div class="tool-cta">
+          Upgrade sections
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </div>
-        <div class="ucard-glow"></div>
       </div>
+    </a>
 
-    </div>
+    <!-- ── Diagrams ────────────────────────── -->
+    <a href="/diagrams" class="tool-card tool-card--diagrams reveal delay-3">
+      <div class="tool-card-bg"></div>
+      <div class="tool-card-inner">
+        <div class="tool-icon">🖊️</div>
+        <h3 class="tool-title">Diagrams</h3>
+        <p class="tool-desc">Generate architecture, flow, ERD, and sequence diagrams with Mermaid — rendered and embedded in your docs.</p>
+        <div class="tool-cta">
+          Draw diagrams
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+    </a>
 
   </div>
 </section>

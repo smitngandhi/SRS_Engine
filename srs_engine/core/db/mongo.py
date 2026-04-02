@@ -48,7 +48,16 @@ async def init_mongo(app: Any, settings: Settings) -> None:
         # Worker/monitor queries: find all pending or processing jobs
         await db.srs_jobs.create_index("status")
 
-        logger.info("MongoDB | Indexes declared for [users, srs_jobs]")
+        # ── diagrams ───────────────────────────────────────────────────
+        await db.diagrams.create_index("diagram_id", unique=True)
+        await db.diagrams.create_index(
+            [("user_id", ASCENDING), ("updated_at", DESCENDING)]
+        )
+        await db.diagrams.create_index(
+            [("user_id", ASCENDING), ("project_name", ASCENDING)]
+        )
+
+        logger.info("MongoDB | Indexes declared for [users, srs_jobs, diagrams]")
 
     except Exception as e:
         # Ignore annoying IndexOptionsConflict error for google_sub unless it's a real crash

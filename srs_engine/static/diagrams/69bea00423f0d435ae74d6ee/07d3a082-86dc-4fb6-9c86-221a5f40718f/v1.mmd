@@ -1,0 +1,9 @@
+flowchart LR
+    A[User] -->|Requests Access| B[Google Auth Server]
+    B -->|Redirects to||Consent Page| C[User Consent]
+    C -->|Grants Consent| D[Authorization Code]
+    D -->|Sends Code||to Google Auth Server| B
+    B -->|Exchanges Code||for Access Token| E[Access Token]
+    E -->|Sends Token||to Client App| F[Client App]
+    F -->|Uses Token||for API Requests| G[Google API]
+    A -->|Uses API||with Token| G

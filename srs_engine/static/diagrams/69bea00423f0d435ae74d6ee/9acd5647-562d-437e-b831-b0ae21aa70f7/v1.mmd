@@ -1,0 +1,11 @@
+flowchart LR
+    Customer -->|provides| Data
+    Data -->|used by| Model
+    Model -->|makes| Prediction
+    Prediction -->|sent to| Analyst
+    Analyst -->|refines| Model
+    Model -->|updated with| Historical_Data
+    Historical_Data -->|stored in| Database
+    Database -->|provides| Data
+    Customer -->|receives| Insights
+    Analyst -->|provides| Insights

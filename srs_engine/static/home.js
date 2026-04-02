@@ -218,7 +218,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const payload = {
             project_name: projectName,
-            problem_statement: problemStatement
+            problem_statement: problemStatement,
         };
 
         try {

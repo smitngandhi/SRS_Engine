@@ -10,6 +10,162 @@ const progressFill  = document.getElementById('progressFill');
 const progressLabel = document.getElementById('progressLabel');
 const stepDotsEl    = document.getElementById('stepDots');
 
+/* ══════════════════════════════════════════════════════
+   VALIDATION CONFIG
+   Each step lists its required fields:
+     label     — human-readable name shown in error messages
+     passes()  — returns truthy if the field is filled
+     highlight — returns the element(s) to outline red
+   Step 6 is fully optional (empty array).
+═══════════════════════════════════════════════════════ */
+const STEP_VALIDATIONS = {
+  1: [
+    {
+      label:     'Project Name',
+      passes:    () => !!document.getElementById('project_name')?.value.trim(),
+      highlight: () => [document.getElementById('project_name')],
+    },
+    {
+      label:     'Author(s)',
+      passes:    () => !!document.getElementById('author')?.value.trim(),
+      highlight: () => [document.getElementById('author')],
+    },
+    {
+      label:     'Organization',
+      passes:    () => !!document.getElementById('organization')?.value.trim(),
+      highlight: () => [document.getElementById('organization')],
+    },
+    {
+      label:     'Problem Statement',
+      passes:    () => !!document.getElementById('problem_statement')?.value.trim(),
+      highlight: () => [document.getElementById('problem_statement')],
+    },
+    {
+      label:     'Target Users (select at least one)',
+      passes:    () => document.querySelectorAll('input[name="target_users"]:checked').length > 0,
+      highlight: () => [document.getElementById('targetUsersGroup')],
+    },
+  ],
+  2: [
+    {
+      label:     'Application Type',
+      passes:    () => !!document.getElementById('application_type')?.value,
+      highlight: () => [document.getElementById('application_type')],
+    },
+    {
+      label:     'Domain / Industry',
+      passes:    () => !!document.getElementById('domain')?.value,
+      highlight: () => [document.getElementById('domain')],
+    },
+  ],
+  3: [
+    {
+      label:     'Core Features',
+      passes:    () => !!document.getElementById('core_features')?.value.trim(),
+      highlight: () => [document.getElementById('core_features')],
+    },
+  ],
+  4: [
+    {
+      label:     'Expected User Scale',
+      passes:    () => !!document.getElementById('expected_user_scale')?.value,
+      highlight: () => [document.getElementById('expected_user_scale')],
+    },
+    {
+      label:     'Performance Expectation',
+      passes:    () => !!document.getElementById('performance_expectation')?.value,
+      highlight: () => [document.getElementById('performance_expectation')],
+    },
+  ],
+  5: [
+    {
+      label:     'Authentication Required',
+      passes:    () => !!document.querySelector('input[name="authentication_required"]:checked'),
+      highlight: () => [document.querySelector('.radio-group:has(input[name="authentication_required"])')],
+    },
+    {
+      label:     'Handles Sensitive Data',
+      passes:    () => !!document.querySelector('input[name="sensitive_data_handling"]:checked'),
+      highlight: () => [document.querySelector('.radio-group:has(input[name="sensitive_data_handling"])')],
+    },
+  ],
+  6: [], // all optional
+  7: [
+    {
+      label:     'SRS Detail Level',
+      passes:    () => !!document.querySelector('input[name="srs_detail_level"]:checked'),
+      highlight: () => [document.getElementById('detailCards')],
+    },
+  ],
+};
+
+/* ── Validate a single step → array of failing rules ─────────── */
+function validateStep(n) {
+  return (STEP_VALIDATIONS[n] || []).filter(rule => !rule.passes());
+}
+
+/* ── Validate every step → { step, label }[] ─────────────────── */
+function validateAll() {
+  const issues = [];
+  for (let n = 1; n <= TOTAL_STEPS; n++) {
+    validateStep(n).forEach(rule => issues.push({ step: n, label: rule.label }));
+  }
+  return issues;
+}
+
+/* ── Error banner (created once, reused) ──────────────────────── */
+let _errorBanner = null;
+function getErrorBanner() {
+  if (_errorBanner) return _errorBanner;
+  _errorBanner = document.createElement('div');
+  _errorBanner.id = 'stepErrorBanner';
+  _errorBanner.className = 'step-error-banner';
+  const controls = document.querySelector('.step-controls');
+  if (controls) controls.insertBefore(_errorBanner, controls.firstChild);
+  return _errorBanner;
+}
+
+function showStepErrors(failedRules) {
+  const banner = getErrorBanner();
+
+  // Highlight failing fields
+  clearFieldHighlights();
+  failedRules.forEach(rule => {
+    rule.highlight().forEach(el => el?.classList.add('field-error'));
+  });
+
+  // Build pill list of missing field names
+  const pills = failedRules
+    .map(r => `<span class="err-pill">${r.label}</span>`)
+    .join('');
+  banner.innerHTML = `<span class="err-icon">⚠</span><span>Please complete: ${pills}</span>`;
+  banner.classList.add('visible');
+
+  // Shake the active action button
+  const activeBtn = currentStep === TOTAL_STEPS ? submitBtn : nextBtn;
+  activeBtn.classList.remove('btn-shake');
+  void activeBtn.offsetWidth; // force reflow
+  activeBtn.classList.add('btn-shake');
+}
+
+function clearStepErrors() {
+  clearFieldHighlights();
+  const banner = getErrorBanner();
+  banner.classList.remove('visible');
+  banner.innerHTML = '';
+}
+
+function clearFieldHighlights() {
+  document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+}
+
+// Clear errors the moment the user starts typing / changing anything
+document.getElementById('srsForm')?.addEventListener('input',  clearStepErrors);
+document.getElementById('srsForm')?.addEventListener('change', clearStepErrors);
+
+/* ══════════════════════════════════════════════════════
+   STEP NAVIGATION
+═══════════════════════════════════════════════════════ */
 function buildDots() {
   stepDotsEl.innerHTML = '';
   for (let i = 1; i <= TOTAL_STEPS; i++) {
@@ -36,12 +192,51 @@ function goToStep(n) {
   progressLabel.textContent = `Step ${n} of ${TOTAL_STEPS}`;
   buildDots();
   if (n === TOTAL_STEPS) buildReview();
+  clearStepErrors();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-nextBtn.addEventListener('click', () => goToStep(currentStep + 1));
-prevBtn.addEventListener('click', () => goToStep(currentStep - 1));
-stepBtns.forEach(btn => btn.addEventListener('click', () => goToStep(parseInt(btn.dataset.step))));
+/* ── Next button: validate current step first ─────────────────── */
+nextBtn.addEventListener('click', () => {
+  const errors = validateStep(currentStep);
+  if (errors.length) {
+    showStepErrors(errors);
+    return;
+  }
+  goToStep(currentStep + 1);
+});
+
+/* ── Back button: always allowed ──────────────────────────────── */
+prevBtn.addEventListener('click', () => {
+  clearStepErrors();
+  goToStep(currentStep - 1);
+});
+
+/* ── Sidebar step buttons: block jumping forward past invalid steps */
+stepBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = parseInt(btn.dataset.step);
+
+    // Going back is always fine
+    if (target <= currentStep) {
+      clearStepErrors();
+      goToStep(target);
+      return;
+    }
+
+    // Validate every step between current and target
+    for (let n = currentStep; n < target; n++) {
+      const errors = validateStep(n);
+      if (errors.length) {
+        goToStep(n);
+        requestAnimationFrame(() => showStepErrors(errors));
+        return;
+      }
+    }
+    goToStep(target);
+  });
+});
+
 goToStep(1);
 
 /* ── Domain panel ──────────────────────────────────── */
@@ -157,24 +352,23 @@ document.getElementById('compliance_other_check')?.addEventListener('change', fu
   document.getElementById('compliance_custom').style.display = this.checked ? 'block' : 'none';
 });
 
-/* ── AI button state ───────────────────────────────── */
+/* ══════════════════════════════════════════════════════
+   AI BUTTON STATE
+═══════════════════════════════════════════════════════ */
 const projectNameInput = document.getElementById('project_name');
 const problemInput     = document.getElementById('problem_statement');
 const enhanceBtn       = document.getElementById('enhanceProblemBtn');
 const autoFeaturesBtn  = document.getElementById('autoGenerateFeaturesBtn');
 const autoFlowBtn      = document.getElementById('autoGenerateFlowBtn');
 
-let enhanceDone = false; // unlocks auto buttons even if user didn't manually type problem
-
 function checkBtns() {
-  // Always re-read from DOM so restored/programmatic values are picked up
   const name   = (document.getElementById('project_name')?.value.trim().length ?? 0) > 0;
   const prob   = (document.getElementById('problem_statement')?.value.trim().length ?? 0) > 0;
-  const autoOk = name && (prob || enhanceDone);
+  const bothOk = name && prob;
 
-  if (enhanceBtn)      { enhanceBtn.disabled     = !name;   enhanceBtn.style.opacity     = name   ? '1' : '0.35'; }
-  if (autoFeaturesBtn) { autoFeaturesBtn.disabled = !autoOk; autoFeaturesBtn.style.opacity = autoOk ? '1' : '0.35'; }
-  if (autoFlowBtn)     { autoFlowBtn.disabled     = !autoOk; autoFlowBtn.style.opacity     = autoOk ? '1' : '0.35'; }
+  if (enhanceBtn)      { enhanceBtn.disabled      = !bothOk; enhanceBtn.style.opacity      = bothOk ? '1' : '0.35'; }
+  if (autoFeaturesBtn) { autoFeaturesBtn.disabled  = !bothOk; autoFeaturesBtn.style.opacity  = bothOk ? '1' : '0.35'; }
+  if (autoFlowBtn)     { autoFlowBtn.disabled      = !bothOk; autoFlowBtn.style.opacity      = bothOk ? '1' : '0.35'; }
 }
 
 projectNameInput?.addEventListener('input', checkBtns);
@@ -207,10 +401,11 @@ async function aiCall(url, body, statusEl, btn, label, onSuccess) {
   } finally {
     btn.disabled = false;
     btn.textContent = label;
+    checkBtns();
   }
 }
 
-/* ── AI button listeners (each defined exactly once) ── */
+/* ── AI button listeners ────────────────────────────── */
 enhanceBtn?.addEventListener('click', () => aiCall(
   '/enhance-problem-statement',
   { project_name: projectNameInput.value.trim(), problem_statement: problemInput.value.trim() },
@@ -218,7 +413,6 @@ enhanceBtn?.addEventListener('click', () => aiCall(
   d => {
     if (d.enhanced_problem_statement) {
       problemInput.value = d.enhanced_problem_statement;
-      enhanceDone = true; // unlock auto buttons even if user never typed in problem field
       checkBtns();
     }
   }
@@ -232,7 +426,6 @@ autoFeaturesBtn?.addEventListener('click', () => aiCall(
     if (d.core_features) {
       document.getElementById('core_features').value =
         Array.isArray(d.core_features) ? d.core_features.join('\n') : d.core_features;
-      checkBtns();
     }
   }
 ));
@@ -244,7 +437,6 @@ autoFlowBtn?.addEventListener('click', () => aiCall(
   d => {
     if (d.primary_user_flow) {
       document.getElementById('primary_user_flow').value = d.primary_user_flow;
-      checkBtns();
     }
   }
 ));
@@ -296,29 +488,39 @@ function restoreFormState() {
       const el = document.getElementById(id);
       if (el && data[id]) el.value = data[id];
     });
-    // if problem statement was restored, treat it as if user typed it
-    const prob = document.getElementById('problem_statement')?.value.trim();
-    if (prob && prob.length > 0) enhanceDone = true;
   } catch (e) {
     sessionStorage.removeItem('srs_form_draft');
   }
 }
 
-// Save on every interaction
 document.getElementById('srsForm')?.addEventListener('input',  saveFormState);
 document.getElementById('srsForm')?.addEventListener('change', saveFormState);
 
-// Restore values, then check buttons after two paint frames so DOM is settled
 restoreFormState();
 requestAnimationFrame(() => requestAnimationFrame(checkBtns));
 
-
-/* ── Form submission ───────────────────────────────── */
+/* ══════════════════════════════════════════════════════
+   FORM SUBMISSION — validates every step before sending
+═══════════════════════════════════════════════════════ */
 document.getElementById('srsForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
+
+  // ── Full-form validation ──────────────────────────
+  const allIssues = validateAll();
+  if (allIssues.length) {
+    // Jump to the first step that has errors
+    const firstFailStep = allIssues[0].step;
+    goToStep(firstFailStep);
+    requestAnimationFrame(() => {
+      const stepErrors = STEP_VALIDATIONS[firstFailStep].filter(r => !r.passes());
+      showStepErrors(stepErrors);
+    });
+    return;
+  }
+
+  // ── Build payload ─────────────────────────────────
   const formData = new FormData(e.target);
 
-  // helpers
   const getChecked = (name) =>
     Array.from(document.querySelectorAll(`input[name="${name}"]:checked`))
       .map(el => el.value).filter(v => v !== 'Other');
@@ -326,45 +528,38 @@ document.getElementById('srsForm')?.addEventListener('submit', async (e) => {
   const splitArr = (val) =>
     val ? val.split(/[\n,]/).map(v => v.trim()).filter(Boolean) : [];
 
-  // target users
   const targetUsers = getChecked('target_users');
   const customUser  = document.getElementById('target_users_custom')?.value.trim();
   if (customUser) targetUsers.push(customUser);
-  if (!targetUsers.length) { alert('Please select at least one target user.'); return; }
 
-  // domain
   let domain = formData.get('domain');
   if (domain === 'Other') {
     const customDomain = document.getElementById('domain_custom')?.value.trim();
     if (customDomain) domain = customDomain;
   }
 
-  // compliance
-  const compliance    = getChecked('compliance_requirements');
-  const customCompli  = document.getElementById('compliance_custom')?.value.trim();
+  const compliance   = getChecked('compliance_requirements');
+  const customCompli = document.getElementById('compliance_custom')?.value.trim();
   if (customCompli) compliance.push(customCompli);
 
-  // authors & features
   const authors      = splitArr(formData.get('author'));
   const coreFeatures = splitArr(formData.get('core_features'));
-  if (!authors.length)      { alert('Please provide at least one author.');       return; }
-  if (!coreFeatures.length) { alert('Please provide at least one core feature.'); return; }
 
   const payload = {
     project_identity: {
-      project_name:       formData.get('project_name')?.trim(),
-      author:             authors,
-      organization:       formData.get('organization')?.trim(),
-      problem_statement:  formData.get('problem_statement')?.trim(),
-      target_users:       targetUsers,
+      project_name:      formData.get('project_name')?.trim(),
+      author:            authors,
+      organization:      formData.get('organization')?.trim(),
+      problem_statement: formData.get('problem_statement')?.trim(),
+      target_users:      targetUsers,
     },
     system_context: {
       application_type: formData.get('application_type'),
-      domain:           domain,
+      domain,
     },
     functional_scope: {
-      core_features:      coreFeatures,
-      primary_user_flow:  formData.get('primary_user_flow')?.trim() || null,
+      core_features:     coreFeatures,
+      primary_user_flow: formData.get('primary_user_flow')?.trim() || null,
     },
     non_functional_requirements: {
       expected_user_scale:     formData.get('expected_user_scale'),
@@ -376,18 +571,17 @@ document.getElementById('srsForm')?.addEventListener('submit', async (e) => {
       compliance_requirements: compliance,
     },
     technical_preferences: {
-      preferred_backend:    formData.get('preferred_backend')?.trim()    || null,
-      database_preference:  formData.get('database_preference')?.trim()  || null,
+      preferred_backend:     formData.get('preferred_backend')?.trim()     || null,
+      database_preference:   formData.get('database_preference')?.trim()   || null,
       deployment_preference: formData.get('deployment_preference')?.trim() || null,
     },
     output_control: {
       srs_detail_level: formData.get('srs_detail_level'),
     },
   };
-  
-  
-  const submitBtn = document.getElementById('submitBtn');
-  const origText  = submitBtn.textContent;
+
+  // ── Submit ────────────────────────────────────────
+  const origText = submitBtn.textContent;
   submitBtn.disabled    = true;
   submitBtn.textContent = '⏳ Generating SRS...';
 
@@ -408,10 +602,7 @@ document.getElementById('srsForm')?.addEventListener('submit', async (e) => {
       throw new Error(`Server error ${res.status}: ${err}`);
     }
 
-    const result = await res.json();
-    console.log('SRS generated:', result);
-
-    // Clear saved draft on success
+    await res.json();
     sessionStorage.removeItem('srs_form_draft');
     window.location.href = '/jobs';
 
