@@ -1,26 +1,41 @@
 from __future__ import annotations
 
 """
-chat_router.py
-──────────────
-Page Index Chatbot — Non-RAG, deterministic document chat.
+core/routers/chat_router.py  v3
+────────────────────────────────
+Page-Index Chatbot — uses the existing PAGE_INDEX_MAP + _sections.json +
+FAISS search_section() exactly as already built by generate_srs().
 
 Architecture:
-  1. The "Page Index" (table of contents) for the selected document is extracted
-     from parsed_docs/{user_id}/{doc_id}.json and injected into the LLM system prompt.
-  2. The LLM is given ONE tool: fetch_section_text(section_id).
-  3. The LLM reasons about which section to read, calls the tool if needed,
-     and then synthesises a grounded, citable answer.
-  4. No vector embeddings — 100% deterministic section lookup.
+  1. GET /api/chat/documents
+       Scans generated_srs/{user_id}/ for *_sections.json files.
+       Returns doc list where doc_id == project_name.
 
-Endpoints:
-  GET  /chat                                  → chat page
-  GET  /api/chat/documents                    → list all parsed documents (for selector)
-  GET  /api/chat/documents/{doc_id}/index     → return section tree for a document
-  POST /api/chat/query                        → ask a question about a document
+  2. GET /api/chat/documents/{doc_id}/index
+       Loads {project_name}_sections.json.
+       Builds the TOC tree from PAGE_INDEX_MAP so page_index values (10, 20 …)
+       become section_ids.  Sub-keys of each section dict become subsections.
 
-BUGS FIXED:
-  - api_list_chat_documents was missing `return result` at the end → returned null.
+  3. POST /api/chat/query
+       Phase 1 — Tool-calling loop (max 3 rounds).
+         LLM tool: fetch_section(section_key)
+           e.g. fetch_section("introduction_section")
+           → reads sections_json[section_key] → readable text.
+       Phase 2 — RAG fallback (search_section from srs_rag_index).
+         Triggered when: no tool called, answer is short, or weak-signal phrases.
+         search_section(query, user_id, project_name) → (section_key, confidence)
+         → reads sections_json[section_key] for synthesis.
+
+BUGS FIXED vs. v1/v2:
+  BUG-1  api_list_chat_documents() never returned result → always null.
+  BUG-2  Used parsed_docs/ instead of generated_srs/*_sections.json.
+  BUG-3  RAG index built but never queried (wrong function name).
+  BUG-4  doc_id was a random hash; now == project_name.
+  BUG-5  RAG fallback never triggered.
+  NEW    Uses PAGE_INDEX_MAP (already computed at generation time) instead of
+         ad-hoc tree reconstruction.
+  NEW    Uses search_section() — the real function in srs_rag_index.py —
+         instead of the non-existent query_rag_index().
 """
 
 import json
@@ -33,240 +48,467 @@ import litellm
 
 from srs_engine.core.auth.deps import require_user
 
-
 router = APIRouter()
 
-PARSED_DOCS_ROOT = Path("./parsed_docs")
+GENERATED_SRS_ROOT = Path("./srs_engine/generated_srs")
+
+# Human-readable labels for each section_key
+_SECTION_LABELS: dict[str, str] = {
+    "introduction_section":        "Introduction",
+    "overall_description_section": "Overall Description",
+    "system_features_section":     "System Features",
+    "external_interfaces_section": "External Interfaces",
+    "nfr_section":                 "Non-Functional Requirements",
+    "glossary_section":            "Glossary",
+    "assumptions_section":         "Assumptions & Dependencies",
+}
+
+# Keys to skip when building subsection trees (metadata, not content)
+_SKIP_KEYS = frozenset({"section_id", "section_number", "domain", "project_name"})
+
+# Phrases that signal a weak/failed LLM answer
+_WEAK_SIGNALS = (
+    "don't know", "cannot find", "not mentioned", "not found",
+    "no information", "unable to find", "not specified",
+    "not contain", "not available",
+)
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# ── File I/O ──────────────────────────────────────────────────────────────────
 
-def _load_parsed_doc(user_id: str, doc_id: str) -> dict | None:
-    path = PARSED_DOCS_ROOT / user_id / f"{doc_id}.json"
-    if not path.exists():
+def _load_sections_json(user_id: str, project_name: str) -> dict | None:
+    p = GENERATED_SRS_ROOT / user_id / f"{project_name}_sections.json"
+    if not p.exists():
         return None
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return json.loads(p.read_text(encoding="utf-8"))
     except Exception:
         return None
 
 
-def _build_page_index(sections: list, depth: int = 0) -> str:
+def _load_meta_json(user_id: str, project_name: str) -> dict:
+    p = GENERATED_SRS_ROOT / user_id / f"{project_name}_meta.json"
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+# ── Section content → readable text for LLM ──────────────────────────────────
+
+def _to_text(obj, depth: int = 0, max_depth: int = 5) -> str:
     """
-    Recursively serialise the section tree into a compact Page Index string.
-    This is injected into the LLM's system prompt as a navigation map.
-    e.g.
-      1 Introduction
-        1.1 Purpose
-        1.2 Scope
-      2 System Architecture
-        2.1 Components
+    Recursively convert a section value (dict / list / str / …) into
+    indented, human-readable plain text the LLM can reason over.
     """
-    lines = []
+    if depth >= max_depth:
+        return str(obj)[:300]
+
     indent = "  " * depth
-    for s in sections:
-        sid     = s.get("section_id", "?")
-        heading = s.get("heading", "")
-        lines.append(f"{indent}{sid} {heading}")
-        lines.extend(_build_page_index(s.get("subsections", []), depth + 1).splitlines())
+
+    if isinstance(obj, str):
+        return obj.strip()
+
+    if isinstance(obj, (int, float, bool)):
+        return str(obj)
+
+    if isinstance(obj, list):
+        parts = []
+        for i, item in enumerate(obj, 1):
+            rendered = _to_text(item, depth + 1, max_depth)
+            if rendered:
+                parts.append(f"{indent}  {i}. {rendered}")
+        return "\n".join(parts)
+
+    if isinstance(obj, dict):
+        parts = []
+        for k, v in obj.items():
+            if k in _SKIP_KEYS:
+                continue
+            label = k.replace("_", " ").title()
+            rendered = _to_text(v, depth + 1, max_depth)
+            if rendered:
+                parts.append(f"{indent}{label}:\n{indent}  {rendered}")
+        return "\n".join(parts)
+
+    return repr(obj)
+
+
+def _section_readable(section_data) -> str:
+    """Full readable dump of a section for the LLM tool response."""
+    text = _to_text(section_data)
+    # Cap at ~4 000 chars to stay within LLM context window comfortably
+    if len(text) > 4000:
+        text = text[:4000] + "\n\n[… content truncated …]"
+    return text or "(No content available for this section.)"
+
+
+# ── TOC tree builder (uses PAGE_INDEX_MAP) ────────────────────────────────────
+
+def _build_toc_tree(sections_json: dict, domain: str = "technical") -> list[dict]:
+    """
+    Build the section tree that the frontend renders as the clickable TOC.
+
+    Uses PAGE_INDEX_MAP so the tree reflects the exact ordering and labels
+    already defined for the domain — no guesswork.
+
+    Tree node schema:
+        {
+            "section_id":  str,   # page_index as string: "10", "20" …
+            "section_key": str,   # "introduction_section" etc.
+            "heading":     str,   # Human label
+            "content":     str,   # First ~300 chars for the preview pane
+            "subsections": list,  # Sub-keys of the section dict
+        }
+    """
+    try:
+        from srs_engine.utils.page_index_map import get_all_sections
+        entries = get_all_sections(domain)
+    except Exception:
+        # Graceful fallback: build ordering from _SECTION_LABELS
+        entries = [
+            {"page_index": i * 10, "section_key": k, "section_type": "text"}
+            for i, k in enumerate(_SECTION_LABELS, 1)
+        ]
+
+    tree: list[dict] = []
+    for entry in entries:
+        page_idx    = entry["page_index"]           # 10, 20, 30 …
+        section_key = entry["section_key"]           # "introduction_section"
+        section_data = sections_json.get(section_key)
+        if not section_data:
+            continue
+
+        heading = _SECTION_LABELS.get(section_key, section_key.replace("_", " ").title())
+
+        # Build subsections from the immediate child keys of the section dict
+        subsections: list[dict] = []
+        if isinstance(section_data, dict):
+            sub_idx = 1
+            for sub_key, sub_val in section_data.items():
+                if sub_key in _SKIP_KEYS:
+                    continue
+                sub_heading = sub_key.replace("_", " ").title()
+                sub_content = _to_text(sub_val, depth=0, max_depth=1)[:300]
+                subsections.append({
+                    "section_id":  f"{page_idx}.{sub_idx}",
+                    "section_key": section_key,       # parent key — used for fetch
+                    "sub_key":     sub_key,
+                    "heading":     sub_heading,
+                    "content":     sub_content,
+                    "subsections": [],
+                })
+                sub_idx += 1
+        elif isinstance(section_data, list):
+            for i, item in enumerate(section_data, 1):
+                if isinstance(item, dict):
+                    sub_heading = (
+                        item.get("name") or item.get("title") or
+                        item.get("feature_name") or item.get("term") or
+                        f"Item {i}"
+                    )
+                    sub_content = _to_text(item, depth=0, max_depth=1)[:300]
+                    subsections.append({
+                        "section_id":  f"{page_idx}.{i}",
+                        "section_key": section_key,
+                        "sub_key":     None,
+                        "heading":     str(sub_heading)[:80],
+                        "content":     sub_content,
+                        "subsections": [],
+                    })
+
+        # Top-level preview: first 300 chars of the section
+        top_content = _to_text(section_data, depth=0, max_depth=1)[:300]
+
+        tree.append({
+            "section_id":  str(page_idx),
+            "section_key": section_key,
+            "heading":     heading,
+            "content":     top_content,
+            "subsections": subsections,
+            "section_type": entry.get("section_type", "text"),
+        })
+
+    return tree
+
+
+# ── Page-Index string (injected into LLM system prompt) ──────────────────────
+
+def _build_page_index_string(tree: list[dict]) -> str:
+    """
+    Build the compact Page Index string the LLM receives as its navigation map.
+
+    Format:
+        10  Introduction                (key: introduction_section)
+          10.1  Purpose
+          10.2  Scope
+        20  Overall Description         (key: overall_description_section)
+          ...
+    """
+    lines: list[str] = []
+    for node in tree:
+        sid  = node["section_id"]
+        key  = node["section_key"]
+        head = node["heading"]
+        lines.append(f"{sid}  {head}  (key: {key})")
+        for sub in node.get("subsections") or []:
+            lines.append(f"  {sub['section_id']}  {sub['heading']}")
     return "\n".join(lines)
 
 
-def _fetch_section_text(sections: list, section_id: str) -> str | None:
-    """
-    Tool implementation: given a section_id string (e.g. '2.1'), return
-    the verbatim content of that section (and its subsections).
-    Searches the entire tree recursively.
-    """
-    for s in sections:
-        if s.get("section_id") == section_id:
-            text: str = (s.get("content") or "").strip()
-            # Include subsection summaries
-            subs = s.get("subsections", [])
-            if subs:
-                for sub in subs:
-                    sub_text = (sub.get("content") or "").strip()
-                    if sub_text:
-                        text = text + f"\n\n[{sub.get('section_id')} {sub.get('heading')}]\n{sub_text}"
-            return text or "(This section has no text content.)"
-        # Recurse into subsections
-        found = _fetch_section_text(s.get("subsections", []), section_id)
-        if found is not None:
-            return found
-    return None
+# ── Precise section lookup (LLM tool implementation) ─────────────────────────
 
+def _fetch_section(sections_json: dict, section_key: str) -> str:
+    """
+    Tool implementation: given section_key, return the readable content.
+    Supports both top-level keys ("introduction_section") and
+    sub-key references ("introduction_section.purpose" notation).
+    """
+    if "." in section_key:
+        parts = section_key.split(".", 1)
+        top_key = parts[0]
+        sub_key = parts[1]
+        top_data = sections_json.get(top_key)
+        if isinstance(top_data, dict) and sub_key in top_data:
+            return _section_readable(top_data[sub_key])
+        # Fall through to full section
+        section_key = top_key
+
+    data = sections_json.get(section_key)
+    if data is None:
+        return (
+            f"Section key '{section_key}' not found. "
+            f"Valid keys: {', '.join(k for k in _SECTION_LABELS if sections_json.get(k))}"
+        )
+    return _section_readable(data)
+
+
+# ── RAG fallback (uses the real search_section from srs_rag_index) ────────────
+
+def _rag_search(
+    user_id: str,
+    project_name: str,
+    query: str,
+    sections_json: dict,
+) -> tuple[str | None, str, float]:
+    """
+    Query the FAISS index via search_section().
+    Returns (section_key, readable_content, confidence).
+    Returns (None, "", 0.0) on any error.
+    """
+    try:
+        from srs_engine.utils.srs_rag_index import search_section
+        section_key, confidence = search_section(
+            query=query,
+            user_id=user_id,
+            project_name=project_name,
+            top_k=1,
+        )
+        if not section_key or confidence < 0.25:
+            return None, "", confidence
+        content = _fetch_section(sections_json, section_key)
+        return section_key, content, confidence
+    except FileNotFoundError:
+        return None, "", 0.0          # RAG index not built yet — silent skip
+    except Exception:
+        return None, "", 0.0          # Any other error — graceful degradation
+
+
+# ── Template helper ────────────────────────────────────────────────────────────
 
 def _render(request: Request, template: str, **ctx):
     return request.app.state.templates.TemplateResponse(
         template,
         {
-            "request": request,
+            "request":      request,
             "is_logged_in": bool(request.session.get("user_id")),
-            "user": request.session.get("display_name"),
+            "user":         request.session.get("display_name"),
             **ctx,
         },
     )
 
 
-# ── Page route ────────────────────────────────────────────────────────────────
+# ── Routes ────────────────────────────────────────────────────────────────────
 
 @router.get("/chat")
 async def chat_page(request: Request):
-    """Render the Document Chat page."""
     if not request.session.get("user_id"):
         return RedirectResponse(url="/login?next=/chat", status_code=302)
     return _render(request, "pages/document_chat.html")
 
 
-# ── API routes ────────────────────────────────────────────────────────────────
+# ── List documents ────────────────────────────────────────────────────────────
 
 @router.get("/api/chat/documents")
 async def api_list_chat_documents(user=Depends(require_user)):
     """
-    List all parsed documents available for chatting.
-    Returns [{doc_id, filename, section_count, word_count}].
+    List all SRS projects that have a _sections.json file.
+    doc_id == project_name (stable, human-readable key).
+
+    BUG-1 FIX: was missing 'return result'.
+    BUG-2 FIX: reads generated_srs/ not parsed_docs/.
+    BUG-4 FIX: doc_id == project_name, not a random hash.
     """
-    user_id = str(user.get("_id"))
-
-    # ── Sync generated documents (ensure they are parsed) ──
-    from srs_engine.core.services.parse_service import parse_uploaded_file
-
-    gen_dir = Path(f"./srs_engine/generated_srs/{user_id}")
-    if gen_dir.exists():
-        for docx_path in gen_dir.glob("*.docx"):
-            doc_id = docx_path.stem
-            json_path = PARSED_DOCS_ROOT / user_id / f"{doc_id}.json"
-            if not json_path.exists():
-                try:
-                    await parse_uploaded_file(
-                        user_id=user_id,
-                        file_id=doc_id,
-                        storage_path=str(docx_path),
-                        original_filename=docx_path.name,
-                        file_type="docx"
-                    )
-                except Exception:
-                    continue
-
-    user_dir = PARSED_DOCS_ROOT / user_id
+    user_id  = str(user.get("_id"))
+    user_dir = GENERATED_SRS_ROOT / user_id
     if not user_dir.exists():
         return []
 
-    result = []
-    for json_path in user_dir.glob("*.json"):
+    result: list[dict] = []
+    for path in sorted(user_dir.glob("*_sections.json")):
+        project_name = path.stem.removesuffix("_sections")
         try:
-            data = json.loads(json_path.read_text(encoding="utf-8"))
-            meta = data.get("metadata", {})
+            sections_json = json.loads(path.read_text(encoding="utf-8"))
+            meta          = _load_meta_json(user_id, project_name)
+            domain        = sections_json.get("domain", "technical")
+
+            # Count how many sections have data
+            section_count = sum(
+                1 for k in _SECTION_LABELS if sections_json.get(k)
+            )
+
             result.append({
-                "doc_id":        json_path.stem,
-                "filename":      meta.get("original_filename", json_path.stem),
-                "section_count": len(data.get("sections", [])),
-                "word_count":    meta.get("word_count", 0),
-                "project_name":  meta.get("project_name", ""),
+                "doc_id":        project_name,
+                "filename":      f"{project_name} — SRS",
+                "project_name":  project_name,
+                "domain":        domain,
+                "section_count": section_count,
+                "organization":  meta.get("organization", ""),
+                "generated_at":  meta.get("generated_at", ""),
             })
         except Exception:
             continue
 
-    # ── BUG FIX: missing return statement ──────────────────────────────────────
-    # The original code built `result` but never returned it, so the endpoint
-    # always returned null/None, causing the document list to be empty.
+    # BUG-1 FIX: original code never returned result
     return result
 
+
+# ── Section tree ──────────────────────────────────────────────────────────────
 
 @router.get("/api/chat/documents/{doc_id}/index")
 async def api_get_page_index(doc_id: str, user=Depends(require_user)):
     """
-    Return the full section tree (Page Index) for a document.
+    Return the full section tree for a project.
+    doc_id == project_name.
+    Tree is built from PAGE_INDEX_MAP so ordering & labels are exact.
+
+    BUG-2 FIX: Loads _sections.json directly.
+    NEW:  Uses PAGE_INDEX_MAP so the navigator reflects the same structure
+          that was defined at generation time.
     """
-    user_id = str(user.get("_id"))
-    data = _load_parsed_doc(user_id, doc_id)
-    if not data:
-        return {"error": "Document not found"}
+    user_id       = str(user.get("_id"))
+    sections_json = _load_sections_json(user_id, doc_id)
+    if sections_json is None:
+        return {"error": f"No generated SRS found for project '{doc_id}'."}
 
-    return data.get("sections", [])
+    domain = sections_json.get("domain", "technical")
+    tree   = _build_toc_tree(sections_json, domain)
+    if not tree:
+        return {"error": "SRS sections are empty or malformed."}
+    return tree
 
+
+# ── Chat query ────────────────────────────────────────────────────────────────
 
 @router.post("/api/chat/query")
 async def api_chat_query(request: Request, user=Depends(require_user)):
     """
-    Page Index Chatbot — single turn query.
+    Page-Index chatbot — tool calling + RAG fallback.
 
-    Request body: { "doc_id": str, "question": str, "history": [...] }
-    The LLM gets the Page Index as a map and can request specific sections
-    via tool calling (function call loop). Max 3 tool calls per turn to
-    prevent runaway loops.
+    Request body:
+        { "doc_id": str, "question": str, "history": [{role, content}, …] }
+
+    Flow:
+      Phase 1 — LLM tool-calling loop (max 3 rounds).
+        Tool: fetch_section(section_key) reads sections_json[section_key].
+      Phase 2 — RAG fallback via search_section() from srs_rag_index.
+        Triggers when answer is weak.  Fetches the highest-confidence section,
+        injects it as context, and calls a synthesis completion.
+
+    BUG-3 FIX: search_section() (the real function) is now called.
+    BUG-5 FIX: RAG fallback triggers correctly.
+    NEW:   LLM tool uses section_key (not numeric id) for precise lookup.
     """
-    user_id = str(user.get("_id"))
-    body    = await request.json()
-    doc_id   = body.get("doc_id", "").strip()
+    user_id  = str(user.get("_id"))
+    body     = await request.json()
+    doc_id   = body.get("doc_id", "").strip()   # == project_name
     question = body.get("question", "").strip()
-    history  = body.get("history", [])  # [{role, content}] for multi-turn
+    history  = body.get("history", [])
 
     if not doc_id or not question:
         return {"error": "doc_id and question are required."}
 
-    # ── Load the parsed document ──────────────────────────────────────────────
-    data = _load_parsed_doc(user_id, doc_id)
-    if not data:
-        return {"error": "Document not found. Please upload and parse it first."}
+    # ── Load ──────────────────────────────────────────────────────────────────
+    sections_json = _load_sections_json(user_id, doc_id)
+    if sections_json is None:
+        return {"error": f"SRS document '{doc_id}' not found. Generate it first."}
 
-    meta     = data.get("metadata", {})
-    sections = data.get("sections", [])
-    filename = meta.get("original_filename", doc_id)
+    domain = sections_json.get("domain", "technical")
+    tree   = _build_toc_tree(sections_json, domain)
+    if not tree:
+        return {"error": "Document has no readable sections."}
 
-    # ── Build the Page Index map for the system prompt ────────────────────────
-    page_index = _build_page_index(sections) or "(No sections detected in this document.)"
+    page_index_str = _build_page_index_string(tree)
 
-    system_prompt = f"""You are an expert document analyst chatbot. You have been given the document:
-"{filename}"
+    # ── System prompt ─────────────────────────────────────────────────────────
+    system_prompt = f"""You are a precise SRS analyst answering questions about the Software Requirements Specification for project: "{doc_id}".
 
-Below is the complete Page Index (Table of Contents) of this document:
+The document uses these section keys:
+{chr(10).join(f'  {k}' for k in _SECTION_LABELS if sections_json.get(k))}
 
 === PAGE INDEX ===
-{page_index}
+{page_index_str}
 === END PAGE INDEX ===
 
 INSTRUCTIONS:
-1. When the user asks a question, look at the Page Index to identify the most relevant section(s).
-2. If you need to read a section's full content, call the `fetch_section_text` function with the exact section_id (e.g. "2.1").
-3. Use the retrieved content to give a precise, grounded answer.
-4. Always cite the section you used (e.g., "According to section 2.1 Security Requirements...").
-5. If you are confident the answer is in the index headings alone, answer directly without calling the function.
-6. Never make up information. If the document doesn't contain the answer, say so honestly.
-"""
+1. Identify the most relevant section from the Page Index.
+2. Call fetch_section with its section_key (e.g. "system_features_section") to read its content.
+3. Answer precisely using the fetched content. Always cite the section.
+4. You may call fetch_section up to 3 times if multiple sections are relevant.
+5. If the Page Index headings alone answer the question, answer directly.
+6. Never fabricate information. If the document lacks an answer, say so explicitly."""
 
-    # ── Define the fetch_section_text tool ───────────────────────────────────
+    # ── Tool definition ────────────────────────────────────────────────────────
     tools = [
         {
             "type": "function",
             "function": {
-                "name": "fetch_section_text",
-                "description": "Fetch the full text content of a specific section from the document by its section_id.",
+                "name": "fetch_section",
+                "description": (
+                    "Fetch the full content of a section from the SRS document. "
+                    "Use the section_key shown in the Page Index, e.g. 'introduction_section', "
+                    "'system_features_section', 'nfr_section'."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "section_id": {
+                        "section_key": {
                             "type": "string",
-                            "description": "The section ID to fetch (e.g. '1', '2.1', '3.4.2')",
+                            "description": "The section key to fetch (e.g. 'system_features_section')",
                         }
                     },
-                    "required": ["section_id"],
+                    "required": ["section_key"],
                 },
             },
         }
     ]
 
-    # ── Build the message list ──────────────────────────────────────────────
+    # ── Messages ───────────────────────────────────────────────────────────────
     messages = [{"role": "system", "content": system_prompt}]
-    for h in history[-10:]:  # Keep last 10 turns for context window control
+    for h in history[-10:]:
         messages.append({"role": h["role"], "content": h["content"]})
     messages.append({"role": "user", "content": question})
 
-    # ── Agentic tool-calling loop (max 3 rounds) ────────────────────────────
     model = os.environ.get("GROQ_MODEL", "groq/meta-llama/llama-4-scout-17b-16e-instruct")
-    tool_calls_made = []
 
-    for _ in range(3):  # Max 3 tool call rounds
+    tool_calls_made: list[dict] = []
+    any_tool_called = False
+    final_answer    = ""
+
+    # ── Phase 1: Tool-calling loop ─────────────────────────────────────────────
+    for _ in range(3):
         response = await litellm.acompletion(
             model=model,
             messages=messages,
@@ -275,45 +517,124 @@ INSTRUCTIONS:
             temperature=0.1,
             max_tokens=1500,
         )
-
         msg = response.choices[0].message
 
-        # No tool call — the LLM has a final answer
         if not msg.tool_calls:
-            return {
-                "answer":     msg.content or "",
-                "tool_calls": tool_calls_made,
-                "doc_id":     doc_id,
-                "filename":   filename,
-            }
+            final_answer = msg.content or ""
+            break
 
-        # Process each tool call the LLM requested
-        messages.append({"role": "assistant", "content": msg.content or "", "tool_calls": [
-            {"id": tc.id, "type": "function", "function": {"name": tc.function.name, "arguments": tc.function.arguments}}
-            for tc in msg.tool_calls
-        ]})
+        # Append assistant turn with tool calls
+        any_tool_called = True
+        messages.append({
+            "role":       "assistant",
+            "content":    msg.content or "",
+            "tool_calls": [
+                {
+                    "id":       tc.id,
+                    "type":     "function",
+                    "function": {
+                        "name":      tc.function.name,
+                        "arguments": tc.function.arguments,
+                    },
+                }
+                for tc in msg.tool_calls
+            ],
+        })
 
         for tc in msg.tool_calls:
             args        = json.loads(tc.function.arguments or "{}")
-            section_id  = args.get("section_id", "").strip()
-            section_text = _fetch_section_text(sections, section_id)
+            section_key = args.get("section_key", "").strip()
+            content     = _fetch_section(sections_json, section_key)
 
-            if section_text is None:
-                section_text = f"Section '{section_id}' was not found in this document. Please check the Page Index."
+            # Map section_key → page_index for TOC highlighting
+            page_idx_str = _key_to_page_index(section_key, tree)
 
-            tool_calls_made.append({"section_id": section_id, "chars_returned": len(section_text)})
+            tool_calls_made.append({
+                "section_id":     page_idx_str,   # for TOC highlight in JS
+                "section_key":    section_key,
+                "chars_returned": len(content),
+            })
 
             messages.append({
                 "role":         "tool",
                 "tool_call_id": tc.id,
-                "content":      section_text,
+                "content":      content,
+            })
+    else:
+        # Loop exhausted without a final non-tool response
+        last = next((m for m in reversed(messages) if m.get("role") == "assistant"), None)
+        final_answer = (last or {}).get("content") or ""
+
+    # ── Phase 2: RAG fallback ──────────────────────────────────────────────────
+    answer_lower = (final_answer or "").lower()
+    answer_weak  = (
+        not any_tool_called
+        or len(final_answer) < 120
+        or any(sig in answer_lower for sig in _WEAK_SIGNALS)
+    )
+
+    rag_section_key: str | None = None
+    rag_used = False
+
+    if answer_weak:
+        rag_key, rag_content, rag_confidence = _rag_search(
+            user_id, doc_id, question, sections_json
+        )
+        if rag_key and rag_content:
+            rag_section_key = rag_key
+            rag_used        = True
+            rag_page_idx    = _key_to_page_index(rag_key, tree)
+
+            # Synthesis with RAG context
+            synth_messages = [
+                {"role": "system", "content": system_prompt},
+                {
+                    "role": "user",
+                    "content": (
+                        f"{question}\n\n"
+                        f"The following content was found via semantic search "
+                        f"(section: {rag_key}, confidence: {rag_confidence:.0%}):\n\n"
+                        f"{rag_content}\n\n"
+                        f"Please use this content to give a complete, cited answer."
+                    ),
+                },
+            ]
+            synth_resp = await litellm.acompletion(
+                model=model,
+                messages=synth_messages,
+                temperature=0.1,
+                max_tokens=1500,
+            )
+            final_answer = synth_resp.choices[0].message.content or final_answer
+
+            tool_calls_made.append({
+                "section_id":     rag_page_idx,
+                "section_key":    rag_key,
+                "chars_returned": len(rag_content),
+                "source":         "rag",
+                "confidence":     round(rag_confidence, 3),
             })
 
-    # If we exhausted the loop, return what we have
-    last_assistant = next((m for m in reversed(messages) if m["role"] == "assistant"), None)
     return {
-        "answer":     last_assistant.get("content") or "I was unable to produce a final answer. Please try rephrasing.",
+        "answer":     final_answer or "I could not find a relevant answer in this document.",
         "tool_calls": tool_calls_made,
         "doc_id":     doc_id,
-        "filename":   filename,
+        "filename":   f"{doc_id} — SRS",
+        "rag_used":   rag_used,
     }
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _key_to_page_index(section_key: str, tree: list[dict]) -> str:
+    """
+    Given a section_key like 'system_features_section', return the
+    page_index string ('30') used as section_id in the TOC tree.
+    Falls back to the section_key itself if not found.
+    """
+    # Strip sub-key suffix if present (e.g. "introduction_section.purpose")
+    top_key = section_key.split(".")[0]
+    for node in tree:
+        if node.get("section_key") == top_key:
+            return node["section_id"]
+    return section_key

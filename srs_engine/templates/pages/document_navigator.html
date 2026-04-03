@@ -22,9 +22,7 @@
         overflow: hidden;
     }
 
-    .nav-panel:last-child {
-        border-right: none;
-    }
+    .nav-panel:last-child { border-right: none; }
 
     .panel-hdr {
         padding: 16px 20px;
@@ -70,9 +68,7 @@
         font-family: inherit;
     }
 
-    #docSelect option {
-        background: #0a1023;
-    }
+    #docSelect option { background: #0a1023; }
 
     .toc-wrap {
         flex: 1;
@@ -113,8 +109,6 @@
         border-left-color: var(--primary);
     }
 
-    /* BUG FIX: toc-label class was missing from original CSS,
-       only toc-id was styled. Added toc-label to complete the item style. */
     .toc-id {
         font-family: monospace;
         font-size: 0.72rem;
@@ -124,6 +118,7 @@
         flex-shrink: 0;
     }
 
+    /* BUG FIX: toc-label was missing in original */
     .toc-label {
         font-size: 0.8rem;
         color: #94a3b8;
@@ -132,14 +127,8 @@
         text-overflow: ellipsis;
     }
 
-    .toc-item.active .toc-label {
-        color: var(--primary);
-    }
-
-    .toc-sub {
-        padding-left: 14px;
-        list-style: none;
-    }
+    .toc-item.active .toc-label { color: var(--primary); }
+    .toc-sub { padding-left: 14px; list-style: none; }
 
     /* ── Center: Chat ── */
     .chat-panel {
@@ -180,7 +169,6 @@
         line-height: 1.65;
         position: relative;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        white-space: pre-wrap;
         word-break: break-word;
     }
 
@@ -188,6 +176,7 @@
         background: linear-gradient(135deg, var(--primary), var(--accent));
         color: #001a18;
         border-bottom-right-radius: 4px;
+        white-space: pre-wrap;   /* preserve user line breaks */
     }
 
     .msg.bot .msg-bubble {
@@ -198,6 +187,47 @@
         backdrop-filter: blur(8px);
     }
 
+    /* ── BUG-7 FIX: Markdown rendered HTML styles ── */
+    .msg.bot .msg-bubble .md-h3,
+    .msg.bot .msg-bubble .md-h4 {
+        color: var(--primary);
+        font-weight: 600;
+        margin: 10px 0 4px;
+        font-size: 0.95rem;
+    }
+
+    .msg.bot .msg-bubble .md-p {
+        margin: 0 0 8px;
+    }
+
+    .msg.bot .msg-bubble .md-p:last-child { margin-bottom: 0; }
+
+    .msg.bot .msg-bubble .md-ul {
+        padding-left: 18px;
+        margin: 4px 0 8px;
+    }
+
+    .msg.bot .msg-bubble .md-ul li {
+        margin-bottom: 3px;
+    }
+
+    .msg.bot .msg-bubble .md-code {
+        background: rgba(0, 229, 204, 0.1);
+        border: 1px solid rgba(0, 229, 204, 0.2);
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 0.85em;
+        color: var(--primary);
+    }
+
+    .msg.bot .msg-bubble .md-hr {
+        border: none;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        margin: 10px 0;
+    }
+
+    /* ── Tool citations ── */
     .msg-meta {
         font-size: 0.68rem;
         color: var(--muted);
@@ -206,12 +236,12 @@
     }
 
     .msg-tool {
-        margin-top: 8px;
+        margin-top: 6px;
         font-size: 0.72rem;
         color: #94a3b8;
         background: rgba(0, 229, 204, 0.05);
         border: 1px dashed rgba(0, 229, 204, 0.2);
-        padding: 6px 10px;
+        padding: 5px 10px;
         border-radius: 8px;
         display: flex;
         align-items: center;
@@ -258,7 +288,7 @@
     }
 
     #chatInput::placeholder { color: rgba(255,255,255,0.25); }
-    #chatInput:disabled { opacity: 0.4; cursor: not-allowed; }
+    #chatInput:disabled     { opacity: 0.4; cursor: not-allowed; }
 
     .send-btn {
         width: 40px;
@@ -276,17 +306,14 @@
         align-self: flex-end;
     }
 
-    .send-btn:hover:not(:disabled) { transform: scale(1.06); }
+    .send-btn:hover:not(:disabled)  { transform: scale(1.06); }
     .send-btn:active:not(:disabled) { transform: scale(0.95); }
-    .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .send-btn:disabled              { opacity: 0.3; cursor: not-allowed; }
 
     /* ── Right: Preview ── */
-    .preview-panel {
-        background: rgba(6, 9, 15, 0.8);
-    }
+    .preview-panel { background: rgba(6, 9, 15, 0.8); }
 
-    /* BUG FIX: .preview-content must also be flex column so it can scroll.
-       The original had no overflow on this element, so long sections clipped. */
+    /* BUG FIX: needs overflow-y:auto + flex:1 to scroll */
     .preview-content {
         flex: 1;
         overflow-y: auto;
@@ -329,7 +356,7 @@
         line-height: 1.6;
     }
 
-    /* ── Thinking Indicator ── */
+    /* ── Thinking ── */
     .thinking {
         display: flex;
         gap: 5px;
@@ -353,7 +380,7 @@
     }
 
     /* ── Scrollbars ── */
-    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar       { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
@@ -390,13 +417,19 @@
                 <span class="dot" style="background:var(--primary);"></span>
                 Agentic Chat
             </span>
+            <span id="ragBadge" style="display:none;font-size:0.65rem;color:#94a3b8;
+                background:rgba(0,229,204,0.06);border:1px solid rgba(0,229,204,0.15);
+                padding:2px 8px;border-radius:20px;">
+                🔍 RAG available
+            </span>
         </div>
 
         <div class="chat-messages" id="chatMessages">
             <div class="preview-empty">
                 <div class="preview-empty-icon">🤖</div>
                 <p>Welcome to the <strong>Document Navigator</strong>.<br>
-                   I use a Page Index to precisely locate information.<br>
+                   I use the Page Index to precisely locate information.<br>
+                   When I can't find it there, I search semantically via RAG.<br>
                    Select a document on the left to begin.</p>
             </div>
         </div>
@@ -405,7 +438,7 @@
             <div class="input-box">
                 <textarea
                     id="chatInput"
-                    placeholder="Ask about any section or requirement… (Enter to send)"
+                    placeholder="Ask about any section or requirement… (Enter to send, Shift+Enter for new line)"
                     disabled
                 ></textarea>
                 <button id="sendBtn" class="send-btn" disabled title="Send (Enter)">
@@ -428,8 +461,7 @@
                 Section Context
             </span>
         </div>
-        <!-- BUG FIX: id="sectionPreview" must be on the scrollable .preview-content
-             div, not on a child. The JS writes innerHTML directly into this element. -->
+        <!-- BUG FIX: id on the scrollable .preview-content div -->
         <div class="preview-content" id="sectionPreview">
             <div class="preview-empty">
                 <div class="preview-empty-icon">📖</div>

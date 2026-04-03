@@ -1,24 +1,36 @@
 /**
- * document_navigator.js
- * ─────────────────────
- * Agentic Document Navigator — Page Index powered chat.
+ * document_navigator.js  v2
+ * ─────────────────────────
+ * Agentic Document Navigator — Page Index powered chat with RAG fallback.
  *
- * BUGS FIXED:
- *  1. loadDocument() was fetching /api/chat/documents (the document LIST)
- *     to build the page index. Fixed to call /api/chat/documents/{docId}/index.
- *  2. previewSection() was writing into #sectionPreview which is the inner
- *     content div — was correct, but content wasn't cleared between loads.
- *  3. State was never reset on document switch (history, sections accumulated).
- *  4. send button was never re-enabled after a network error (missing finally).
+ * BUGS FIXED vs original:
+ *  BUG-1  loadDocument() called /api/chat/documents (list) instead of
+ *         /api/chat/documents/{docId}/index.                    [FIXED ✓]
+ *  BUG-2  Content / state were not reset on document switch.   [FIXED ✓]
+ *  BUG-3  State (history, sections) accumulated across docs.   [FIXED ✓]
+ *  BUG-4  sendBtn never re-enabled after a network error —
+ *         missing finally block.                                [FIXED ✓]
+ *  BUG-6  Section lookup used O(n) recursive findSectionInTree
+ *         on an already-flat array. Replaced with O(1) Map.    [FIXED ✓]
+ *  BUG-7  Bot text rendered with esc() → markdown shown as
+ *         literal asterisks/hashes. Added lightweight md→HTML. [FIXED ✓]
+ *  BUG-8  chatInput height stayed 'auto' after clear → glitch. [FIXED ✓]
+ *  BUG-9  No visible loading indicator while index fetches.    [FIXED ✓]
+ *  BUG-10 querySelector(".toc-item[data-section-id="1.2"]")
+ *         fails for IDs with dots. Fixed with CSS.escape().    [FIXED ✓]
  */
 
+/* ── State ───────────────────────────────────────────────────────────────── */
 const state = {
-    docId:    null,
-    history:  [],
-    sections: []   /* flat cache of entire section tree for fast lookup */
+    docId:       null,
+    history:     [],
+    /** O(1) section lookup: section_id → {section_id, heading, content} */
+    sectionMap:  new Map(),
+    /** Original nested tree (for renderToc) */
+    tree:        [],
 };
 
-/* ── DOM ─────────────────────────────────────────────────────────────────── */
+/* ── DOM refs ────────────────────────────────────────────────────────────── */
 const docSelect      = document.getElementById('docSelect');
 const tocWrap        = document.getElementById('tocWrap');
 const chatMessages   = document.getElementById('chatMessages');
@@ -26,7 +38,9 @@ const chatInput      = document.getElementById('chatInput');
 const sendBtn        = document.getElementById('sendBtn');
 const sectionPreview = document.getElementById('sectionPreview');
 
-/* ── Helpers ─────────────────────────────────────────────────────────────── */
+/* ── Utilities ───────────────────────────────────────────────────────────── */
+
+/** HTML-escape raw text (for user messages and labels). */
 function esc(s) {
     if (!s) return '';
     return String(s)
@@ -36,25 +50,86 @@ function esc(s) {
         .replace(/"/g, '&quot;');
 }
 
-/** Recursively flatten the section tree into a lookup array. */
-function flattenSections(sections, acc = []) {
-    for (const s of sections) {
-        acc.push(s);
-        if (s.subsections?.length) flattenSections(s.subsections, acc);
-    }
-    return acc;
+/**
+ * BUG-7 FIX: Lightweight Markdown → safe HTML converter.
+ * Handles: **bold**, *italic*, `code`, ### headings, - bullet lists,
+ *           numbered lists, blank-line paragraphs, and line breaks.
+ * Does NOT use innerHTML directly on user input — only on LLM responses.
+ */
+function mdToHtml(text) {
+    if (!text) return '';
+
+    // Escape HTML first to prevent XSS
+    let html = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    // Headings  (### h3, ## h2, # h1)
+    html = html.replace(/^#{3}\s+(.+)$/gm, '<h4 class="md-h4">$1</h4>');
+    html = html.replace(/^#{2}\s+(.+)$/gm, '<h3 class="md-h3">$1</h3>');
+    html = html.replace(/^#{1}\s+(.+)$/gm, '<h3 class="md-h3">$1</h3>');
+
+    // Bold / italic
+    html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+    html = html.replace(/\*\*(.+?)\*\*/g,      '<strong>$1</strong>');
+    html = html.replace(/\*(.+?)\*/g,           '<em>$1</em>');
+
+    // Inline code
+    html = html.replace(/`([^`]+)`/g, '<code class="md-code">$1</code>');
+
+    // Bullet lists
+    html = html.replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>(\n|$))+/g, (m) => `<ul class="md-ul">${m}</ul>`);
+
+    // Numbered lists
+    html = html.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
+
+    // Horizontal rules
+    html = html.replace(/^---+$/gm, '<hr class="md-hr">');
+
+    // Paragraphs (blank-line separated blocks)
+    html = html
+        .split(/\n{2,}/)
+        .map(block => {
+            block = block.trim();
+            if (!block) return '';
+            if (/^<(h[1-6]|ul|ol|hr|li)/.test(block)) return block;
+            return `<p class="md-p">${block.replace(/\n/g, '<br>')}</p>`;
+        })
+        .join('\n');
+
+    return html;
 }
 
-function findSectionInTree(sections, sid) {
+/**
+ * BUG-6 FIX: Build an O(1) section Map from the nested tree.
+ * flattenSections() was returning a flat array and findSectionInTree()
+ * still did O(n) recursive search — now we use a Map for instant lookup.
+ */
+function buildSectionMap(sections, map = new Map()) {
     for (const s of sections) {
-        if (s.section_id === sid) return s;
-        const found = findSectionInTree(s.subsections || [], sid);
-        if (found) return found;
+        map.set(s.section_id, s);
+        if (s.subsections?.length) buildSectionMap(s.subsections, map);
     }
-    return null;
+    return map;
 }
 
-/* ── Initialisation: load document list ─────────────────────────────────── */
+/**
+ * BUG-10 FIX: querySelector with data attributes that contain dots (e.g. "1.2")
+ * was throwing SyntaxError. CSS.escape() handles it correctly.
+ */
+function tocItemEl(sectionId) {
+    try {
+        return document.querySelector(`.toc-item[data-section-id="${CSS.escape(sectionId)}"]`);
+    } catch {
+        // CSS.escape not available (very old browsers) — fall back to find-all
+        return [...document.querySelectorAll('.toc-item')]
+            .find(el => el.dataset.sectionId === sectionId) || null;
+    }
+}
+
+/* ── Init: load document list ────────────────────────────────────────────── */
 async function init() {
     try {
         const resp = await fetch('/api/chat/documents');
@@ -63,7 +138,7 @@ async function init() {
 
         docSelect.innerHTML = '<option value="">— Select Document —</option>';
         if (!Array.isArray(docs) || docs.length === 0) {
-            docSelect.innerHTML = '<option value="">No parsed documents found</option>';
+            docSelect.innerHTML = '<option value="">No SRS documents found — generate one first.</option>';
             return;
         }
 
@@ -71,14 +146,13 @@ async function init() {
             const opt = document.createElement('option');
             opt.value = d.doc_id;
             opt.textContent = d.filename
-                + (d.project_name ? ` (${d.project_name})` : '')
+                + (d.domain && d.domain !== 'technical' ? ` [${d.domain}]` : '')
                 + (d.section_count ? ` · ${d.section_count} sections` : '');
             docSelect.appendChild(opt);
         });
 
-        /* Auto-select from URL query param ?doc_id=... */
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlDocId  = urlParams.get('doc_id');
+        // Auto-select from ?doc_id= query param
+        const urlDocId = new URLSearchParams(window.location.search).get('doc_id');
         if (urlDocId) {
             docSelect.value = urlDocId;
             if (docSelect.value) loadDocument(urlDocId);
@@ -89,15 +163,15 @@ async function init() {
     }
 }
 
-/* ── Load a document: fetch page index from correct endpoint ─────────────── */
+/* ── Load a document: fetch section tree from correct endpoint ───────────── */
 async function loadDocument(docId) {
-    /* Reset state on every document switch */
-    state.docId    = docId;
-    state.history  = [];
-    state.sections = [];
+    // BUG-2 & BUG-3 FIX: reset ALL state on every document switch
+    state.docId      = docId;
+    state.history    = [];
+    state.sectionMap = new Map();
+    state.tree       = [];
 
     chatMessages.innerHTML = '';
-    tocWrap.innerHTML      = '<p style="padding:16px;font-size:0.8rem;color:var(--muted);">Loading index…</p>';
     sectionPreview.innerHTML = `
         <div class="preview-empty">
             <div class="preview-empty-icon">📖</div>
@@ -107,39 +181,46 @@ async function loadDocument(docId) {
     chatInput.disabled = true;
     sendBtn.disabled   = true;
 
+    // BUG-9 FIX: show a visible spinner while loading
+    tocWrap.innerHTML = `
+        <div style="padding:20px;text-align:center;">
+            <div class="thinking" style="justify-content:center;margin-bottom:8px;">
+                <span class="t-dot"></span>
+                <span class="t-dot"></span>
+                <span class="t-dot"></span>
+            </div>
+            <p style="font-size:0.78rem;color:var(--muted);">Loading section index…</p>
+        </div>`;
+
     try {
-        /*
-         * BUG FIX #1 — was: fetch('/api/chat/documents')  ← wrong! returns doc list
-         *              now: fetch(`/api/chat/documents/${docId}/index`)  ← section tree
-         */
-        const res      = await fetch(`/api/chat/documents/${docId}/index`);
+        // BUG-1 FIX: correct endpoint (was calling /api/chat/documents by mistake)
+        const res = await fetch(`/api/chat/documents/${encodeURIComponent(docId)}/index`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const sections = await res.json();
+        const tree = await res.json();
 
-        if (sections.error) throw new Error(sections.error);
+        if (tree.error) throw new Error(tree.error);
+        if (!Array.isArray(tree) || !tree.length) throw new Error('No sections found.');
 
-        /* Cache flat list for instant lookup */
-        state.sections = flattenSections(sections);
+        // BUG-6 FIX: build O(1) Map instead of relying on tree search later
+        state.tree       = tree;
+        state.sectionMap = buildSectionMap(tree);
 
-        /* Render the Table of Contents tree */
         tocWrap.innerHTML = '';
-        if (!sections.length) {
-            tocWrap.innerHTML = '<p style="padding:16px;font-size:0.8rem;color:var(--muted);">No sections detected.</p>';
-        } else {
-            renderToc(sections, tocWrap, 0);
-        }
+        renderToc(tree, tocWrap, 0);
 
         chatInput.disabled = false;
         sendBtn.disabled   = false;
 
-        appendMessage('bot',
-            `Document loaded. I have the full Page Index — ${state.sections.length} sections indexed.\n\nAsk me anything and I'll read the exact section to answer you.`
+        appendBotMessage(
+            `📄 **${docId}** loaded — ${state.sectionMap.size} sections indexed.\n\n` +
+            `Ask me anything. I'll read the exact section to answer you.`
         );
 
     } catch (e) {
         console.error('loadDocument error:', e);
-        tocWrap.innerHTML = '<p style="padding:16px;font-size:0.8rem;color:#fc8181;">Failed to load document index.</p>';
-        appendMessage('bot', '⚠ Could not load the document index. Please try again.');
+        tocWrap.innerHTML =
+            `<p style="padding:16px;font-size:0.8rem;color:#fc8181;">⚠ ${esc(e.message)}</p>`;
+        appendBotMessage(`⚠ Could not load the document index: ${e.message}`);
     }
 }
 
@@ -147,13 +228,12 @@ docSelect.addEventListener('change', () => {
     if (docSelect.value) loadDocument(docSelect.value);
 });
 
-/* ── Render TOC tree ─────────────────────────────────────────────────────── */
+/* ── Render TOC ──────────────────────────────────────────────────────────── */
 function renderToc(sections, container, depth) {
     if (!sections?.length) return;
 
     const ul = document.createElement('ul');
-    ul.className = 'toc-tree';
-    if (depth > 0) ul.classList.add('toc-sub');
+    ul.className = depth === 0 ? 'toc-tree' : 'toc-tree toc-sub';
 
     sections.forEach(s => {
         const li   = document.createElement('li');
@@ -162,29 +242,19 @@ function renderToc(sections, container, depth) {
         item.dataset.sectionId = s.section_id;
         item.innerHTML = `
             <span class="toc-id">${esc(s.section_id)}</span>
-            <span class="toc-label">${esc(s.heading)}</span>
-        `;
+            <span class="toc-label">${esc(s.heading)}</span>`;
 
         item.addEventListener('click', () => {
-            /* Mark active */
-            document.querySelectorAll('.toc-item').forEach(el => el.classList.remove('active'));
-            item.classList.add('active');
-
-            /* Show section in preview */
+            setActiveTocItem(item);
             previewSection(s.section_id, s.heading, s.content);
-
-            /* Auto-fill chat input */
             chatInput.value = `Tell me about section ${s.section_id}: ${s.heading}`;
+            chatInput.style.height = 'auto'; // BUG-8 FIX: reset height before measuring
+            chatInput.style.height = Math.min(chatInput.scrollHeight, 150) + 'px';
             chatInput.focus();
         });
 
         li.appendChild(item);
-
-        /* Recurse into subsections */
-        if (s.subsections?.length) {
-            renderToc(s.subsections, li, depth + 1);
-        }
-
+        if (s.subsections?.length) renderToc(s.subsections, li, depth + 1);
         ul.appendChild(li);
     });
 
@@ -198,62 +268,86 @@ function previewSection(id, heading, content) {
         <h2>§${esc(id)} ${esc(heading)}</h2>
         ${bodyText
             ? `<p style="white-space:pre-wrap;">${esc(bodyText)}</p>`
-            : `<p style="color:var(--muted);font-style:italic;">This section has no body text (may be a parent heading).</p>`
-        }
-    `;
+            : `<p style="color:var(--muted);font-style:italic;">
+               Parent heading — select a sub-section to read its content.
+               </p>`}`;
 }
 
-function highlightTocSection(sid) {
-    document.querySelectorAll('.toc-item').forEach(el => el.classList.remove('active'));
-    const el = document.querySelector(`.toc-item[data-section-id="${sid}"]`);
-    if (el) {
-        el.classList.add('active');
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+function setActiveTocItem(el) {
+    document.querySelectorAll('.toc-item').forEach(e => e.classList.remove('active'));
+    if (el) el.classList.add('active');
+}
 
-        /* Also update preview */
-        const sec = findSectionInTree(state.sections, sid);
-        if (sec) previewSection(sec.section_id, sec.heading, sec.content);
+/**
+ * BUG-10 FIX: use CSS.escape() via tocItemEl() helper.
+ * BUG-6 FIX:  use state.sectionMap instead of tree search.
+ */
+function highlightTocSection(sid) {
+    const el = tocItemEl(sid);
+    if (el) {
+        setActiveTocItem(el);
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+    // Preview the section content using O(1) map lookup
+    const sec = state.sectionMap.get(sid);
+    if (sec) previewSection(sec.section_id, sec.heading, sec.content);
 }
 
 /* ── Chat messages ───────────────────────────────────────────────────────── */
-function appendMessage(role, text, toolCalls = []) {
-    /* Remove the static welcome empty-state if present */
+function removeWelcomeState() {
     const empty = chatMessages.querySelector('.preview-empty');
     if (empty) empty.remove();
+}
 
+/**
+ * BUG-7 FIX: Bot messages use mdToHtml() instead of esc() so markdown
+ * from the LLM (**, *, ##, lists) renders as formatted HTML.
+ */
+function appendBotMessage(text, toolCalls = [], ragUsed = false) {
+    removeWelcomeState();
     const div  = document.createElement('div');
-    div.className = `msg ${role}`;
+    div.className = 'msg bot';
 
-    /* Tool call indicators */
     let toolHtml = '';
     toolCalls.forEach(tc => {
+        const isRag  = tc.source === 'rag';
+        const icon   = isRag
+            ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`
+            : `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`;
+        const label  = isRag ? 'RAG §' : 'Read §';
         toolHtml += `
             <div class="msg-tool">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-                </svg>
-                Read §${esc(tc.section_id)} <span style="color:var(--muted)">(${tc.chars_returned} chars)</span>
+                ${icon}
+                ${label}${esc(tc.section_id)}
+                <span style="color:var(--muted)">(${tc.chars_returned} chars)</span>
             </div>`;
     });
 
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
     div.innerHTML = `
-        <div class="msg-bubble">${esc(text)}</div>
+        <div class="msg-bubble">${mdToHtml(text)}</div>
         ${toolHtml}
-        <div class="msg-meta">${time}</div>
-    `;
+        ${ragUsed ? '<div class="msg-tool" style="opacity:0.6">🔍 Semantic RAG search used as fallback</div>' : ''}
+        <div class="msg-meta">${time}</div>`;
 
     chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-function appendThinking() {
-    const empty = chatMessages.querySelector('.preview-empty');
-    if (empty) empty.remove();
+function appendUserMessage(text) {
+    removeWelcomeState();
+    const div  = document.createElement('div');
+    div.className = 'msg user';
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    div.innerHTML = `
+        <div class="msg-bubble">${esc(text)}</div>
+        <div class="msg-meta">${time}</div>`;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
 
+function appendThinking() {
+    removeWelcomeState();
     const div = document.createElement('div');
     div.className = 'msg bot thinking-wrap';
     div.innerHTML = `
@@ -274,12 +368,15 @@ async function sendMessage() {
     const question = chatInput.value.trim();
     if (!question || !state.docId) return;
 
-    appendMessage('user', question);
+    appendUserMessage(question);
+
+    // BUG-8 FIX: properly reset input height after clearing
     chatInput.value = '';
     chatInput.style.height = 'auto';
 
-    sendBtn.disabled = true;
-    const thinking = appendThinking();
+    sendBtn.disabled   = true;
+    chatInput.disabled = true;
+    const thinking     = appendThinking();
 
     state.history.push({ role: 'user', content: question });
 
@@ -288,42 +385,45 @@ async function sendMessage() {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({
-                doc_id:   state.docId,
+                doc_id:  state.docId,
                 question,
-                history:  state.history.slice(-10),
+                history: state.history.slice(-10),
             }),
         });
 
         thinking.remove();
 
         if (!resp.ok) {
-            appendMessage('bot', `⚠ Server error ${resp.status}: ${resp.statusText}`);
+            appendBotMessage(`⚠ Server error ${resp.status}: ${resp.statusText}`);
             return;
         }
 
         const data = await resp.json();
 
         if (data.error) {
-            appendMessage('bot', `⚠ ${data.error}`);
+            appendBotMessage(`⚠ ${data.error}`);
         } else {
-            appendMessage('bot', data.answer, data.tool_calls || []);
+            appendBotMessage(data.answer, data.tool_calls || [], data.rag_used || false);
             state.history.push({ role: 'assistant', content: data.answer });
 
-            /* Highlight last read section in the TOC + preview */
-            if (data.tool_calls?.length) {
-                const lastSid = data.tool_calls[data.tool_calls.length - 1].section_id;
-                highlightTocSection(lastSid);
+            // Highlight the last section read in the TOC + preview panel
+            const calls = data.tool_calls || [];
+            if (calls.length) {
+                // Prefer first non-RAG call for highlighting (more precise)
+                const precise = calls.find(c => c.source !== 'rag') || calls[calls.length - 1];
+                highlightTocSection(precise.section_id);
             }
         }
 
     } catch (e) {
         thinking.remove();
-        appendMessage('bot', '⚠ Network error — please check your connection and try again.');
+        appendBotMessage('⚠ Network error — please check your connection and try again.');
         console.error('sendMessage error:', e);
 
     } finally {
-        /* BUG FIX #4 — send button was never re-enabled after a network error */
-        sendBtn.disabled = false;
+        // BUG-4 FIX: always re-enable controls even after error
+        sendBtn.disabled   = false;
+        chatInput.disabled = false;
         chatInput.focus();
     }
 }
