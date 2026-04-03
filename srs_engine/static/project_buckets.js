@@ -6,21 +6,47 @@ document.addEventListener('DOMContentLoaded', () => {
     details: document.getElementById('project-details'),
     emptyState: document.getElementById('project-empty-state'),
     title: document.getElementById('detail-title'),
+    subtitle: document.getElementById('detail-subtitle'),
     summary: document.getElementById('detail-summary'),
     srsList: document.getElementById('detail-srs-list'),
     srsEmpty: document.getElementById('detail-srs-empty'),
     diagramsGrid: document.getElementById('detail-diagrams-grid'),
     diagramsEmpty: document.getElementById('detail-diagrams-empty'),
-    form: document.getElementById('generate-diagram-form'),
-    diagramType: document.getElementById('diagram-type'),
-    diagramPrompt: document.getElementById('diagram-prompt'),
-    btnGenerate: document.getElementById('btn-generate-diagram'),
-    statusText: document.getElementById('generate-diagram-status'),
+    historyList: document.getElementById('detail-history-list'),
+    historyEmpty: document.getElementById('detail-history-empty'),
+    btnOpenStudio: document.getElementById('btn-open-studio'),
+    
+    // Stats
+    statDocs: document.getElementById('stat-docs-count'),
+    statDiagrams: document.getElementById('stat-diagrams-count'),
+    statVersions: document.getElementById('stat-versions-count'),
+    
+    // Tabs
+    tabButtons: document.querySelectorAll('.tab-btn'),
+    tabContents: document.querySelectorAll('.tab-content'),
+    
+    // Modals
+    restoreModal: document.getElementById('restore-modal'),
+    btnCancelRestore: document.getElementById('btn-cancel-restore'),
+    btnConfirmRestore: document.getElementById('btn-confirm-restore'),
   };
 
   let allProjects = [];
   let allDocuments = [];
   let currentProject = null;
+  let pendingRestoreVersion = null;
+
+  /* ── Tab Logic ───────────────────────────────────────────────────────── */
+  elements.tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      elements.tabButtons.forEach(b => b.classList.remove('active'));
+      elements.tabContents.forEach(c => c.classList.remove('active'));
+      
+      btn.classList.add('active');
+      document.getElementById(target).classList.add('active');
+    });
+  });
 
   /* ── Mermaid thumbnail config ─────────────────────────────────────────── */
   function initMermaidForThumbs() {
@@ -44,7 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* Render one mermaid thumbnail into a container element */
   async function renderThumb(container, mermaidCode) {
     if (!mermaidCode || typeof mermaid === 'undefined') return;
     try {
@@ -60,7 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
       svgEl.removeAttribute('height');
       svgEl.style.cssText = 'width:100%!important;height:100%!important;background:transparent!important;display:block;';
 
-      // Strip white fills
       svgEl.querySelectorAll('[fill="white"],[fill="#ffffff"],[fill="#fff"]').forEach(el =>
         el.setAttribute('fill', 'transparent')
       );
@@ -71,9 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const firstRect = svgEl.querySelector('rect:first-child');
       if (firstRect) firstRect.setAttribute('fill', 'transparent');
-    } catch (_) {
-      // Keep icon fallback already in DOM
-    }
+    } catch (_) {}
   }
 
   /* ── Init ─────────────────────────────────────────────────────────────── */
@@ -92,7 +114,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  /* ── Project list sidebar ─────────────────────────────────────────────── */
   function renderProjectList() {
     if (!allProjects.length) {
       elements.list.innerHTML = `<div class="muted" style="padding:16px;">No projects found yet.</div>`;
@@ -100,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     elements.list.innerHTML = '';
-    const sorted = [...allProjects].sort((a, b) => (b.updated_at || 0) - (a.updated_at || 0));
+    const sorted = [...allProjects].sort((a, b) => (new Date(b.updated_at || 0)) - (new Date(a.updated_at || 0)));
 
     sorted.forEach(proj => {
       const div = document.createElement('div');
@@ -127,16 +148,25 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.emptyState.style.display = 'none';
     elements.details.style.display = 'block';
     elements.title.textContent = proj.project_name || 'Untitled Project';
+    
+    // Set Diagram Studio link
+    if (elements.btnOpenStudio) {
+      elements.btnOpenStudio.href = `/diagrams?project=${encodeURIComponent(proj.project_name)}`;
+    }
+
+    // Set Loading state for stats
+    elements.statDiagrams.closest('.stat-card').classList.add('is-loading');
+    elements.statVersions.closest('.stat-card').classList.add('is-loading');
 
     // Summary
     if (proj.summary?.problem_statement || proj.summary?.features?.length) {
       let html = '';
       if (proj.summary.problem_statement)
-        html += `<div style="margin-bottom:16px;"><strong>Problem:</strong> ${escHtml(proj.summary.problem_statement)}</div>`;
+        html += `<div style="margin-bottom:16px;"><strong>Problem Statement:</strong><p style="margin-top:8px; color:var(--text-secondary);">${escHtml(proj.summary.problem_statement)}</p></div>`;
       if (proj.summary.features?.length) {
-        html += `<div>${proj.summary.features.map(f =>
+        html += `<div style="margin-top:20px;"><strong>Key Features:</strong><div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:8px;">${proj.summary.features.map(f =>
           `<span class="summary-feature">${escHtml(f.title || 'Feature')}</span>`
-        ).join('')}</div>`;
+        ).join('')}</div></div>`;
       }
       elements.summary.innerHTML = html;
     } else {
@@ -147,6 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const docs = allDocuments.filter(d => d.project_name === proj.project_name);
     elements.srsList.innerHTML = '';
     elements.srsEmpty.style.display = docs.length ? 'none' : 'block';
+    elements.statDocs.textContent = docs.length;
+    
     docs.forEach(doc => {
       const dateStr = new Date(doc.created_at * 1000).toLocaleDateString();
       const card = document.createElement('div');
@@ -159,13 +191,20 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="doc-actions">
           <a class="btn btn-link" href="/api/download-srs/${doc.id}" download>Download</a>
-          <a class="btn btn-primary" href="/document-navigator?doc_id=${doc.id}" style="font-size: 0.75rem; padding: 4px 8px;">Chat</a>
+          <a class="btn btn-primary" href="/document-navigator?doc_id=${doc.project_name}" style="font-size: 0.75rem; padding: 4px 8px;">Chat</a>
         </div>`;
       elements.srsList.appendChild(card);
     });
 
+    // Reset tabs to overview when changing project
+    const overviewTab = elements.tabButtons[0];
+    if (overviewTab) overviewTab.click();
+
     // Diagrams
-    loadDiagrams(proj.project_name);
+    await loadDiagrams(proj.project_name);
+    
+    // History
+    await loadHistory(proj.project_name);
   }
 
   /* ── Load & render diagrams ───────────────────────────────────────────── */
@@ -183,6 +222,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const diagrams = await res.json();
 
       elements.diagramsGrid.innerHTML = '';
+      elements.statDiagrams.textContent = diagrams.length;
+      elements.statDiagrams.closest('.stat-card').classList.remove('is-loading');
 
       if (!diagrams.length) {
         elements.diagramsEmpty.style.display = 'block';
@@ -201,7 +242,6 @@ document.addEventListener('DOMContentLoaded', () => {
           e.preventDefault();
           if (v && v.svg_path) openDiagramModal(d.project_name, v.svg_path);
         };
-        card.style.textDecoration = 'none';
 
         card.innerHTML = `
           <div class="diagram-preview-thumb" id="${thumbId}">
@@ -215,44 +255,107 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>`;
 
         elements.diagramsGrid.appendChild(card);
-
-        // Render mermaid thumbnail with stagger so cards paint first
         if (v?.mermaid_code) {
           const thumbEl = document.getElementById(thumbId);
-          if (thumbEl) {
-            setTimeout(() => renderThumb(thumbEl, v.mermaid_code), i * 80);
-          }
+          if (thumbEl) setTimeout(() => renderThumb(thumbEl, v.mermaid_code), i * 80);
         }
       });
-
     } catch (e) {
+      elements.statDiagrams.closest('.stat-card').classList.remove('is-loading');
       elements.diagramsGrid.innerHTML = '<div class="docs-error">Error loading diagrams.</div>';
     }
   }
 
-  /* ── Generate diagram form ────────────────────────────────────────────── */
-  elements.form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!currentProject) return;
+  /* ── Load & render history ───────────────────────────────────────────── */
+  async function loadHistory(projectName) {
+    elements.historyList.innerHTML = '<div class="muted" style="padding:8px;">Loading history…</div>';
+    elements.historyEmpty.style.display = 'none';
 
-    const payload = {
-      project_name: currentProject.project_name,
-      prompt: elements.diagramPrompt.value.trim(),
-      diagram_type: elements.diagramType.value,
-    };
-    if (!payload.prompt) return;
+    try {
+      const res = await fetch(`/upgrade/generated/${encodeURIComponent(projectName)}/history`);
+      if (!res.ok) throw new Error('Fetch history failed');
+      const data = await res.json();
+      const versions = (data.versions || []).slice().reverse(); // newest first
+      
+      elements.historyList.innerHTML = '';
+      elements.statVersions.textContent = versions.length;
+      elements.statVersions.closest('.stat-card').classList.remove('is-loading');
 
-    elements.btnGenerate.disabled = true;
-    elements.btnGenerate.textContent = 'Navigating…';
+      if (!versions.length) {
+        elements.historyEmpty.style.display = 'block';
+        return;
+      }
 
-    const params = new URLSearchParams({
-      project: payload.project_name,
-      type: payload.diagram_type,
-      prompt: payload.prompt
-    });
+      versions.forEach((v, idx) => {
+        const date = v.timestamp ? new Date(v.timestamp).toLocaleString() : 'Recently';
+        const isLatest = idx === 0;
+        
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        item.innerHTML = `
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+              <strong style="color:var(--text-primary);">Version ${v.version}</strong>
+              ${isLatest ? '<span class="summary-feature" style="margin:0; font-size:0.65rem; padding:2px 6px;">Active</span>' : ''}
+            </div>
+            <div style="font-size:0.85rem; color:var(--text-secondary);">${escHtml(v.comment || 'Automatic update')}</div>
+            <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:4px;">${date}</div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <a href="/upgrade/generated/${encodeURIComponent(projectName)}/download-version/${v.version}" class="btn btn-link" style="font-size:0.8rem;">Download</a>
+            ${!isLatest ? `<button class="btn btn-outline btn-restore" data-version="${v.version}" style="font-size:0.8rem; padding:4px 10px;">Restore</button>` : ''}
+          </div>
+        `;
+        
+        const restoreBtn = item.querySelector('.btn-restore');
+        if (restoreBtn) {
+          restoreBtn.addEventListener('click', () => {
+            pendingRestoreVersion = v.version;
+            elements.restoreModal.style.display = 'flex';
+          });
+        }
+        
+        elements.historyList.appendChild(item);
+      });
+    } catch (e) {
+      elements.statVersions.closest('.stat-card').classList.remove('is-loading');
+      elements.historyList.innerHTML = '<div class="docs-error">Error loading history.</div>';
+    }
+  }
 
-    window.location.href = `/diagrams?${params.toString()}`;
-  });
+  /* ── Restore Logic ───────────────────────────────────────────────────── */
+  elements.btnCancelRestore.onclick = () => {
+    elements.restoreModal.style.display = 'none';
+    pendingRestoreVersion = null;
+  };
+
+  elements.btnConfirmRestore.onclick = async () => {
+    if (!currentProject || !pendingRestoreVersion) return;
+    
+    elements.btnConfirmRestore.disabled = true;
+    elements.btnConfirmRestore.textContent = 'Restoring...';
+    
+    try {
+      const res = await fetch(`/upgrade/generated/${encodeURIComponent(currentProject.project_name)}/restore`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ version: pendingRestoreVersion }),
+      });
+      
+      if (!res.ok) throw new Error('Restore failed');
+      
+      elements.restoreModal.style.display = 'none';
+      alert(`Project successfully restored to version ${pendingRestoreVersion}`);
+      await selectProject(currentProject); // Refresh everything
+    } catch (err) {
+      alert(`Error: ${err.message}`);
+    } finally {
+      elements.btnConfirmRestore.disabled = false;
+      elements.btnConfirmRestore.textContent = 'Yes, Restore';
+      pendingRestoreVersion = null;
+    }
+  };
+
 
   /* ── Diagram Viewer Modal ─────────────────────────────────────────────── */
   const diagramModal = document.getElementById('diagram-modal');
@@ -286,11 +389,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function relativeTime(isoString) {
     if (!isoString) return 'unknown';
-    const date = new Date(isoString + 'Z');
+    const date = new Date(isoString.endsWith('Z') ? isoString : isoString + 'Z');
     const diffDays = Math.round((date - new Date()) / 86400000);
     if (diffDays === 0) return 'today';
     return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(diffDays, 'day');
   }
 
   init();
-});
+});

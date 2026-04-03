@@ -100,7 +100,7 @@ async def get_my_documents(user=Depends(require_user)):
     for file in sorted(raw_files, key=os.path.getmtime, reverse=True):
         stat = file.stat()
         # stem e.g. "MyProject_SRS" → project name "MyProject"
-        project_name = file.stem.removesuffix("_SRS").replace("_", " ")
+        project_name = file.stem.removesuffix("_SRS")
 
         documents.append({
             "id": file.stem,
