@@ -1,0 +1,48 @@
+flowchart TD
+    A[User] -->|Login| B[Login Page]
+    B -->|Valid Credentials| C[Dashboard]
+    B -->|Invalid Credentials| D[Error Message]
+    C -->|Search Book| E[Book Search]
+    C -->|View Book| F[Book Details]
+    C -->|Add Book| G[Add Book Form]
+    C -->|Edit Book| H[Edit Book Form]
+    C -->|Delete Book| I[Delete Book Confirmation]
+    J[CSV/Excel Upload] -->|Upload File| K[File Processor]
+    K -->|Process File| L[Data Import]
+    M[Role-Based Access Control] -->|Check Role| N[Access Granted]
+    M -->|Check Role| O[Access Denied]
+    P[Automated Email Notifications] -->|Send Email| Q[Email Service]
+    R[Data Visualization and Reporting] -->|Generate Report| S[Report Generator]
+    T[System Logging and Monitoring] -->|Log Event| U[Log Storage]
+    V[User Profile Management] -->|Update Profile| W[Profile Editor]
+    X[Real-time Data Processing] -->|Process Data| Y[Data Processor]
+    subgraph System Components
+    C
+    E
+    F
+    G
+    H
+    I
+    end
+    subgraph External Interfaces
+    J
+    K
+    L
+    Q
+    S
+    U
+    end
+    subgraph Security and Access Control
+    M
+    N
+    O
+    end
+    subgraph Data Management
+    R
+    X
+    Y
+    end
+    subgraph User Management
+    V
+    W
+    end

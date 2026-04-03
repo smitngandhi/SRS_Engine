@@ -68,32 +68,6 @@
           </select>
         </div>
 
-        <!-- Diagram type -->
-        <div style="margin-top:14px;">
-          <label class="ctrl-label">Diagram Type</label>
-          <div class="type-grid">
-            <button class="type-chip active" data-type="flowchart">
-              <span class="type-chip-icon"></span>
-              <span class="type-chip-label">Flowchart</span>
-            </button>
-            <button class="type-chip" data-type="sequence">
-              <span class="type-chip-icon"></span>
-              <span class="type-chip-label">Sequence</span>
-            </button>
-            <button class="type-chip" data-type="erd">
-              <span class="type-chip-icon"></span>
-              <span class="type-chip-label">ER Diagram</span>
-            </button>
-            <button class="type-chip" data-type="class">
-              <span class="type-chip-icon"></span>
-              <span class="type-chip-label">Class</span>
-            </button>
-            <button class="type-chip" data-type="custom" style="grid-column: 1 / -1;">
-              <span class="type-chip-icon"></span>
-              <span class="type-chip-label">Custom / Auto</span>
-            </button>
-          </div>
-        </div>
 
         <!-- Prompt -->
         <div>
@@ -201,6 +175,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://unpkg.com/panzoom@9.4.3/dist/panzoom.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <script src="{{ url_for('static', path='diagram_studio.js') }}"></script>
 {% endblock %}

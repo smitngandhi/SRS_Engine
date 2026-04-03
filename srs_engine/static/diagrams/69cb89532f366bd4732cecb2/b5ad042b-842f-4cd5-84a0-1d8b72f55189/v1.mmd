@@ -1,0 +1,101 @@
+classDiagram
+    class User {}
+        +String username
+        +String password
+        +login()
+        +logout()
+    }
+    class Librarian {}
+        +String name
+        +manageBooks()
+        +trackBookStatus()
+    }
+    class LibraryAdministrator {}
+        +String name
+        +manageUsers()
+        +manageRoles()
+    }
+    class Book {}
+        +String title
+        +String author
+        +String status
+    }
+    class Dashboard {}
+        +displayAnalytics()
+        +displayBookList()
+    }
+    class Role {}
+        +String name
+        +String description
+    }
+    User <|-- Librarian
+    User <|-- LibraryAdministrator
+    Librarian *-- Book
+    LibraryAdministrator *-- User
+    LibraryAdministrator *-- Role
+    Dashboard o-- Book
+    Role o-- User
+    class SystemLogging {}
+        +logEvents()
+    }
+    class SystemMonitoring {}
+        +monitorSystem()
+    }
+    SystemLogging *-- SystemMonitoring
+    class DataVisualization {}
+        +visualizeData()
+    }
+    class Reporting {}
+        +generateReports()
+    }
+    DataVisualization *-- Reporting
+    class PredictiveModel {}
+        +trainModel()
+        +evaluateModel()
+    }
+    PredictiveModel *-- DataVisualization
+    class AutomatedEmail {}
+        +sendEmails()
+    }
+    AutomatedEmail *-- User
+    class UserProfile {}
+        +manageProfile()
+    }
+    UserProfile *-- User
+    class RealTimeUpdates {}
+        +updateData()
+    }
+    RealTimeUpdates *-- Book
+    RealTimeUpdates *-- Dashboard
+    class Authentication {}
+        +authenticateUser()
+    }
+    Authentication *-- User
+    class Authorization {}
+        +authorizeUser()
+    }
+    Authorization *-- User
+    Authorization *-- Role
+    class CSVUpload {}
+        +uploadCSV()
+    }
+    CSVUpload *-- Book
+    class ExportReports {}
+        +exportReports()
+    }
+    ExportReports *-- Reporting
+    class System {}
+        +manageSystem()
+    }
+    System *-- SystemLogging
+    System *-- SystemMonitoring
+    System *-- DataVisualization
+    System *-- Reporting
+    System *-- PredictiveModel
+    System *-- AutomatedEmail
+    System *-- UserProfile
+    System *-- RealTimeUpdates
+    System *-- Authentication
+    System *-- Authorization
+    System *-- CSVUpload
+    System *-- ExportReports

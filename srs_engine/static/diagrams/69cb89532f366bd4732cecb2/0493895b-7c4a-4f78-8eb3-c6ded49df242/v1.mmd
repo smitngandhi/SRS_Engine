@@ -1,0 +1,21 @@
+stateDiagram-v2
+[*] --> Unregistered : Initialize
+Unregistered --> Registered : Register
+Registered --> LoggedIn : Login
+LoggedIn --> Dashboard : View Dashboard
+Dashboard --> SearchBooks : Search Books
+Dashboard --> UploadBooks : Upload Books
+Dashboard --> ViewReports : View Reports
+Dashboard --> ManageProfile : Manage Profile
+Dashboard --> Logout : Logout
+Logout --> Unregistered : Unregistered
+UploadBooks --> BooksUploaded : Books Uploaded
+SearchBooks --> BooksFound : Books Found
+ViewReports --> ReportsViewed : Reports Viewed
+ManageProfile --> ProfileUpdated : Profile Updated
+BooksUploaded --> Dashboard : Return to Dashboard
+BooksFound --> Dashboard : Return to Dashboard
+ReportsViewed --> Dashboard : Return to Dashboard
+ProfileUpdated --> Dashboard : Return to Dashboard
+[*] --> Deleted : Delete Account
+Deleted --> [*] : End Session

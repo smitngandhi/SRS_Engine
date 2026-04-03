@@ -1,0 +1,18 @@
+erDiagram
+    USER { string id PK }
+    LIBRARIAN { string id PK }
+    LIBRARY_ADMIN { string id PK }
+    BOOK { string isbn PK }
+    BOOK_CATEGORY { string id PK }
+    BORROWER { string id PK }
+    USER ||--|| LIBRARIAN : "is"
+    USER ||--|| LIBRARY_ADMIN : "is"
+    LIBRARIAN ||--|{ BOOK : "manages"
+    LIBRARY_ADMIN ||--|{ BOOK : "oversees"
+    BOOK }|--|{ BOOK_CATEGORY : "belongs to"
+    BORROWER }o--|| BOOK : "borrows"
+    USER ||--|| BORROWER : "is"
+    LIBRARIAN ||--|| BOOK_CATEGORY : "maintains"
+    LIBRARY_ADMIN ||--|| BOOK_CATEGORY : "monitors"
+    BOOK ||--|{ USER : "is borrowed by"
+    BOOK_CATEGORY ||--|| BOOK : "contains"

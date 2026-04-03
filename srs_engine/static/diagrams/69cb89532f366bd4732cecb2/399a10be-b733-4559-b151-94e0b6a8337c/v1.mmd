@@ -1,0 +1,63 @@
+classDiagram
+    class User {}
+        +String username
+        +String password
+        +register()
+        +login()
+    }
+    class Librarian {}
+        +manageBookInventory()
+        +trackBookStatus()
+        +searchBook()
+    }
+    class LibraryAdministrator {}
+        +manageUserAccounts()
+        +configureSystemSettings()
+    }
+    class Book {}
+        +String title
+        +String author
+        +String status
+    }
+    class Dashboard {}
+        +displayRealTimeAnalytics()
+        +uploadCSVExcelFile()
+    }
+    class SystemLogger {}
+        +logSystemEvents()
+        +monitorSystemPerformance()
+    }
+    class Authenticator {}
+        +authenticateUser()
+    }
+    User <|-- Librarian
+    User <|-- LibraryAdministrator
+    Librarian *-- Book
+    LibraryAdministrator *-- User
+    Dashboard o-- SystemLogger
+    Authenticator *-- User
+    class DataVisualizer {}
+        +visualizeData()
+        +generateReports()
+    }
+    class EmailNotifier {}
+        +sendEmailNotifications()
+    }
+    Dashboard *-- DataVisualizer
+    Dashboard *-- EmailNotifier
+    class RoleBasedAccessController {}
+        +controlAccess()
+    }
+    LibraryAdministrator *-- RoleBasedAccessController
+    class UserProfileManager {}
+        +manageUserProfile()
+    }
+    User *-- UserProfileManager
+    class RealTimeDataProcessor {}
+        +processRealTimeData()
+    }
+    Dashboard *-- RealTimeDataProcessor
+    class PDFReportExporter {}
+        +exportReportToPDF()
+    }
+    DataVisualizer *-- PDFReportExporter

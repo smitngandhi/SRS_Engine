@@ -1,93 +1,129 @@
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional
+"""
+schemas/diagram_schemas/diagram_schemas.py
+──────────────────────────────────────────
+Pydantic schemas for the Diagram Studio API.
 
+v2: Added detail_level, state/gantt/mindmap diagram types, server-side
+    verification fields.
+"""
+
+from datetime import datetime
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
-class DiagramGenerateRequest(BaseModel):
-    project_name: str = Field(..., min_length=1, max_length=120)
-    prompt: str = Field(..., min_length=5, max_length=2000)
-    diagram_type: str = Field(default="flowchart")  # flowchart | sequence | erd | class | custom
-    # Context Selector: optional list of parsed document IDs to use as context
-    selected_document_ids: list[str] = Field(default_factory=list)
-    # Retry loop: previous Mermaid parse error to feed back to the LLM
-    error_feedback: str = Field(default="")
+# ── Output schemas ─────────────────────────────────────────────────────────────
 
-
-class DiagramRegenerateRequest(BaseModel):
-    prompt: str = Field(..., min_length=5, max_length=2000)
-    diagram_type: str = Field(default="flowchart")
-    # Context Selector: optional list of parsed document IDs to use as context
-    selected_document_ids: list[str] = Field(default_factory=list)
-    # Retry loop: previous Mermaid parse error to feed back to the LLM
-    error_feedback: str = Field(default="")
-
-
-
-class DiagramEditRequest(BaseModel):
-    mermaid_code: str = Field(..., min_length=3)
-
-
-class DiagramVersionOut(BaseModel):
+class DiagramVersion(BaseModel):
     version_id: str
     version_number: int
     prompt: str
     mermaid_code: str
     svg_path: str
-    created_at: datetime
+    created_at: str  # ISO-8601 string
+
+    @classmethod
+    def from_doc(cls, v: dict) -> "DiagramVersion":
+        return cls(
+            version_id=str(v.get("version_id", "")),
+            version_number=v.get("version_number", 1),
+            prompt=v.get("prompt", ""),
+            mermaid_code=v.get("mermaid_code", ""),
+            svg_path=v.get("svg_path", ""),
+            created_at=_iso(v.get("created_at")),
+        )
 
 
 class DiagramOut(BaseModel):
     diagram_id: str
     project_name: str
     diagram_type: str
-    created_at: datetime
-    updated_at: datetime
-    versions: list[DiagramVersionOut]
-    current_version: Optional[DiagramVersionOut] = None
+    prompt: str
+    current_version: Optional[DiagramVersion]
+    versions: List[DiagramVersion]
+    created_at: str
+    updated_at: str
 
     @classmethod
     def from_doc(cls, doc: dict) -> "DiagramOut":
-        """
-        Build a DiagramOut from a raw MongoDB document.
+        if doc is None:
+            raise ValueError("Cannot build DiagramOut from None document")
 
-        svg_path stored in MongoDB is now always a public URL
-        (e.g. /static/diagrams/user/diag/v1.svg) so no path
-        transformation is required here.
-
-        If you have OLD documents in the DB that still contain
-        filesystem paths, the fallback block below converts them.
-        """
-        versions = []
-        for v in doc.get("versions", []):
-            sp = v.get("svg_path", "")
-
-            # ── Backwards-compat: convert legacy filesystem paths → URL ─────────
-            # New documents always store a URL, so this block is a no-op for them.
-            if sp and not sp.startswith("/static"):
-                # Normalise separators first (Windows backslashes)
-                sp = sp.replace("\\", "/")
-                # Strip leading './'
-                if sp.startswith("./"):
-                    sp = sp[2:]
-                # Convert  srs_engine/static/diagrams/...  → /static/diagrams/...
-                if "srs_engine/static" in sp:
-                    sp = "/static" + sp.split("srs_engine/static")[1]
-                elif not sp.startswith("/"):
-                    sp = "/" + sp
-
-            v["svg_path"] = sp
-            versions.append(DiagramVersionOut(**v))
-
+        versions = [DiagramVersion.from_doc(v) for v in doc.get("versions", [])]
         current = versions[-1] if versions else None
+
         return cls(
-            diagram_id=doc["diagram_id"],
-            project_name=doc["project_name"],
-            diagram_type=doc.get("diagram_type", "custom"),
-            created_at=doc["created_at"],
-            updated_at=doc["updated_at"],
-            versions=versions,
+            diagram_id=str(doc.get("diagram_id", "")),
+            project_name=doc.get("project_name", ""),
+            diagram_type=doc.get("diagram_type", "flowchart"),
+            prompt=doc.get("prompt", ""),
             current_version=current,
+            versions=versions,
+            created_at=_iso(doc.get("created_at")),
+            updated_at=_iso(doc.get("updated_at")),
         )
+
+    def dict(self, **kwargs):  # noqa: A003
+        d = super().dict(**kwargs)
+        if self.current_version:
+            d["current_version"] = self.current_version.dict()
+        d["versions"] = [v.dict() for v in self.versions]
+        return d
+
+
+def _iso(dt) -> str:
+    if dt is None:
+        return ""
+    if isinstance(dt, datetime):
+        return (dt.isoformat() + "Z").replace("+00:00Z", "Z")
+    return str(dt)
+
+
+# ── Request schemas ────────────────────────────────────────────────────────────
+
+# Supported diagram types for technical projects
+VALID_DIAGRAM_TYPES = frozenset({
+    "flowchart",   # System / process flow
+    "sequence",    # API / service interaction
+    "erd",         # Database schema
+    "class",       # Object model / architecture
+    "state",       # State machine / lifecycle
+    "gantt",       # Project / sprint timeline
+    "mindmap",     # Feature / requirement map
+    "custom",      # Let the LLM pick the best type
+})
+
+# Detail levels control verbosity and node density
+VALID_DETAIL_LEVELS = frozenset({"brief", "standard", "detailed", "comprehensive"})
+
+
+class DiagramGenerateRequest(BaseModel):
+    project_name: str = Field(..., min_length=1)
+    prompt: str = Field(..., min_length=1)
+    diagram_type: str = Field(default="flowchart")
+    detail_level: str = Field(
+        default="standard",
+        description="brief | standard | detailed | comprehensive",
+    )
+    selected_document_ids: List[str] = Field(default_factory=list)
+    error_feedback: str = Field(default="")
+
+    class Config:
+        extra = "allow"   # forward-compatibility: ignore unknown fields
+
+
+class DiagramRegenerateRequest(BaseModel):
+    prompt: str = Field(..., min_length=1)
+    diagram_type: str = Field(default="flowchart")
+    detail_level: str = Field(default="standard")
+    selected_document_ids: List[str] = Field(default_factory=list)
+    error_feedback: str = Field(default="")
+
+    class Config:
+        extra = "allow"
+
+
+class DiagramEditRequest(BaseModel):
+    mermaid_code: str = Field(..., min_length=1)
