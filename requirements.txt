@@ -50,3 +50,6 @@ aio_pika
 faiss-cpu
 sentence-transformers
 jsonschema
+
+
+code-review-graph
