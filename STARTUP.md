@@ -53,7 +53,7 @@ SMTP_TO_EMAIL        = your_email@example.com
 
 ## Starting the Application
 
-Open **three separate terminals** and run the following commands **in order**.  
+Open **three separate terminals** and run the following commands **in order**.
 Wait for each step to fully start before moving to the next.
 
 ---
@@ -65,6 +65,7 @@ docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:4-manag
 ```
 
 **Wait for this line before proceeding:**
+
 ```
 Server startup complete
 ```
@@ -83,6 +84,7 @@ uvicorn srs_engine.main:app --reload --port 8000
 ```
 
 **Wait for these lines before proceeding:**
+
 ```
 Startup | Initializing MongoDB connection
 Startup | Connecting to RabbitMQ
@@ -102,6 +104,7 @@ python -m srs_engine.worker_manager
 ```
 
 **You should see:**
+
 ```
 Worker | Starting up | queue=srs_generation
 Consumer | Connecting | host=localhost port=5672 queue=srs_generation
@@ -114,18 +117,18 @@ Consumer | Waiting for jobs | queue=srs_generation
 
 ## What Happens When You Generate an SRS
 
-| Step | What happens | Where to see it |
-|------|-------------|-----------------|
-| 1 | User submits the SRS form | Browser redirects to `/jobs` |
-| 2 | FastAPI creates a job in MongoDB and publishes to RabbitMQ | Terminal 2 logs |
-| 3 | Worker picks up the job | Terminal 3 logs |
-| 4 | Phase 1 — 5 AI agents run in parallel | Job card progress bar: 20% |
-| 5 | 60 second wait (API rate limit) | Progress pauses at ~35% |
-| 6 | Phase 2 — Glossary + Assumptions agents | Progress: 55–60% |
-| 7 | 4 Mermaid diagrams rendered | Progress: 75% |
-| 8 | Word document (.docx) built | Progress: 90% |
-| 9 | Job marked complete in MongoDB | Progress: 100%, download button appears |
-| 10 | Email with .docx attachment sent to user | User inbox |
+| Step | What happens                                               | Where to see it                         |
+| ---- | ---------------------------------------------------------- | --------------------------------------- |
+| 1    | User submits the SRS form                                  | Browser redirects to `/jobs`          |
+| 2    | FastAPI creates a job in MongoDB and publishes to RabbitMQ | Terminal 2 logs                         |
+| 3    | Worker picks up the job                                    | Terminal 3 logs                         |
+| 4    | Phase 1 — 5 AI agents run in parallel                     | Job card progress bar: 20%              |
+| 5    | 60 second wait (API rate limit)                            | Progress pauses at ~35%                 |
+| 6    | Phase 2 — Glossary + Assumptions agents                   | Progress: 55–60%                       |
+| 7    | 4 Mermaid diagrams rendered                                | Progress: 75%                           |
+| 8    | Word document (.docx) built                                | Progress: 90%                           |
+| 9    | Job marked complete in MongoDB                             | Progress: 100%, download button appears |
+| 10   | Email with .docx attachment sent to user                   | User inbox                              |
 
 Total generation time: **~3–4 minutes** per document.
 
@@ -150,13 +153,13 @@ python -m srs_engine.worker
 
 ## Monitoring
 
-| Tool | URL | What to watch |
-|------|-----|---------------|
-| Job Tracker (UI) | http://localhost:8000/jobs | Live progress cards for all jobs |
-| RabbitMQ UI | http://localhost:15672 | Queue depth, message rates |
-| MongoDB Compass | localhost:27017 | `srs_engine` → `srs_jobs` collection |
-| FastAPI logs | Terminal 2 | HTTP requests, publish confirmations |
-| Worker logs | Terminal 3 | Pipeline phases, completion, errors |
+| Tool             | URL                        | What to watch                             |
+| ---------------- | -------------------------- | ----------------------------------------- |
+| Job Tracker (UI) | http://localhost:8000/jobs | Live progress cards for all jobs          |
+| RabbitMQ UI      | http://localhost:15672     | Queue depth, message rates                |
+| MongoDB Compass  | localhost:27017            | `srs_engine` → `srs_jobs` collection |
+| FastAPI logs     | Terminal 2                 | HTTP requests, publish confirmations      |
+| Worker logs      | Terminal 3                 | Pipeline phases, completion, errors       |
 
 ---
 

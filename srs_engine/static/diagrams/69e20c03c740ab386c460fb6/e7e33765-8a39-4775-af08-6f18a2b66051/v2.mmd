@@ -1,0 +1,57 @@
+sequenceDiagram
+actor User
+participant WebServer
+participant API
+participant Database2
+participant FileStorage
+participant EmailService
+participant Authentication
+participant LoginPage
+participant Dashboard
+
+User->>WebServer: Access Website
+WebServer->>User: Serves UI
+User->>LoginPage: Logs In
+LoginPage->>Authentication: Validates Credentials
+Authentication->>API: Auth Token
+API->>Database: User Data
+Database-->>API: User Data
+API-->>Authentication: Auth Response
+Authentication-->>LoginPage: Login Success
+LoginPage-->>User: Redirect to Dashboard
+User->>Dashboard: View Tasks
+Dashboard->>API: Get Tasks
+API->>Database: Task Data
+Database-->>API: Task Data
+API-->>Dashboard: Task List
+Dashboard-->>User: Display Tasks
+User->>Dashboard: Create Task
+Dashboard->>API: Create Task
+API->>Database: Create Task
+Database-->>API: Task Created
+API-->>Dashboard: Task Created
+Dashboard-->>User: Task Created
+User->>Dashboard: Update Task
+Dashboard->>API: Update Task
+API->>Database: Update Task
+Database-->>API: Task Updated
+API-->>Dashboard: Task Updated
+Dashboard-->>User: Task Updated
+User->>Dashboard: Delete Task
+Dashboard->>API: Delete Task
+API->>Database: Delete Task
+Database-->>API: Task Deleted
+API-->>Dashboard: Task Deleted
+Dashboard-->>User: Task Deleted
+User->>Dashboard: Upload File
+Dashboard->>API: Upload File
+API->>FileStorage: Upload File
+FileStorage-->>API: File Uploaded
+API-->>Dashboard: File Uploaded
+Dashboard-->>User: File Uploaded
+User->>Dashboard: Send Notification
+Dashboard->>API: Send Notification
+API->>EmailService: Send Email
+EmailService-->>API: Email Sent
+API-->>Dashboard: Notification Sent
+Dashboard-->>User: Notification Sent

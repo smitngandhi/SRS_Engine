@@ -86,7 +86,6 @@ class UserRepo:
             "google_sub": google_sub,
             "email": email,
             "display_name": display_name or email or "Google User",
-            "username": None,
             "password_hash": None,
             "is_active": True,
             "created_at": _now(),

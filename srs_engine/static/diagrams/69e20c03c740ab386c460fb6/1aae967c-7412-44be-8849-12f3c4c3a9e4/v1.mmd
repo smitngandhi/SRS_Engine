@@ -1,0 +1,52 @@
+sequenceDiagram
+actor User
+participant Frontend
+participant Backend
+participant Database
+participant GoogleADK
+participant AuthService
+participant LoadBalancer
+participant Server
+
+User->>Frontend: Login Request
+Frontend->>AuthService: Validate Credentials
+AuthService->>Database: Check Credentials
+Database-->>AuthService: Valid Credentials
+AuthService-->>Frontend: Auth Token
+Frontend-->>User: Login Success
+
+User->>Frontend: Upload CSV/Excel File
+Frontend->>Backend: Process File
+Backend->>Database: Store Data
+Database-->>Backend: Data Stored
+Backend-->>Frontend: Success
+Frontend-->>User: File Uploaded
+
+User->>Frontend: Request Dashboard
+Frontend->>Backend: Get Analytics
+Backend->>Database: Get Data
+Database-->>Backend: Data
+Backend->>GoogleADK: Get Predictions
+GoogleADK-->>Backend: Predictions
+Backend-->>Frontend: Analytics
+Frontend-->>User: Dashboard
+
+User->>Frontend: Request Report
+Frontend->>Backend: Generate Report
+Backend->>Database: Get Data
+Database-->>Backend: Data
+Backend-->>Frontend: Report
+Frontend-->>User: Report
+
+LoadBalancer->>Server: Route Request
+Server->>Backend: Process Request
+Backend->>Database: Get Data
+Database-->>Backend: Data
+Backend-->>Server: Response
+Server-->>LoadBalancer: Response
+LoadBalancer-->>User: Response
+
+AuthService->>GoogleADK: Validate Token
+GoogleADK-->>AuthService: Valid Token
+AuthService-->>Frontend: Auth Token
+Frontend-->>User: Login Success
