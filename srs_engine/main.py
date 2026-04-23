@@ -87,7 +87,8 @@ def create_app() -> FastAPI:
         SessionMiddleware,
         secret_key=settings.session_secret_key,
         same_site="lax",
-        https_only=settings.production,  # BUG FIX #2: was hardcoded False
+        https_only=settings.production,
+        max_age=86400,  # 24 hours
     )
 
     app.mount("/static", StaticFiles(directory="srs_engine/static"), name="static")

@@ -21,6 +21,7 @@ redis[hiredis]==7.4.0
 # ─── Data Validation ──────────────────────────────────────────
 pydantic==2.12.5
 pydantic-settings==2.8.1
+faiss-cpu
 typing_extensions==4.14.1
 
 # ─── Auth & Sessions ──────────────────────────────────────────

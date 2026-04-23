@@ -321,6 +321,7 @@ async def generate_srs(
             project_name = inputs["project_identity"]["project_name"]
             author_list = inputs["project_identity"]["author"]
             organization_name = inputs["project_identity"]["organization"]
+            system_context = inputs.get("system_context", {})
 
             logger.info(f"generate_srs | Project info | project={project_name} | org={organization_name}")
 
@@ -496,7 +497,7 @@ async def generate_srs(
                         # Construct and save meta
                         meta = {
                             "project_name": project_name,
-                            "domain": "technical",
+                            "domain": system_context.get("domain", "Technical"),
                             "authors": author_list,
                             "organization": organization_name,
                             "generated_at": datetime.now(timezone.utc).isoformat() + "Z",

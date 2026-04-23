@@ -235,10 +235,7 @@ async def _notify_user(
         await send_srs_complete_email(
             settings=settings,
             to_email=user_email,
-            user_display_name=user_display_name,
             project_name=project_name,
-            document_path=generated_path,
-            db=db,
         )
 
     except Exception as exc:

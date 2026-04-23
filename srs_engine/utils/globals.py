@@ -332,7 +332,7 @@ def render_mermaid_png(mermaid_code: str, output_png: Path):
         "-t", "forest",
         "-b", "white",
         "-s", "2",
-        "--puppeteer-config", "/app/puppeteer-config.json"
+        "--puppeteerConfigFile", "/app/puppeteer-config.json"
     ]
 
     try:

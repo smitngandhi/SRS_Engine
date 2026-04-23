@@ -54,8 +54,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the entire project
 COPY . .
 
-# Create a dummy health check script to keep HF Space alive
-RUN echo "from fastapi import FastAPI; import uvicorn; app = FastAPI(); @app.get('/')\ndef health(): return {'status': 'worker_running'}\nif __name__ == '__main__': uvicorn.run(app, host='0.0.0.0', port=7860)" > hf_health_check.py
+# Create a proper health check script
+RUN printf "from fastapi import FastAPI\nimport uvicorn\napp = FastAPI()\n@app.get('/')\nasync def health():\n    return {'status': 'worker_running'}\nif __name__ == '__main__':\n    uvicorn.run(app, host='0.0.0.0', port=7860)\n" > hf_health_check.py
 
 # Create a startup script that runs both the worker and the health check
 RUN echo "#!/bin/bash\npython hf_health_check.py & python -m srs_engine.worker\nwait" > start_hf.sh
