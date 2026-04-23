@@ -5,15 +5,42 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from srs_engine.core.db.job_model import JobStatus
 
 def format_ts(dt: Any) -> str:
-    """Helper to format datetime into human readable AM/PM string."""
-    from datetime import datetime
+    """Helper to format datetime into relative 'time ago' string."""
+    from datetime import datetime, timezone
     if not dt: return "Never"
+    
+    # Ensure dt is a datetime object
     if isinstance(dt, str):
         try:
             dt = datetime.fromisoformat(dt.replace('Z', '+00:00'))
         except:
             return dt
-    return dt.strftime("%b %d, %I:%M %p")
+            
+    # Ensure dt is timezone-aware (assume UTC if not specified)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+        
+    now = datetime.now(timezone.utc)
+    diff = now - dt
+    
+    # Calculate IST time (UTC + 5:30)
+    from datetime import timedelta
+    ist_time = dt + timedelta(hours=5, minutes=30)
+    clock_str = ist_time.strftime("%I:%M %p")
+    
+    seconds = diff.total_seconds()
+    if seconds < 60:
+        return f"Just now ({clock_str})"
+    elif seconds < 3600:
+        mins = int(seconds // 60)
+        return f"{mins}m ago ({clock_str})"
+    elif seconds < 86400:
+        hours = int(seconds // 3600)
+        return f"{hours}h ago ({clock_str})"
+    else:
+        days = int(seconds // 86400)
+        if days == 1: return f"Yesterday ({clock_str})"
+        return ist_time.strftime("%b %d, %I:%M %p")
 
 class TrackingService:
     def __init__(self, db: AsyncIOMotorDatabase):
