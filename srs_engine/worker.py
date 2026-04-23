@@ -23,6 +23,7 @@ Scaling: MAX_WORKERS=1 enforced at worker_manager level (Groq 30k TPM limit).
 """
 
 import asyncio
+import json
 import types
 import logging
 from datetime import datetime, timedelta, timezone
