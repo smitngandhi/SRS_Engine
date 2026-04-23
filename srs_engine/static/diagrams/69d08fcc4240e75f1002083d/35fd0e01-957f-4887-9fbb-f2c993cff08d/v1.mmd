@@ -1,0 +1,47 @@
+flowchart TD
+A[User Registration] --> B[User Authentication]
+B --> C[Dashboard]
+C --> D[CSV/Excel Data File Upload]
+D --> E[Predictive Model Training and Evaluation]
+E --> F[Automated Email Notifications]
+F --> G[Role-Based Access Control]
+G --> H[Export Reports in PDF Format]
+H --> I[Real-time Data Visualization]
+I --> J[Data Quality Checks and Validation]
+J --> K[Customizable User Profiles]
+K --> L[Advanced Search Functionality]
+L --> M[System Activity Logging and Monitoring]
+M --> N[Database Storage]
+N --> O[API Data Retrieval]
+O --> P[Predictive Model]
+P --> Q[Reporting Engine]
+Q --> R[Email Server]
+R --> S[User Notification]
+S --> T[System Feedback]
+T --> C
+subgraph System Components
+C
+D
+E
+F
+G
+H
+I
+J
+K
+L
+M
+end
+subgraph External Interfaces
+N
+O
+P
+Q
+R
+end
+subgraph User Interactions
+A
+B
+S
+T
+end

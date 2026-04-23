@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Project Buckets | SpecForge AI{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', path='project_buckets.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='diagram_studio.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="buckets-layout">
+  <!-- LEFT PANEL: Project List -->
+  <aside class="buckets-sidebar">
+    <div class="sidebar-header">
+      <h2>Your Projects</h2>
+    </div>
+    <div id="project-list" class="project-list">
+      <div class="muted" style="padding: 16px;">Loading projects...</div>
+    </div>
+  </aside>
+
+  <!-- RIGHT PANEL: Project Details -->
+  <main class="buckets-main">
+    <div id="project-details" class="project-details" style="display: none;">
+      
+      <div class="detail-header">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <h1 id="detail-title">Project Name</h1>
+            <p id="detail-subtitle" class="muted" style="margin-top: 8px;">Unified Project Dashboard</p>
+          </div>
+          <div id="detail-actions">
+            <!-- Action buttons could go here -->
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <span class="stat-label">Total Documents</span>
+          <span class="stat-value" id="stat-docs-count">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Total Diagrams</span>
+          <span class="stat-value" id="stat-diagrams-count">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Versions Saved</span>
+          <span class="stat-value" id="stat-versions-count">0</span>
+        </div>
+      </div>
+
+      <div class="dashboard-tabs">
+        <button class="tab-btn active" data-tab="tab-overview">Overview</button>
+        <button class="tab-btn" data-tab="tab-srs">SRS Documents</button>
+        <button class="tab-btn" data-tab="tab-diagrams">Diagrams</button>
+        <button class="tab-btn" data-tab="tab-history">History & Versions</button>
+      </div>
+
+      <!-- Tab: Overview -->
+      <div id="tab-overview" class="tab-content active">
+        <div class="detail-section">
+          <h3>Project Summary</h3>
+          <div id="detail-summary" class="summary-box"></div>
+        </div>
+      </div>
+
+      <!-- Tab: SRS -->
+      <div id="tab-srs" class="tab-content">
+        <div class="detail-section">
+          <h3>Generated SRS Documents</h3>
+          <div id="detail-srs-list" class="docs-grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));"></div>
+          <div id="detail-srs-empty" class="muted" style="display: none;">No SRS documents found for this project.</div>
+        </div>
+      </div>
+
+      <!-- Tab: Diagrams -->
+      <div id="tab-diagrams" class="tab-content">
+        <div class="detail-section">
+          <h3>Generated Diagrams</h3>
+          <div id="detail-diagrams-grid" class="diagram-cards-grid"></div>
+          <div id="detail-diagrams-empty" class="muted" style="display: none; margin-bottom: 24px;">No diagrams found for this project.</div>
+          
+          <div class="glass-panel" style="padding: 32px; text-align: center; margin-top: 32px; border: 1px dashed var(--border);">
+            <div style="font-size: 2.5rem; margin-bottom: 16px;">🖊️</div>
+            <h4 style="margin-bottom: 8px;">Create More Diagrams</h4>
+            <p class="muted" style="margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto;">
+              Use the specialized Diagram Studio to create advanced flowcharts, ERDs, and sequence diagrams with full project context.
+            </p>
+            <a id="btn-open-studio" href="/diagrams" class="btn btn-primary" style="padding: 12px 24px;">
+              Open Diagram Studio
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: History -->
+      <div id="tab-history" class="tab-content">
+        <div class="detail-section">
+          <h3>Version History</h3>
+          <div id="detail-history-list" class="history-list"></div>
+          <div id="detail-history-empty" class="muted" style="display: none;">No version history found.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="project-empty-state" class="empty-state">
+      <div class="empty-icon">🗂️</div>
+      <h2>Select a project</h2>
+      <p class="muted">Choose a project from the left panel to view its unified dashboard including summary, documents, diagrams, and history.</p>
+    </div>
+  </main>
+</div>
+
+<!-- Restore Confirmation Modal -->
+<div id="restore-modal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:10000; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px);">
+  <div style="background:var(--bg-primary, #0f1117); border:1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius:12px; width:100%; max-width:450px; padding:32px; text-align:center; box-shadow:0 16px 48px rgba(0,0,0,0.5);">
+    <div style="font-size:3rem; margin-bottom:16px;">↩️</div>
+    <h3 style="margin-bottom:12px; font-size:1.5rem; color:#fff;">Restore Version?</h3>
+    <p class="muted" style="margin-bottom:24px; line-height:1.5;">This will overwrite your current active document with the selected version. This action cannot be easily undone.</p>
+    <div style="display:flex; gap:12px; justify-content:center;">
+      <button id="btn-cancel-restore" class="btn btn-outline" style="min-width:120px;">Cancel</button>
+      <button id="btn-confirm-restore" class="btn btn-primary" style="min-width:120px; background:var(--danger, #ef4444); border-color:var(--danger, #ef4444);">Yes, Restore</button>
+    </div>
+  </div>
+</div>
+
+<!-- Diagram Viewer Modal Overlay -->
+<div id="diagram-modal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px);">
+  <div style="background:var(--bg-primary, #0f1117); border:1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius:12px; width:100%; max-width:1000px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 16px 48px rgba(0,0,0,0.5);">
+    <div style="padding:16px 20px; border-bottom:1px solid var(--border-color, rgba(255,255,255,0.1)); display:flex; justify-content:space-between; align-items:center;">
+      <h3 id="modal-diagram-title" style="margin:0; font-size:1.1rem; color: #e2e8f0;">Diagram</h3>
+      <button id="modal-diagram-close" style="background:none; border:none; color:#94a3b8; font-size:1.5rem; cursor:pointer; line-height:1; padding:0;">&times;</button>
+    </div>
+    <div id="modal-diagram-content" style="flex:1; overflow:auto; padding:24px; display:flex; justify-content:center; align-items:center; min-height:400px; background:#090b10;">
+      <!-- SVG injected here -->
+    </div>
+    <div style="padding:16px 20px; border-top:1px solid var(--border-color, rgba(255,255,255,0.1)); display:flex; justify-content:flex-end; background:rgba(255,255,255,0.02);">
+      <a id="modal-diagram-download" class="btn btn-primary" href="#" download="diagram.svg" style="text-decoration:none;">⬇ Download SVG</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="{{ url_for('static', path='site.js') }}"></script>
+  <script src="{{ url_for('static', path='project_buckets.js') }}"></script>
+{% endblock %}

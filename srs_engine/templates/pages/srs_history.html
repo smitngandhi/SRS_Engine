@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Version History - SpecForge AI{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='generated_upgrader.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="history-container">
+    <div class="history-header">
+        <div>
+            <a href="/srs-generated-upgrader" class="gu-back-link">← Back to Projects</a>
+            <h1 class="project-name-display" id="projectName">Version History</h1>
+        </div>
+    </div>
+
+    <div id="versionList" class="version-list">
+        <!-- Versions will be loaded here -->
+        <div class="empty-state">Loading version history...</div>
+    </div>
+</div>
+
+<!-- Modal for Restore Confirmation -->
+<div id="restoreModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 450px; text-align: center;">
+        <h2>Restore Version?</h2>
+        <p>This will roll back your project to the selected state. Current unbuilt changes will be lost unless you built them first.</p>
+        <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px;">
+            <button class="gu-btn gu-btn-outline" onclick="closeRestoreModal()">Cancel</button>
+            <button class="gu-btn gu-btn-primary" id="confirmRestoreBtn">Yes, Restore</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='srs_history.js') }}"></script>
+{% endblock %}

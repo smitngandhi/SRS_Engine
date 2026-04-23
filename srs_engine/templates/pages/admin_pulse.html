@@ -1,0 +1,559 @@
+{% extends "base.html" %}
+
+{% block title %}System Pulse | SpecForge AI Admin{% endblock %}
+
+{% block content %}
+<section class="admin-container">
+    
+    <div class="admin-header">
+        <div class="header-main">
+            <div class="pulse-indicator"></div>
+            <div>
+                <h1>System Pulse</h1>
+                <p class="muted">Monitoring all activity on SpecForge AI Engine</p>
+            </div>
+        </div>
+        <div class="system-badge">
+            <span class="dot"></span> NODE: PRODUCTION-01
+        </div>
+    </div>
+
+    <!-- Global Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-glass-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-body">
+                <span class="stat-label">Beta Users</span>
+                <span class="stat-value">{{ stats.total_users | default(0) }} / 10</span>
+            </div>
+        </div>
+        <div class="stat-glass-card">
+            <div class="stat-icon">📄</div>
+            <div class="stat-body">
+                <span class="stat-label">Total Specs</span>
+                <span class="stat-value">{{ stats.total_jobs | default(0) }}</span>
+            </div>
+        </div>
+        <div class="stat-glass-card">
+            <div class="stat-icon" style="color: var(--accent);">⚡</div>
+            <div class="stat-body">
+                <span class="stat-label">Processing</span>
+                <span class="stat-value" style="color: var(--accent);">{{ stats.active_jobs | default(0) }}</span>
+            </div>
+        </div>
+        <div class="stat-glass-card">
+            <div class="stat-icon" style="color: #00ff88;">✓</div>
+            <div class="stat-body">
+                <span class="stat-label">Completed</span>
+                <span class="stat-value" style="color: #00ff88;">{{ stats.completed_jobs | default(0) }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Monitoring Grid -->
+    <h2 class="section-title">User Activity & Quotas</h2>
+    <div class="user-monitor-grid">
+        {% for user in stats.user_metrics | default([]) %}
+        <div class="user-card">
+            <div class="user-card-header">
+                <div class="user-avatar">{{ (user.display_name[0] if user.display_name else '?') | upper }}</div>
+                <div class="user-info">
+                    <h3>{{ user.display_name | default('User') }}</h3>
+                    <p class="user-email">{{ user.email | default('unknown') }}</p>
+                </div>
+                <div class="user-status-tag {{ 'verified' if user.is_verified else 'pending' }}">
+                    {{ 'Verified' if user.is_verified else 'Unverified' }}
+                </div>
+            </div>
+
+            <div class="quota-grid">
+                <!-- SRS Quota -->
+                <div class="quota-item">
+                    <div class="quota-header">
+                        <span>SRS Specs</span>
+                        <span>{{ user.quotas.srs.used | default(0) }} / {{ user.quotas.srs.limit | default(2) }}</span>
+                    </div>
+                    <div class="quota-bar">
+                        {% set srs_used = user.quotas.srs.used | default(0) | float %}
+                        {% set srs_limit = user.quotas.srs.limit | default(2) | float %}
+                        {% set srs_pct = (srs_used / srs_limit * 100) if srs_limit > 0 else 0 %}
+                        <div class="quota-fill {{ 'critical' if srs_pct >= 100 }}" style="width: {{ srs_pct }}%;"></div>
+                    </div>
+                </div>
+
+                <!-- Chat Quota -->
+                <div class="quota-item">
+                    <div class="quota-header">
+                        <span>AI Chat</span>
+                        <span>{{ user.quotas.chat.used | default(0) }} / {{ user.quotas.chat.limit | default(15) }}</span>
+                    </div>
+                    <div class="quota-bar">
+                        {% set chat_used = user.quotas.chat.used | default(0) | float %}
+                        {% set chat_limit = user.quotas.chat.limit | default(15) | float %}
+                        {% set chat_pct = (chat_used / chat_limit * 100) if chat_limit > 0 else 0 %}
+                        <div class="quota-fill chat" style="width: {{ chat_pct }}%;"></div>
+                    </div>
+                </div>
+
+                <!-- Diagrams & Upgrades Mini Stats -->
+                <div class="quota-mini-row">
+                    <div class="mini-stat">
+                        <span class="label">Diagrams</span>
+                        <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                            <span class="val">{{ user.quotas.diagrams.used | default(0) }} / {{ user.quotas.diagrams.limit | default(2) }}</span>
+                        </div>
+                        <div class="quota-bar" style="height:3px; margin-top:5px;">
+                            {% set diag_pct = (user.quotas.diagrams.used|default(0)|float / user.quotas.diagrams.limit|default(2)|float * 100) if user.quotas.diagrams.limit|default(2)|float > 0 else 0 %}
+                            <div class="quota-fill {{ 'critical' if diag_pct >= 100 }}" style="width: {{ diag_pct }}%;"></div>
+                        </div>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="label">Upgrades</span>
+                        <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                            <span class="val">{{ user.quotas.upgrades.used | default(0) }} / {{ user.quotas.upgrades.limit | default(2) }}</span>
+                        </div>
+                        <div class="quota-bar" style="height:3px; margin-top:5px;">
+                            {% set upgr_pct = (user.quotas.upgrades.used|default(0)|float / user.quotas.upgrades.limit|default(2)|float * 100) if user.quotas.upgrades.limit|default(2)|float > 0 else 0 %}
+                            <div class="quota-fill {{ 'critical' if upgr_pct >= 100 }}" style="width: {{ upgr_pct }}%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="activity-timeline">
+                <div class="timeline-label">Last Activity</div>
+                {% for job in user.recent_jobs | default([]) %}
+                <div class="timeline-item">
+                    <span class="job-status-dot {{ (job.status | lower) if job.status else 'pending' }}"></span>
+                    <span class="job-name">{{ job.name | default('Untitled') }}</span>
+                    <span class="job-time">{{ job.created | default('') }}</span>
+                </div>
+                {% endfor %}
+                {% if not user.recent_jobs %}
+                <p class="muted" style="font-size: 0.75rem; margin-top: 10px;">No jobs yet</p>
+                {% endif %}
+            </div>
+
+            <div class="user-footer">
+                <div class="footer-stat">
+                    <span>Joined</span>
+                    <p>{{ user.joined | default('---') }}</p>
+                </div>
+                <div class="footer-stat">
+                    <span>Last Login</span>
+                    <p>{{ user.last_login | default('Never') }}</p>
+                </div>
+            </div>
+
+            <div class="user-actions">
+                <button class="action-btn message" 
+                        data-user-id="{{ user.id }}" 
+                        data-email="{{ user.email | default('') }}"
+                        onclick="openActionModal(this.dataset.userId, this.dataset.email, 'message')">💬 Message</button>
+                
+                <button class="action-btn promote" 
+                        data-user-id="{{ user.id }}" 
+                        data-email="{{ user.email | default('') }}"
+                        data-srs="{{ user.quotas.srs.limit | default(2) }}"
+                        data-chat="{{ user.quotas.chat.limit | default(15) }}"
+                        data-diag="{{ user.quotas.diagrams.limit | default(2) }}"
+                        data-upgr="{{ user.quotas.upgrades.limit | default(2) }}"
+                        onclick="openActionModal(this.dataset.userId, this.dataset.email, 'promote', { srs: this.dataset.srs, chat: this.dataset.chat, diag: this.dataset.diag, upgr: this.dataset.upgr })">⏫ Promote</button>
+                
+                {% if user.is_active | default(True) %}
+                <button class="action-btn revoke" 
+                        data-user-id="{{ user.id }}" 
+                        data-email="{{ user.email | default('') }}"
+                        onclick="openActionModal(this.dataset.userId, this.dataset.email, 'revoke')">🚫 Revoke</button>
+                {% else %}
+                <button class="action-btn restore" 
+                        data-user-id="{{ user.id }}" 
+                        data-email="{{ user.email | default('') }}"
+                        onclick="openActionModal(this.dataset.userId, this.dataset.email, 'restore')">♻️ Restore</button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</section>
+
+<!-- Action Modal -->
+<div id="adminModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Admin Action</h2>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="modalUser" class="muted"></p>
+            <div id="quotaInputGroup" style="display:none; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label style="display:block; font-size: 0.8rem; margin-bottom: 5px;">SRS Docs</label>
+                        <input type="number" id="newQuota" value="5" style="width:100%; padding:10px; background:rgba(0,0,0,0.2); border:1px solid var(--border); color:white; border-radius:8px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size: 0.8rem; margin-bottom: 5px;">Chat Queries</label>
+                        <input type="number" id="newChatQuota" value="50" style="width:100%; padding:10px; background:rgba(0,0,0,0.2); border:1px solid var(--border); color:white; border-radius:8px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size: 0.8rem; margin-bottom: 5px;">Diag (per proj)</label>
+                        <input type="number" id="newDiagQuota" value="10" style="width:100%; padding:10px; background:rgba(0,0,0,0.2); border:1px solid var(--border); color:white; border-radius:8px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size: 0.8rem; margin-bottom: 5px;">Upgr (per proj)</label>
+                        <input type="number" id="newUpgradeQuota" value="10" style="width:100%; padding:10px; background:rgba(0,0,0,0.2); border:1px solid var(--border); color:white; border-radius:8px;">
+                    </div>
+                </div>
+            </div>
+            <label style="display:block; font-size: 0.8rem; margin-bottom: 5px;">Reason (Raw Comment for AI to reframe)</label>
+            <textarea id="actionReason" placeholder="E.g. Great contributions to beta test!" style="width:100%; height:100px; padding:10px; background:rgba(0,0,0,0.2); border:1px solid var(--border); color:white; border-radius:8px; resize:none;"></textarea>
+            <p style="font-size: 0.7rem; color: var(--accent); margin-top: 10px;">✨ The SpecForge Diplomat AI will reframe this into a polite email.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+            <button id="submitActionBtn" class="btn btn-primary">Process Action →</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-container {
+    max-width: 1400px;
+    margin: 60px auto;
+    padding: 0 40px;
+    font-family: 'Outfit', sans-serif;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 50px;
+}
+
+.header-main { display: flex; align-items: center; gap: 20px; }
+
+.pulse-indicator {
+    width: 12px; height: 12px;
+    background: #00ff88;
+    border-radius: 50%;
+    box-shadow: 0 0 15px #00ff88;
+    position: relative;
+}
+.pulse-indicator::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border: 2px solid #00ff88;
+    border-radius: 50%;
+    animation: pulse-ring 1.5s infinite;
+}
+
+@keyframes pulse-ring {
+    0% { transform: scale(1); opacity: 0.5; }
+    100% { transform: scale(2.5); opacity: 0; }
+}
+
+.admin-header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.8rem;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -1px;
+}
+
+.system-badge {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    padding: 8px 20px;
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted);
+    display: flex; align-items: center; gap: 10px;
+}
+
+.system-badge .dot { width: 6px; height: 6px; background: #00ff88; border-radius: 50%; }
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-bottom: 60px;
+}
+
+.stat-glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 30px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.stat-icon {
+    font-size: 1.8rem;
+    width: 60px; height: 60px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.stat-body { display: flex; flex-direction: column; gap: 4px; }
+.stat-label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.stat-value { font-size: 2.2rem; font-weight: 800; font-family: 'Syne', sans-serif; }
+
+.section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    margin-bottom: 30px;
+    color: var(--accent);
+}
+
+.user-monitor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 24px;
+}
+
+.user-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 24px;
+    transition: all 0.3s ease;
+}
+.user-card:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(0, 229, 201, 0.3);
+    transform: translateY(-5px);
+}
+
+.user-card-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.user-avatar {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; color: white; font-size: 1.2rem;
+}
+
+.user-info h3 { font-size: 1.1rem; margin: 0; }
+.user-email { font-size: 0.8rem; color: var(--muted); margin: 2px 0 0; }
+
+.user-status-tag {
+    margin-left: auto;
+    font-size: 0.65rem;
+    padding: 4px 10px;
+    border-radius: 100px;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+.user-status-tag.verified { background: rgba(0, 255, 136, 0.1); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.2); }
+.user-status-tag.pending { background: rgba(255, 165, 0, 0.1); color: orange; border: 1px solid rgba(255, 165, 0, 0.2); }
+
+.quota-grid { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; }
+.quota-item { display: flex; flex-direction: column; gap: 6px; }
+.quota-header { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 600; color: var(--muted); }
+.quota-bar { height: 6px; background: rgba(255, 255, 255, 0.05); border-radius: 100px; overflow: hidden; }
+.quota-fill { height: 100%; transition: width 1s ease; background: var(--accent); }
+.quota-fill.critical { background: #ff4b4b; box-shadow: 0 0 10px rgba(255, 75, 75, 0.3); }
+.quota-fill.chat { background: #9d50bb; background: linear-gradient(to right, #6e48aa, #9d50bb); }
+
+.quota-mini-row { display: flex; gap: 10px; margin-top: 5px; }
+.mini-stat { 
+    flex: 1; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); 
+    padding: 10px; border-radius: 12px; display: flex; flex-direction: column; gap: 2px;
+}
+.mini-stat .label { font-size: 0.6rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.5px; }
+.mini-stat .val { font-size: 1rem; font-weight: 700; font-family: 'Syne', sans-serif; }
+
+.activity-timeline {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+.timeline-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 1px; }
+
+.timeline-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+.timeline-item:last-child { border: none; }
+
+.job-status-dot { width: 8px; height: 8px; border-radius: 50%; }
+.job-status-dot.completed { background: #00ff88; box-shadow: 0 0 8px #00ff88; }
+.job-status-dot.processing { background: var(--accent); animation: pulse-dot 1.5s infinite; }
+.job-status-dot.failed { background: #ff4b4b; }
+
+.job-name { font-size: 0.85rem; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.job-time { font-size: 0.75rem; color: var(--muted); }
+
+.user-footer {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.footer-stat span { display: block; font-size: 0.65rem; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+.footer-stat p { font-size: 0.8rem; font-weight: 600; margin: 0; }
+
+.user-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+.action-btn {
+    flex: 1;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.03);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.action-btn:hover { background: rgba(255,255,255,0.08); }
+.action-btn.promote:hover { border-color: var(--accent); color: var(--accent); }
+.action-btn.message:hover { border-color: #3498db; color: #3498db; }
+.action-btn.revoke:hover { border-color: #ff4b4b; color: #ff4b4b; }
+.action-btn.restore:hover { border-color: #00ff88; color: #00ff88; }
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(10px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+.modal-overlay.open { display: flex; }
+.modal-content {
+    background: #0a0e14;
+    border: 1px solid var(--border);
+    width: 100%;
+    max-width: 500px;
+    border-radius: 24px;
+    padding: 30px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.close-btn { background: none; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; }
+
+@keyframes pulse-dot {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
+@media (max-width: 1200px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+    .admin-header { flex-direction: column; align-items: flex-start; gap: 20px; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .admin-container { padding: 0 20px; }
+}
+</style>
+
+<script>
+let currentUserId = null;
+let currentAction = null;
+
+function openActionModal(userId, email, action, currentQuotas = null) {
+    currentUserId = userId;
+    currentAction = action;
+    const modal = document.getElementById('adminModal');
+    const title = document.getElementById('modalTitle');
+    const userDisplay = document.getElementById('modalUser');
+    const quotaGroup = document.getElementById('quotaInputGroup');
+    
+    userDisplay.textContent = `Target: ${email}`;
+    quotaGroup.style.display = action === 'promote' ? 'block' : 'none';
+
+    // Set defaults based on current user stats if promoting
+    if (action === 'promote' && currentQuotas) {
+        document.getElementById('newQuota').value = currentQuotas.srs || 2;
+        document.getElementById('newChatQuota').value = currentQuotas.chat || 15;
+        document.getElementById('newDiagQuota').value = currentQuotas.diag === '∞' ? 10 : currentQuotas.diag || 10;
+        document.getElementById('newUpgradeQuota').value = currentQuotas.upgr === '∞' ? 10 : currentQuotas.upgr || 10;
+    }
+    
+    if (action === 'revoke') title.textContent = 'Revoke Access';
+    else if (action === 'promote') title.textContent = 'Global Promotion';
+    else if (action === 'restore') title.textContent = 'Restore Access';
+    else if (action === 'message') title.textContent = 'Direct Message';
+    
+    modal.classList.add('open');
+}
+
+function closeModal() {
+    document.getElementById('adminModal').classList.remove('open');
+    document.getElementById('actionReason').value = '';
+}
+
+document.getElementById('submitActionBtn').onclick = async function() {
+    const reason = document.getElementById('actionReason').value;
+    const quota = document.getElementById('newQuota').value;
+    const chatQuota = document.getElementById('newChatQuota').value;
+    const diagQuota = document.getElementById('newDiagQuota').value;
+    const upgradeQuota = document.getElementById('newUpgradeQuota').value;
+    const btn = this;
+    
+    btn.disabled = true;
+    btn.textContent = 'Processing...';
+    
+    try {
+        const response = await fetch(`/admin/user/${currentUserId}/action`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: currentAction,
+                reason: reason,
+                quota: quota,
+                chat_quota: chatQuota,
+                diag_quota: diagQuota,
+                upgrade_quota: upgradeQuota
+            })
+        });
+        
+        if (response.ok) {
+            alert('Action completed successfully. User has been notified.');
+            window.location.reload();
+        } else {
+            alert('Failed to process action.');
+        }
+    } catch (e) {
+        console.error(e);
+        alert('An error occurred.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Process Action →';
+        closeModal();
+    }
+};
+</script>
+{% endblock %}

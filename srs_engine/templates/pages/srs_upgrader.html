@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Upload Upgrader — Coming Soon | SpecForge AI{% endblock %}
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:center; min-height:70vh; padding:2rem;">
+  <div style="max-width:600px; text-align:center; padding:3rem; 
+       background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); 
+       border-radius:24px; backdrop-filter:blur(20px);">
+    <div style="font-size:4rem; margin-bottom:1rem;">🚀</div>
+    <h1 style="font-size:2rem; margin-bottom:0.5rem;">Upload Upgrader</h1>
+    <p style="color:var(--text-secondary); font-size:1.1rem; margin-bottom:2rem;">
+      Upload existing SRS documents (PDF/DOCX) and upgrade them with our 
+      multi-agent debate pipeline. This feature is coming in the next release.
+    </p>
+    <div style="padding:1rem; background:rgba(102,126,234,0.1); border-radius:12px; 
+         border:1px solid rgba(102,126,234,0.2); margin-bottom:1.5rem;">
+      <p style="margin:0; font-size:0.9rem; color:var(--text-secondary);">
+        <strong>What's coming:</strong> Multi-format parsing (PDF, DOCX) · 
+        Section-level analysis · AI-powered improvement suggestions · 
+        Side-by-side comparison view
+      </p>
+    </div>
+    <a href="/home" class="btn btn--primary" style="display:inline-block; padding:0.75rem 2rem;">
+      ← Back to Dashboard
+    </a>
+  </div>
+</div>
+{% endblock %}

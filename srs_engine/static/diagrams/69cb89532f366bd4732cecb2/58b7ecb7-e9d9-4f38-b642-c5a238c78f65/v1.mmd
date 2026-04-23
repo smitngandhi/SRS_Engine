@@ -1,0 +1,31 @@
+flowchart TD
+    A[User] -->|Login| B[Login Page]
+    B -->|Valid Credentials| C[Dashboard]
+    B -->|Invalid Credentials| D[Error Message]
+    C -->|Search Book| E[Search Results]
+    C -->|Upload CSV/Excel| F[Data Upload]
+    C -->|View Reports| G[Reports]
+    C -->|Manage Profile| H[User Profile]
+    C -->|System Logging| I[Logging]
+    F -->|Data Processing| J[Data Processing]
+    J -->|Update Dashboard| C
+    G -->|Export PDF| K[PDF Export]
+    H -->|Update Settings| L[Settings]
+    I -->|Monitor System| M[Monitoring]
+    subgraph System Components
+    C
+    E
+    F
+    G
+    H
+    I
+    end
+    subgraph External Interfaces
+    N[Authentication Service] -->|API Response| C
+    O[Analytics Service] -->|API Response| C
+    P[Database] -->|Data Storage| F
+    end
+    subgraph User Interfaces
+    A -->|Login| B
+    B -->|Display Data| A
+    end

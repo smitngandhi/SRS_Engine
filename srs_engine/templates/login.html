@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block title %}Login | SpecForge AI{% endblock %}
+
+{% block content %}
+<section class="auth-card">
+
+  <div class="auth-header">
+    <h1>Welcome back</h1>
+    <p class="muted">Sign in or create an account to access SpecForge AI.</p>
+  </div>
+
+  <div class="auth-grid">
+
+    <!-- ── LOGIN ──────────────────────────────────── -->
+    <div class="auth-panel">
+      <div class="auth-panel-label">Sign in</div>
+
+      <form method="POST" action="/auth/login" class="form" id="loginForm">
+        <label>
+          <span>Username</span>
+          <input name="username" type="text" placeholder="your_username" autocomplete="username" required />
+        </label>
+        <label>
+          <span>Password</span>
+          <div class="input-wrap">
+            <input name="password" type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" required />
+            <button type="button" class="eye-btn" onclick="togglePwd('loginPassword', this)">👁</button>
+          </div>
+        </label>
+        <button class="btn btn-primary" type="submit" style="width:100%">Sign In →</button>
+      </form>
+
+      <hr class="sep" />
+
+      <div class="auth-panel-label" style="margin-bottom:10px">Or continue with</div>
+      <a class="btn btn-secondary" href="/auth/google/login" style="width:100%; justify-content:center;">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+          <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+          <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+          <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+        </svg>
+        Continue with Google
+      </a>
+    </div>
+
+    <!-- ── REGISTER ────────────────────────────────── -->
+    <div class="auth-panel">
+      <div class="auth-panel-label">Create account</div>
+
+      <form method="POST" action="/auth/register" class="form" id="registerForm">
+        <label>
+          <span>Username</span>
+          <div class="input-wrap">
+            <input name="username" type="text" id="regUsername" placeholder="cool_username"
+              autocomplete="username" required
+              oninput="validateUsername(this.value)" />
+            <span class="input-status" id="usernameStatus"></span>
+          </div>
+          <div class="rules-list" id="usernameRules">
+            <div class="rule" id="rule-ulen">✗ 3–32 characters</div>
+            <div class="rule" id="rule-uchars">✗ Letters, numbers, _ . - only</div>
+          </div>
+        </label>
+
+        <!-- Email is now REQUIRED -->
+        <label>
+          <span>Email</span>
+          <div class="input-wrap">
+            <input name="email" type="email" id="regEmail" placeholder="you@example.com"
+              autocomplete="email" required
+              oninput="validateEmail(this.value)" />
+            <span class="input-status" id="emailStatus"></span>
+          </div>
+          <div class="rules-list" id="emailRules">
+            <div class="rule" id="rule-email">✗ Valid email address required</div>
+          </div>
+        </label>
+
+        <label>
+          <span>Password</span>
+          <div class="input-wrap">
+            <input name="password" type="password" id="regPassword" placeholder="••••••••"
+              autocomplete="new-password" required
+              oninput="validatePassword(this.value)" />
+            <button type="button" class="eye-btn" onclick="togglePwd('regPassword', this)">👁</button>
+          </div>
+          <div class="strength-bar-wrap">
+            <div class="strength-bar" id="strengthBar"></div>
+          </div>
+          <div class="strength-label" id="strengthLabel"></div>
+          <div class="rules-list" id="passwordRules">
+            <div class="rule" id="rule-len">✗ At least 8 characters</div>
+            <div class="rule" id="rule-upper">✗ One uppercase letter (A–Z)</div>
+            <div class="rule" id="rule-lower">✗ One lowercase letter (a–z)</div>
+            <div class="rule" id="rule-num">✗ One number (0–9)</div>
+            <div class="rule" id="rule-max">✓ Under 72 characters</div>
+          </div>
+        </label>
+
+        <button class="btn btn-primary" type="submit" id="registerBtn" style="width:100%" disabled>
+          Create Account →
+        </button>
+      </form>
+    </div>
+
+  </div>
+
+  {% if error %}
+    <div class="alert alert-error" id="authError">
+      <span>⚠</span> {{ error }}
+    </div>
+  {% endif %}
+
+</section>
+
+<style>
+/* ── Auth card overrides ────────────────────────────── */
+.auth-card {
+  max-width: 900px;
+  margin: 48px auto;
+}
+
+.auth-header { margin-bottom: 28px; }
+.auth-header h1 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  margin-bottom: 6px;
+}
+
+.auth-panel-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.input-wrap .field-input,
+.input-wrap input {
+  width: 100%;
+  padding-right: 40px;
+}
+.eye-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+  padding: 0;
+  line-height: 1;
+}
+.eye-btn:hover { opacity: 1; }
+
+.input-status {
+  position: absolute;
+  right: 36px;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+/* No optional tag anymore — email is required */
+
+.rules-list {
+  display: grid;
+  gap: 5px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(0,0,0,0.18);
+}
+
+.rule {
+  font-size: 0.8rem;
+  color: var(--muted);
+  transition: color 0.25s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rule.pass { color: var(--accent); }
+.rule.fail { color: #ff6b6b; }
+
+.strength-bar-wrap {
+  height: 3px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 999px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+.strength-bar {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  transition: width 0.4s cubic-bezier(0.22,1,0.36,1), background 0.3s;
+}
+.strength-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  margin-top: 4px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: color 0.3s;
+  min-height: 16px;
+}
+
+.alert-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%,60%  { transform: translateX(-6px); }
+  40%,80%  { transform: translateX(6px); }
+}
+</style>
+
+<script>
+/* ── Toggle password visibility ───────────────────── */
+function togglePwd(id, btn) {
+  const input = document.getElementById(id);
+  input.type = input.type === 'password' ? 'text' : 'password';
+  btn.textContent = input.type === 'password' ? '👁' : '🙈';
+}
+
+/* ── Username validation ──────────────────────────── */
+const USERNAME_PATTERN = /^[a-zA-Z0-9_.-]+$/;
+
+function validateUsername(val) {
+  const lenOk   = val.length >= 3 && val.length <= 32;
+  const charsOk = USERNAME_PATTERN.test(val) && val.length > 0;
+
+  setRule('rule-ulen',   lenOk);
+  setRule('rule-uchars', charsOk);
+
+  const status = document.getElementById('usernameStatus');
+  if (val.length === 0) { status.textContent = ''; }
+  else if (lenOk && charsOk) { status.textContent = '✓'; status.style.color = 'var(--accent)'; }
+  else { status.textContent = '✗'; status.style.color = '#ff6b6b'; }
+
+  checkRegisterBtn();
+  return lenOk && charsOk;
+}
+
+/* ── Email validation ─────────────────────────────── */
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+function validateEmail(val) {
+  const ok = EMAIL_PATTERN.test(val.trim());
+
+  setRule('rule-email', ok);
+
+  const status = document.getElementById('emailStatus');
+  if (!val.length) { status.textContent = ''; }
+  else if (ok) { status.textContent = '✓'; status.style.color = 'var(--accent)'; }
+  else { status.textContent = '✗'; status.style.color = '#ff6b6b'; }
+
+  checkRegisterBtn();
+  return ok;
+}
+
+/* ── Password validation ──────────────────────────── */
+function validatePassword(val) {
+  const checks = {
+    'rule-len':   val.length >= 8,
+    'rule-upper': /[A-Z]/.test(val),
+    'rule-lower': /[a-z]/.test(val),
+    'rule-num':   /[0-9]/.test(val),
+    'rule-max':   val.length <= 72,
+  };
+
+  Object.entries(checks).forEach(([id, ok]) => setRule(id, ok));
+
+  const passed = Object.values(checks).filter(Boolean).length;
+  updateStrengthBar(passed, val.length);
+  checkRegisterBtn();
+  return Object.values(checks).every(Boolean);
+}
+
+function setRule(id, pass) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const label = el.textContent.replace(/^[✓✗] /, '');
+  el.textContent = (pass ? '✓ ' : '✗ ') + label;
+  el.className = 'rule ' + (pass ? 'pass' : 'fail');
+}
+
+function updateStrengthBar(passed, length) {
+  const bar   = document.getElementById('strengthBar');
+  const label = document.getElementById('strengthLabel');
+  if (!length) { bar.style.width = '0'; label.textContent = ''; return; }
+
+  const levels = [
+    { min: 1, color: '#ef4444', text: 'Weak',      pct: '25%' },
+    { min: 2, color: '#f97316', text: 'Fair',      pct: '50%' },
+    { min: 4, color: '#eab308', text: 'Good',      pct: '75%' },
+    { min: 5, color: '#00e5c9', text: 'Strong ✓',  pct: '100%' },
+  ];
+
+  const level = [...levels].reverse().find(l => passed >= l.min) || levels[0];
+  bar.style.width      = level.pct;
+  bar.style.background = level.color;
+  label.textContent    = level.text;
+  label.style.color    = level.color;
+}
+
+/* ── Enable register button only when ALL rules pass ── */
+function checkRegisterBtn() {
+  const btn      = document.getElementById('registerBtn');
+  const username = document.getElementById('regUsername').value;
+  const email    = document.getElementById('regEmail').value;
+  const password = document.getElementById('regPassword').value;
+
+  const uOk = validateUsernameQuiet(username);
+  const eOk = EMAIL_PATTERN.test(email.trim());
+  const pOk = validatePasswordQuiet(password);
+
+  btn.disabled      = !(uOk && eOk && pOk);
+  btn.style.opacity = (uOk && eOk && pOk) ? '1' : '0.45';
+}
+
+function validateUsernameQuiet(val) {
+  return val.length >= 3 && val.length <= 32 && USERNAME_PATTERN.test(val);
+}
+
+function validatePasswordQuiet(val) {
+  return val.length >= 8 && val.length <= 72 &&
+    /[A-Z]/.test(val) && /[a-z]/.test(val) && /[0-9]/.test(val);
+}
+
+/* ── Auto-dismiss error after 6s ─────────────────── */
+const errEl = document.getElementById('authError');
+if (errEl) setTimeout(() => {
+  errEl.style.transition = 'opacity 0.5s';
+  errEl.style.opacity = '0';
+  setTimeout(() => errEl.remove(), 500);
+}, 6000);
+
+const errorEl = document.querySelector('.alert-error');
+if (errorEl && errorEl.textContent.includes('closed beta')) {
+  errorEl.style.background = 'linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1))';
+  errorEl.style.borderColor = '#667eea';
+  errorEl.innerHTML = `
+    <div style="font-size:1.5rem; margin-bottom:0.5rem;">🚀</div>
+    <strong>SpecForge AI is in closed beta</strong><br>
+    All 10 spots are currently taken. Join our waitlist to be notified when we open up!<br>
+    <a href="/home#contact" style="color:#667eea; margin-top:0.5rem; display:inline-block;">
+      → Join Waitlist
+    </a>
+  `;
+}
+</script>
+{% endblock %}

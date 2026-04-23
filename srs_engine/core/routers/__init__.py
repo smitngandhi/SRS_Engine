@@ -1,0 +1,11 @@
+from .auth import router as auth_router
+from .contact_api import router as contact_router
+from .pages import router as pages_router
+from .srs_api import router as srs_router
+from .upload_router import router as upload_router
+from .parse_router import router as parse_router
+from .upgrade_router import router as upgrade_router
+from .generated_srs_upgrade_router import router as generated_upgrade_router
+from .diagram_router import router as diagram_router
+from .chat_router import router as chat_router
+from .monitor_api import router as monitor_router

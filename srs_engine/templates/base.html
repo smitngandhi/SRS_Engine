@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}SpecForge AI{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='site.css') }}">
+  {% block head %}{% endblock %}
+</head>
+
+<body>
+
+  <!-- ── SITE HEADER ───────────────────────────────────────────── -->
+  <header class="site-header" id="siteHeader">
+
+    <!-- Left: Brand + Primary Nav -->
+    <div class="nav-left">
+      <a class="brand" href="/home">SpecForge AI</a>
+
+      <!-- Desktop nav -->
+      <nav class="nav" id="desktopNav">
+        <a href="/home#features" class="nav-link">Features</a>
+        <a href="/home#faqs"     class="nav-link">FAQs</a>
+        <a href="/home#about"    class="nav-link">About</a>
+        <a href="/home#contact"  class="nav-link">Contact</a>
+
+        <!-- Tools dropdown -->
+        <div class="nav-dropdown" id="toolsDropdown">
+          <button class="nav-link nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false" id="toolsBtn">
+            Tools
+            <svg class="nav-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+
+          <div class="nav-dropdown-panel" id="toolsPanel" role="menu">
+            <div class="dropdown-grid">
+              <a href="/srs-generator" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">⚡</span>
+                <span class="dropdown-item-body">
+                  <span class="dropdown-item-title">SRS Generator</span>
+                  <span class="dropdown-item-desc">Create IEEE 830 documents</span>
+                </span>
+              </a>
+              <!-- 
+              <span class="dropdown-item disabled" style="opacity:0.5; cursor:default; display:flex; align-items:center; gap:0.5rem; padding:12px 16px;">
+                🔒 Upload Upgrader <span class="badge" style="font-size:0.6rem; background:linear-gradient(135deg, #667eea, #764ba2); color:white; padding:2px 6px; border-radius:8px;">Coming Soon</span>
+              </span>
+              -->
+              <a href="/srs-generated-upgrader" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">✨</span>
+                <span class="dropdown-item-body">
+                  <span class="dropdown-item-title">Section Upgrader</span>
+                  <span class="dropdown-item-desc">Upgrade individual sections</span>
+                </span>
+              </a>
+              <a href="/document-navigator" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">🗺️</span>
+                <span class="dropdown-item-body">
+                  <span class="dropdown-item-title">Doc Navigator</span>
+                  <span class="dropdown-item-desc">Agentic document chat</span>
+                </span>
+              </a>
+              <a href="/diagrams" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">🖊️</span>
+                <span class="dropdown-item-body">
+                  <span class="dropdown-item-title">Diagrams</span>
+                  <span class="dropdown-item-desc">Architecture & flow diagrams</span>
+                </span>
+              </a>
+              <a href="/project-buckets" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">📁</span>
+                <span class="dropdown-item-body">
+                  <span class="dropdown-item-title">Projects</span>
+                  <span class="dropdown-item-desc">Organise your work</span>
+                </span>
+              </a>
+            </div>
+
+            <div class="dropdown-footer">
+              <a href="/jobs" class="dropdown-footer-link">
+                <span class="dropdown-footer-dot"></span>
+                View generation jobs
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="margin-left:auto">
+                  <path d="M2 9L9 2M9 2H4.5M9 2V6.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </div>
+
+    <!-- Right: User + Auth + Hamburger -->
+    <div class="nav-right">
+      {% set display_name = request.session.get('display_name') %}
+      {% if display_name %}
+        <div class="user-chip" title="{{ display_name }}">
+          <span class="user-chip-avatar">{{ display_name[0] | upper }}</span>
+          <span class="user-chip-name">{{ display_name }}</span>
+        </div>
+        <a class="btn btn-link nav-auth-btn" href="/auth/logout">Logout</a>
+      {% else %}
+        <a class="btn btn-primary nav-auth-btn" href="/login">Sign in</a>
+      {% endif %}
+
+      <!-- Mobile hamburger -->
+      <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-expanded="false">
+        <span class="ham-bar"></span>
+        <span class="ham-bar"></span>
+        <span class="ham-bar"></span>
+      </button>
+    </div>
+
+  </header>
+
+  <!-- ── MOBILE DRAWER ─────────────────────────────────────────── -->
+  <div class="mobile-overlay" id="mobileOverlay" aria-hidden="true">
+    <nav class="mobile-drawer" id="mobileDrawer">
+
+      <div class="mobile-drawer-header">
+        <a class="brand" href="/home" onclick="closeMobileMenu()">SpecForge AI</a>
+        <button class="mobile-close" id="mobileCloseBtn" aria-label="Close navigation">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M2 2L16 16M16 2L2 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="mobile-drawer-body">
+
+        <!-- Pages -->
+        <div class="mobile-section-label">Pages</div>
+        <a href="/home#features" class="mobile-link" onclick="closeMobileMenu()">Features</a>
+        <a href="/home#faqs"     class="mobile-link" onclick="closeMobileMenu()">FAQs</a>
+        <a href="/home#about"    class="mobile-link" onclick="closeMobileMenu()">About</a>
+        <a href="/home#contact"  class="mobile-link" onclick="closeMobileMenu()">Contact</a>
+
+        <!-- Tools -->
+        <div class="mobile-section-label" style="margin-top:20px;">Tools</div>
+        <a href="/srs-generator"          class="mobile-link" onclick="closeMobileMenu()">
+          <span class="mobile-link-icon">⚡</span> SRS Generator
+        </a>
+        <!-- 
+        <span class="mobile-link disabled" style="opacity:0.5; cursor:default; display:flex; align-items:center; gap:0.5rem; padding:12px 16px;">
+          🔒 Upload Upgrader <span class="badge" style="font-size:0.6rem; background:linear-gradient(135deg, #667eea, #764ba2); color:white; padding:2px 6px; border-radius:8px;">Coming Soon</span>
+        </span>
+        -->
+        <a href="/srs-generated-upgrader" class="mobile-link" onclick="closeMobileMenu()">
+          <span class="mobile-link-icon">✨</span> Section Upgrader
+        </a>
+        <a href="/document-navigator"     class="mobile-link" onclick="closeMobileMenu()">
+          <span class="mobile-link-icon">🗺️</span> Doc Navigator
+        </a>
+        <a href="/diagrams"               class="mobile-link" onclick="closeMobileMenu()">
+          <span class="mobile-link-icon">🖊️</span> Diagrams
+        </a>
+        <a href="/project-buckets"        class="mobile-link" onclick="closeMobileMenu()">
+          <span class="mobile-link-icon">📁</span> Projects
+        </a>
+        <a href="/jobs"                   class="mobile-link" onclick="closeMobileMenu()">
+          <span class="mobile-link-icon">📋</span> My Jobs
+        </a>
+
+        <!-- Auth -->
+        <div class="mobile-auth">
+          {% if display_name %}
+            <div class="mobile-user">Signed in as <strong>{{ display_name }}</strong></div>
+            <a class="btn btn-outline" href="/auth/logout" style="width:100%;justify-content:center;">Logout</a>
+          {% else %}
+            <a class="btn btn-primary" href="/login" style="width:100%;justify-content:center;">Sign in</a>
+          {% endif %}
+        </div>
+
+      </div>
+    </nav>
+  </div>
+
+  <!-- ── MAIN CONTENT ──────────────────────────────────────────── -->
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div>© 2026 SpecForge AI — All rights reserved.</div>
+  </footer>
+
+  {% if request.session.get('user_id') %}
+  <!-- ── UNIFIED QUOTA BAR ────────────────────────────────── -->
+  <div id="unifiedQuotaBar" class="unified-quota-bar" style="display:none;">
+    <button id="quotaToggle" class="quota-toggle-btn" title="Toggle Quota View">
+      <span class="toggle-icon">📊</span>
+    </button>
+    <div id="quotaContent" class="quota-content">
+      <div class="quota-pill" id="quota-srs">
+        <span class="quota-pill-label">SRS</span>
+        <span class="quota-pill-value" id="val-srs">0/2</span>
+        <div class="quota-progress"><div class="quota-progress-fill" id="fill-srs" style="width: 0%"></div></div>
+      </div>
+      <div class="quota-pill" id="quota-diagrams">
+        <span class="quota-pill-label">Diag</span>
+        <span class="quota-pill-value" id="val-diagrams">0/2</span>
+        <div class="quota-progress"><div class="quota-progress-fill" id="fill-diagrams" style="width: 0%"></div></div>
+      </div>
+      <div class="quota-pill" id="quota-upgrades">
+        <span class="quota-pill-label">Upgr</span>
+        <span class="quota-pill-value" id="val-upgrades">0/2</span>
+        <div class="quota-progress"><div class="quota-progress-fill" id="fill-upgrades" style="width: 0%"></div></div>
+      </div>
+      <div class="quota-pill" id="quota-chat">
+        <span class="quota-pill-label">Chat</span>
+        <span class="quota-pill-value" id="val-chat">0/15</span>
+        <div class="quota-progress"><div class="quota-progress-fill" id="fill-chat" style="width: 0%"></div></div>
+      </div>
+    </div>
+  </div>
+  <script src="{{ url_for('static', path='quota_manager.js') }}"></script>
+  {% endif %}
+
+  <script src="{{ url_for('static', path='site.js') }}"></script>
+  {% block scripts %}{% endblock %}
+
+  <!-- ── NAV SCRIPTS ───────────────────────────────────────────── -->
+  <script>
+    /* ─── Tools dropdown ─────────────────────────────── */
+    const toolsBtn   = document.getElementById('toolsBtn');
+    const toolsPanel = document.getElementById('toolsPanel');
+    const toolsDrop  = document.getElementById('toolsDropdown');
+
+    function openDropdown() {
+      if (toolsPanel) toolsPanel.classList.add('open');
+      if (toolsBtn) toolsBtn.setAttribute('aria-expanded', 'true');
+    }
+    function closeDropdown() {
+      if (toolsPanel) toolsPanel.classList.remove('open');
+      if (toolsBtn) toolsBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    if (toolsBtn) {
+      toolsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toolsPanel.classList.contains('open') ? closeDropdown() : openDropdown();
+      });
+    }
+
+    document.addEventListener('click', (e) => {
+      if (toolsDrop && !toolsDrop.contains(e.target)) closeDropdown();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeDropdown();
+    });
+
+    /* ─── Mobile drawer ──────────────────────────────── */
+    const overlay    = document.getElementById('mobileOverlay');
+    const drawer     = document.getElementById('mobileDrawer');
+    const hamBtn     = document.getElementById('hamburgerBtn');
+    const closeBtn   = document.getElementById('mobileCloseBtn');
+
+    function openMobileMenu() {
+      overlay.classList.add('open');
+      hamBtn.classList.add('open');
+      hamBtn.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeMobileMenu() {
+      overlay.classList.remove('open');
+      hamBtn.classList.remove('open');
+      hamBtn.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    }
+
+    if (hamBtn) hamBtn.addEventListener('click', openMobileMenu);
+    if (closeBtn) closeBtn.addEventListener('click', closeMobileMenu);
+
+    if (overlay && drawer) {
+      overlay.addEventListener('click', (e) => {
+        if (!drawer.contains(e.target)) closeMobileMenu();
+      });
+    }
+
+    /* ─── Active nav link (path-based) ──────────────── */
+    const path = window.location.pathname;
+    document.querySelectorAll('.nav-link[href], .dropdown-item[href], .mobile-link[href]').forEach(link => {
+      const href = link.getAttribute('href');
+      if (href && !href.includes('#') && href !== '/home' && path.startsWith(href)) {
+        link.classList.add('active');
+      }
+    });
+  </script>
+
+</body>
+</html>

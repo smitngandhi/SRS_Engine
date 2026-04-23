@@ -1,0 +1,49 @@
+sequenceDiagram
+actor User
+participant Frontend
+participant Backend
+participant Database
+participant AuthService
+participant GoogleADK
+participant LoadBalancer
+participant Server
+
+User->>Frontend: Login Request
+Frontend->>Backend: Validate Credentials
+Backend->>Database: Check Credentials
+Database-->>Backend: Valid Credentials
+Backend->>AuthService: Authenticate
+AuthService-->>Backend: Auth Token
+Backend-->>Frontend: Login Success
+Frontend-->>User: Login Success
+
+User->>Frontend: Upload CSV/Excel File
+Frontend->>Backend: Upload File
+Backend->>Database: Store File
+Database-->>Backend: File Stored
+Backend->>GoogleADK: Train Predictive Model
+GoogleADK-->>Backend: Model Trained
+Backend-->>Frontend: Model Trained
+Frontend-->>User: Model Trained
+
+User->>Frontend: View Dashboard
+Frontend->>Backend: Get Real-time Analytics
+Backend->>Database: Get Data
+Database-->>Backend: Data
+Backend-->>Frontend: Real-time Analytics
+Frontend-->>User: Real-time Analytics
+
+User->>Frontend: Request Report
+Frontend->>Backend: Generate Report
+Backend->>Database: Get Data
+Database-->>Backend: Data
+Backend-->>Frontend: Report
+Frontend-->>User: Report
+
+LoadBalancer->>Server: Route Request
+Server->>Backend: Process Request
+Backend->>Database: Get Data
+Database-->>Backend: Data
+Backend-->>Server: Response
+Server-->>LoadBalancer: Response
+LoadBalancer-->>User: Response

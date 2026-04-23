@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Section Upgrader — SpecForge AI{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='generated_upgrader.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="gu-upgrader-layout">
+
+  <!-- ── Left Sidebar ─────────────────────────────────────────── -->
+  <div class="gu-sidebar" style="display:flex;flex-direction:column;">
+    <div class="gu-sidebar-title">Sections</div>
+    <div id="sidebar-list" style="flex:1;overflow-y:auto;"></div>
+
+    <div class="gu-sidebar-actions">
+      <button id="rebuild-btn" class="gu-btn gu-btn-outline" title="Rebuild the .docx with all confirmed upgrades">
+        📄 Rebuild Document
+      </button>
+      <a href="/srs-generated-upgrader" class="gu-btn gu-btn-outline" style="text-decoration:none;text-align:center;">
+        ← Back to Documents
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Main Area ────────────────────────────────────────────── -->
+  <div class="gu-main">
+
+    <!-- Top bar -->
+    <div class="gu-topbar">
+      <span id="project-title" style="font-weight:400;color:var(--gu-text-muted);font-size:.88rem;"></span>
+      <span style="color:var(--gu-border);">/</span>
+      <span id="topbar-title" class="gu-topbar-title">Select a section</span>
+      <div id="topbar-badges" style="display:flex;gap:.4rem;margin-left:auto;"></div>
+    </div>
+
+    <!-- Content area -->
+    <div id="content-area" class="gu-content-area">
+      <div class="gu-loading-overlay">
+        <div class="gu-spinner gu-spinner-lg"></div>
+        <div class="loading-text">Loading section…</div>
+      </div>
+    </div>
+
+    <!-- Quota Banner -->
+    <div id="upgrader-quota" class="quota-banner" style="display:none; margin: 0 1rem 1rem 1rem; padding: 0.75rem; background: rgba(255,183,77,0.1); border: 1px solid rgba(255,183,77,0.3); border-radius: 8px;"></div>
+
+    <!-- Instruction bar -->
+    <div class="gu-instruction-bar">
+      <textarea
+        id="instruction-text"
+        placeholder="Describe what you want to change in this section… e.g. 'Add Redis cache between FastAPI and MongoDB'"
+        rows="1"
+      ></textarea>
+      <button id="preview-btn" class="gu-btn gu-btn-primary">✨ Preview Upgrade</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Preview Overlay ──────────────────────────────────────── -->
+<div id="preview-overlay" class="gu-overlay">
+  <div class="gu-overlay-content">
+    <div class="gu-overlay-header">
+      <h2>Preview Upgrade</h2>
+      <button id="close-overlay-btn" class="gu-btn gu-btn-outline" style="padding:.35rem .75rem;">✕</button>
+    </div>
+    <div id="overlay-body" class="gu-overlay-body">
+      <!-- Diff content injected by JS -->
+    </div>
+    <div class="gu-overlay-footer">
+      <button id="discard-btn" class="gu-btn gu-btn-danger">✕ Discard</button>
+      <button id="confirm-btn" class="gu-btn gu-btn-success">✅ Confirm</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='section_upgrader.js') }}"></script>
+{% endblock %}

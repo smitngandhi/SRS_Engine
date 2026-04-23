@@ -1,0 +1,27 @@
+erDiagram
+    USER { string id PK }
+    USER ||--|| ROLE : "has role"
+    ROLE { string id PK }
+    ROLE ||--|| PERMISSION : "has permission"
+    PERMISSION { string id PK }
+    BOOK { string id PK }
+    BOOK ||--|{ CATEGORY : "belongs to"
+    CATEGORY { string id PK }
+    BOOK }|--|| USER : "borrowed by"
+    BORROWING_HISTORY { string id PK }
+    BORROWING_HISTORY ||--|| BOOK : "book history"
+    BORROWING_HISTORY ||--|| USER : "user history"
+    AUTHOR { string id PK }
+    AUTHOR ||--|{ BOOK : "wrote"
+    PUBLISHER { string id PK }
+    PUBLISHER ||--|{ BOOK : "published"
+    LIBRARY { string id PK }
+    LIBRARY ||--|{ BOOK : "has book"
+    LIBRARIAN { string id PK }
+    LIBRARIAN ||--|| LIBRARY : "manages" 
+    SYSTEM_LOG { string id PK }
+    SYSTEM_LOG ||--|| USER : "logged by" 
+    SYSTEM_LOG ||--|| LIBRARIAN : "logged by" 
+    REPORT { string id PK }
+    REPORT ||--|| BOOK : "generated for"
+    REPORT ||--|| LIBRARY : "generated for"

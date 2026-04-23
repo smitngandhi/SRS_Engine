@@ -1,0 +1,88 @@
+classDiagram
+    class User {}
+        +String username
+        +String password
+        +register()
+        +login()
+    }
+    class Librarian {}
+        +String name
+        +manageBooks()
+        +trackBookStatus()
+    }
+    class LibraryAdministrator {}
+        +String name
+        +manageLibrarians()
+        +manageLibrarySettings()
+    }
+    class Book {}
+        +String title
+        +String author
+        +String status
+    }
+    class Dashboard {}
+        +displayRealTimeAnalytics()
+        +displayBookSearchResults()
+    }
+    class Authentication {}
+        +authenticateUser()
+    }
+    class RoleBasedAccessControl {}
+        +assignRoles()
+        +checkPermissions()
+    }
+    class DataVisualization {}
+        +generateReports()
+        +displayData()
+    }
+    class SystemLogging {}
+        +logEvents()
+        +monitorSystem()
+    }
+    User <|-- Librarian
+    User <|-- LibraryAdministrator
+    Librarian *-- Book
+    LibraryAdministrator *-- Librarian
+    Dashboard o-- DataVisualization
+    Authentication *-- User
+    RoleBasedAccessControl *-- User
+    SystemLogging *-- Dashboard
+    class System {}
+        +manageUsers()
+        +manageBooks()
+    }
+    System *-- User
+    System *-- Book
+    System *-- Dashboard
+    System *-- Authentication
+    System *-- RoleBasedAccessControl
+    System *-- SystemLogging
+    class ExternalService {}
+        +provideData()
+    }
+    System *-- ExternalService
+    class PredictiveModel {}
+        +trainModel()
+        +evaluateModel()
+    }
+    System *-- PredictiveModel
+    class AutomatedEmail {}
+        +sendEmails()
+    }
+    System *-- AutomatedEmail
+    class UserProfile {}
+        +manageProfile()
+    }
+    System *-- UserProfile
+    class RealTimeData {}
+        +processData()
+    }
+    System *-- RealTimeData
+    class ExportReport {}
+        +exportReport()
+    }
+    System *-- ExportReport
+    class CSVUpload {}
+        +uploadCSV()
+    }
+    System *-- CSVUpload

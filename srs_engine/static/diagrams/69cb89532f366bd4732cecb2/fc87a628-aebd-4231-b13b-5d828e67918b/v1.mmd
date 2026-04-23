@@ -1,0 +1,50 @@
+sequenceDiagram
+    participant User as "End User"
+    participant Librarian as "Librarian"
+    participant Administrator as "Library Administrator"
+    participant Authentication as "Authentication Service"
+    participant Analytics as "Data Analytics Service"
+    participant Database as "Database"
+    participant Server as "SmartLibrary Server"
+    participant Client as "Web Browser"
+
+    User->>Client: Login Request
+    Client->>Server: Login Request
+    Server->>Authentication: Authenticate User
+    Authentication-->>Server: Authentication Response
+    Server->>Database: Retrieve User Data
+    Database-->>Server: User Data
+    Server-->>Client: Login Response
+    Client-->>User: Login Response
+
+    Librarian->>Client: Search Book Request
+    Client->>Server: Search Book Request
+    Server->>Database: Retrieve Book Data
+    Database-->>Server: Book Data
+    Server-->>Client: Search Book Response
+    Client-->>Librarian: Search Book Response
+
+    Administrator->>Client: Upload CSV/Excel File
+    Client->>Server: Upload CSV/Excel File
+    Server->>Database: Store File Data
+    Database-->>Server: File Data Stored
+    Server-->>Client: Upload Response
+    Client-->>Administrator: Upload Response
+
+    Server->>Analytics: Send Data for Analytics
+    Analytics-->>Server: Analytics Response
+    Server->>Client: Update Dashboard
+    Client-->>User: Updated Dashboard
+
+    User->>Client: Request Report
+    Client->>Server: Request Report
+    Server->>Database: Retrieve Report Data
+    Database-->>Server: Report Data
+    Server->>Client: Report Response
+    Client-->>User: Report Response
+
+    Note over Client,Server: HTTPS used for secure communication
+    Note over Client,Server: WebSockets used for real-time updates
+    activate Server
+    Server->>Client: Real-time Updates
+    deactivate Server

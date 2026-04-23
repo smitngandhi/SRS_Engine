@@ -1,0 +1,40 @@
+# ─── Core Web Framework ───────────────────────────────────────
+fastapi[standard]==0.136.0
+uvicorn[standard]==0.46.0
+starlette==0.52.1
+itsdangerous==2.2.0
+jinja2==3.1.6
+python-multipart==0.0.26
+
+# ─── AI & LLM ─────────────────────────────────────────────────
+google-adk==1.26.0
+# google-generativeai REMOVED — google-adk already includes google-genai>=1.56.0
+# Use: from google import genai  (instead of import google.generativeai)
+litellm
+motor==3.7.1
+pymongo==4.17.0
+aiosqlite==0.22.1
+
+# ─── Redis Queue ──────────────────────────────────────────────
+redis[hiredis]==7.4.0
+
+# ─── Data Validation ──────────────────────────────────────────
+pydantic==2.12.5
+pydantic-settings==2.8.1
+typing_extensions==4.14.1
+
+# ─── Auth & Sessions ──────────────────────────────────────────
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+authlib==1.7.0
+python-dotenv==1.0.1
+
+# ─── HTTP ─────────────────────────────────────────────────────
+requests==2.33.1
+
+# ─── Document Generation ──────────────────────────────────────
+python-docx==1.2.0
+jsonschema==4.23.0
+
+# ─── Process Management ───────────────────────────────────────
+supervisor==4.3.0

@@ -1,0 +1,904 @@
+{% extends "base.html" %}
+
+{% block title %}Home | SpecForge AI{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='upgrader.css') }}">
+<style>
+  /* ══════════════════════════════════════════
+       TOOLS SHOWCASE — bento grid
+    ══════════════════════════════════════════ */
+
+  .tools-section {
+    padding: 100px 32px;
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+
+  .tools-section-header {
+    text-align: center;
+    max-width: 580px;
+    margin: 0 auto 64px;
+  }
+
+  /* ── Bento grid ─────────────────────────── */
+  .tools-bento {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: minmax(200px, auto);
+    gap: 14px;
+  }
+
+  /* Layout assignments */
+  .tool-card--generator {
+    grid-column: 1 / 3;
+    grid-row: 1 / 3;
+  }
+
+  .tool-card--navigator {
+    grid-column: 3 / 4;
+    grid-row: 1 / 2;
+  }
+
+  .tool-card--projects {
+    grid-column: 3 / 4;
+    grid-row: 2 / 3;
+  }
+
+  .tool-card--upgrader {
+    grid-column: 1 / 2;
+  }
+
+  .tool-card--section {
+    grid-column: 2 / 3;
+  }
+
+  .tool-card--diagrams {
+    grid-column: 3 / 4;
+  }
+
+  /* ── Base card ─────────────────────────── */
+  .tool-card {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    overflow: hidden;
+    text-decoration: none !important;
+    background: var(--panel);
+    backdrop-filter: blur(14px);
+    display: flex;
+    flex-direction: column;
+    padding: 28px 28px 24px;
+    transition: border-color 0.35s, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s;
+    cursor: pointer;
+  }
+
+  .tool-card:hover {
+    transform: translateY(-5px);
+  }
+
+  /* Top gradient shimmer line */
+  .tool-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--tc-line, linear-gradient(90deg, transparent, rgba(79, 142, 255, 0.5), transparent));
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+
+  .tool-card:hover::after {
+    opacity: 1;
+  }
+
+  /* Ambient glow overlay */
+  .tool-card-bg {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.45s;
+    pointer-events: none;
+    background: var(--tc-bg, radial-gradient(ellipse 80% 60% at 50% 0%, rgba(79, 142, 255, 0.09), transparent));
+  }
+
+  .tool-card:hover .tool-card-bg {
+    opacity: 1;
+  }
+
+  /* Content wrapper */
+  .tool-card-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  /* ── Icon ─────────────────────────────── */
+  .tool-icon {
+    font-size: 1.8rem;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    border: 1px solid var(--tc-border, rgba(79, 142, 255, 0.2));
+    background: var(--tc-icon-bg, rgba(79, 142, 255, 0.1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s;
+    flex-shrink: 0;
+  }
+
+  .tool-card:hover .tool-icon {
+    transform: scale(1.12) rotate(-4deg);
+    box-shadow: 0 0 22px var(--tc-glow, rgba(79, 142, 255, 0.35));
+  }
+
+  /* ── Badge ─────────────────────────────── */
+  .tool-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--tc-border, rgba(79, 142, 255, 0.3));
+    background: var(--tc-icon-bg, rgba(79, 142, 255, 0.08));
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--tc-text, var(--primary));
+    margin-bottom: 12px;
+    align-self: flex-start;
+  }
+
+  .tool-badge::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 5px currentColor;
+    animation: pulse 2s ease infinite;
+  }
+
+  /* ── Title ─────────────────────────────── */
+  .tool-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    color: var(--text);
+    margin-bottom: 10px;
+    line-height: 1.2;
+  }
+
+  .tool-card--generator .tool-title {
+    font-size: 1.7rem;
+  }
+
+  /* ── Description ───────────────────────── */
+  .tool-desc {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    flex: 1;
+  }
+
+  /* ── Feature list (generator only) ─────── */
+  .tool-features {
+    list-style: none;
+    margin: 18px 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .tool-features li {
+    font-size: 0.82rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .tool-features li::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--tc-text, var(--primary));
+    flex-shrink: 0;
+    box-shadow: 0 0 4px var(--tc-glow, rgba(79, 142, 255, 0.4));
+  }
+
+  /* ── CTA row ─────────────────────────────── */
+  .tool-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--tc-text, var(--primary));
+    font-family: 'Syne', sans-serif;
+    letter-spacing: 0.01em;
+    transition: gap 0.25s;
+  }
+
+  .tool-card:hover .tool-cta {
+    gap: 13px;
+  }
+
+  .tool-cta svg {
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .tool-card:hover .tool-cta svg {
+    transform: translateX(4px);
+  }
+
+  /* ── Floating orbs (generator) ──────────── */
+  .tool-orbs {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .tool-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(50px);
+    opacity: 0.18;
+    animation: orbFloat linear infinite;
+  }
+
+  @keyframes orbFloat {
+    0% {
+      transform: translate(0, 0) scale(1);
+    }
+
+    33% {
+      transform: translate(20px, -15px) scale(1.05);
+    }
+
+    66% {
+      transform: translate(-10px, 20px) scale(0.97);
+    }
+
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+  }
+
+  /* Scan line animation (generator) */
+  @keyframes scanLine {
+    0% {
+      top: -2px;
+      opacity: 0;
+    }
+
+    10% {
+      opacity: 1;
+    }
+
+    90% {
+      opacity: 1;
+    }
+
+    100% {
+      top: 100%;
+      opacity: 0;
+    }
+  }
+
+  .tool-scan {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(79, 142, 255, 0.5), transparent);
+    animation: scanLine 4s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Per-card color themes ──────────────── */
+
+  /* Generator — blue */
+  .tool-card--generator {
+    --tc-bg: radial-gradient(ellipse 90% 50% at 30% 10%, rgba(79, 142, 255, 0.13), transparent);
+    --tc-line: linear-gradient(90deg, transparent, rgba(79, 142, 255, 0.6), transparent);
+    --tc-border: rgba(79, 142, 255, 0.25);
+    --tc-icon-bg: rgba(79, 142, 255, 0.12);
+    --tc-glow: rgba(79, 142, 255, 0.45);
+    --tc-text: #6ea9ff;
+  }
+
+  .tool-card--generator:hover {
+    border-color: rgba(79, 142, 255, 0.35);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45), 0 0 40px rgba(79, 142, 255, 0.18);
+  }
+
+  /* Upload Upgrader — purple */
+  .tool-card--upgrader {
+    --tc-bg: radial-gradient(ellipse 90% 70% at 50% 0%, rgba(124, 58, 237, 0.14), transparent);
+    --tc-line: linear-gradient(90deg, transparent, rgba(124, 58, 237, 0.6), transparent);
+    --tc-border: rgba(124, 58, 237, 0.22);
+    --tc-icon-bg: rgba(124, 58, 237, 0.12);
+    --tc-glow: rgba(124, 58, 237, 0.4);
+    --tc-text: #a78bfa;
+  }
+
+  .tool-card--upgrader:hover {
+    border-color: rgba(124, 58, 237, 0.32);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45), 0 0 40px rgba(124, 58, 237, 0.15);
+  }
+
+  /* Doc Navigator — amber */
+  .tool-card--navigator {
+    --tc-bg: radial-gradient(ellipse 90% 70% at 50% 0%, rgba(245, 158, 11, 0.12), transparent);
+    --tc-line: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.55), transparent);
+    --tc-border: rgba(245, 158, 11, 0.2);
+    --tc-icon-bg: rgba(245, 158, 11, 0.1);
+    --tc-glow: rgba(245, 158, 11, 0.38);
+    --tc-text: #fbbf24;
+  }
+
+  .tool-card--navigator:hover {
+    border-color: rgba(245, 158, 11, 0.3);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45), 0 0 40px rgba(245, 158, 11, 0.13);
+  }
+
+  /* Section Upgrader — teal */
+  .tool-card--section {
+    --tc-bg: radial-gradient(ellipse 90% 70% at 50% 0%, rgba(0, 229, 201, 0.11), transparent);
+    --tc-line: linear-gradient(90deg, transparent, rgba(0, 229, 201, 0.55), transparent);
+    --tc-border: rgba(0, 229, 201, 0.2);
+    --tc-icon-bg: rgba(0, 229, 201, 0.1);
+    --tc-glow: rgba(0, 229, 201, 0.38);
+    --tc-text: #00e5c9;
+  }
+
+  .tool-card--section:hover {
+    border-color: rgba(0, 229, 201, 0.3);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45), 0 0 40px rgba(0, 229, 201, 0.13);
+  }
+
+  /* Diagrams — pink */
+  .tool-card--diagrams {
+    --tc-bg: radial-gradient(ellipse 90% 70% at 50% 0%, rgba(236, 72, 153, 0.11), transparent);
+    --tc-line: linear-gradient(90deg, transparent, rgba(236, 72, 153, 0.55), transparent);
+    --tc-border: rgba(236, 72, 153, 0.2);
+    --tc-icon-bg: rgba(236, 72, 153, 0.1);
+    --tc-glow: rgba(236, 72, 153, 0.38);
+    --tc-text: #f472b6;
+  }
+
+  .tool-card--diagrams:hover {
+    border-color: rgba(236, 72, 153, 0.3);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45), 0 0 40px rgba(236, 72, 153, 0.13);
+  }
+
+  /* Projects — green */
+  .tool-card--projects {
+    --tc-bg: radial-gradient(ellipse 90% 70% at 50% 0%, rgba(16, 185, 129, 0.11), transparent);
+    --tc-line: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.55), transparent);
+    --tc-border: rgba(16, 185, 129, 0.2);
+    --tc-icon-bg: rgba(16, 185, 129, 0.1);
+    --tc-glow: rgba(16, 185, 129, 0.38);
+    --tc-text: #34d399;
+  }
+
+  .tool-card--projects:hover {
+    border-color: rgba(16, 185, 129, 0.3);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45), 0 0 40px rgba(16, 185, 129, 0.13);
+  }
+
+  /* ── Responsive ─────────────────────────── */
+  @media (max-width: 900px) {
+    .tools-bento {
+      grid-template-columns: 1fr 1fr;
+      grid-auto-rows: auto;
+    }
+
+    .tool-card--generator {
+      grid-column: 1 / 3;
+      grid-row: auto;
+    }
+
+    .tool-card--navigator {
+      grid-column: auto;
+      grid-row: auto;
+    }
+
+    .tool-card--projects {
+      grid-column: auto;
+      grid-row: auto;
+    }
+
+    .tool-card--upgrader {
+      grid-column: auto;
+    }
+
+    .tool-card--section {
+      grid-column: auto;
+    }
+
+    .tool-card--diagrams {
+      grid-column: auto;
+    }
+
+    .tool-features {
+      grid-template-columns: 1fr;
+    }
+
+    .tool-card--generator .tool-title {
+      font-size: 1.4rem;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .tools-bento {
+      grid-template-columns: 1fr;
+    }
+
+    .tool-card--generator {
+      grid-column: auto;
+    }
+
+    .tools-section {
+      padding: 70px 20px;
+    }
+  }
+
+  /* ══════════════════════════════════════════
+       UPGRADER EYEBROW — remove unused New badge spacing
+    ══════════════════════════════════════════ */
+  .upgrader-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── HERO ───────────────────────────────────────────── -->
+<section id="home" class="hero-section">
+  <div class="hero-eyebrow">AI-Powered SRS Generation</div>
+
+  <h1 class="hero-title reveal">
+    Write better specs,<br>
+    <span class="gradient-text">faster than ever.</span>
+  </h1>
+
+  <p class="hero-desc reveal delay-1">
+    SpecForge AI transforms your project ideas into IEEE-grade Software Requirements Specifications — complete with
+    diagrams, structured sections, and compliance guidance.
+  </p>
+
+  <div class="hero-cta reveal delay-2">
+    <a class="btn btn-primary" href="/srs-generator">Open SRS Generator</a>
+    <a class="btn btn-secondary" href="#tools">Explore Tools</a>
+  </div>
+
+  <div class="hero-scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ── MY DOCUMENTS ──────────────────────────────────── -->
+{% if user %}
+<section id="my-documents" class="documents-section">
+  <div class="reveal">
+    <span class="section-label">Your workspace</span>
+    <h2 class="section-heading">My Generated SRS</h2>
+    <p class="section-sub">All your previously generated specifications — ready to download.</p>
+  </div>
+
+  <div id="docsGrid" class="docs-grid">
+    <div class="doc-card doc-skeleton reveal delay-1"></div>
+    <div class="doc-card doc-skeleton reveal delay-2"></div>
+    <div class="doc-card doc-skeleton reveal delay-3"></div>
+  </div>
+
+  <div id="docsEmpty" class="docs-empty reveal delay-1" style="display:none;">
+    <div class="docs-empty-icon">📄</div>
+    <p>No documents yet. <a href="/srs-generator">Generate your first SRS →</a></p>
+  </div>
+
+  <div id="docsError" class="docs-error reveal delay-1" style="display:none;">
+    <span>⚠️</span> Failed to load documents. <button class="btn btn-link" onclick="loadDocuments()">Retry</button>
+  </div>
+</section>
+
+<hr class="section-divider">
+{% endif %}
+
+
+
+<!-- ── TOOLS SHOWCASE ─────────────────────────────────── -->
+<section id="tools" class="tools-section">
+
+  <div class="tools-section-header reveal">
+    <span class="section-label">Everything in one place</span>
+    <h2 class="section-heading">Your complete<br>documentation toolkit.</h2>
+    <p class="section-sub" style="margin: 0 auto;">Six specialised tools, one seamless workflow — from first draft to
+      fully compliant specification.</p>
+  </div>
+
+  <div class="tools-bento">
+
+    <!-- ── SRS Generator (featured 2×2) ──── -->
+    <a href="/srs-generator" class="tool-card tool-card--generator reveal delay-1">
+      <div class="tool-card-bg"></div>
+
+      <!-- animated scan line -->
+      <div class="tool-scan"></div>
+
+      <!-- floating orbs -->
+      <div class="tool-orbs">
+        <div class="tool-orb"
+          style="width:180px;height:180px;background:rgba(79,142,255,0.35);top:-40px;right:-40px;animation-duration:9s;">
+        </div>
+        <div class="tool-orb"
+          style="width:120px;height:120px;background:rgba(0,229,201,0.2);bottom:20px;left:20px;animation-duration:12s;animation-delay:-4s;">
+        </div>
+      </div>
+
+      <div class="tool-card-inner">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div class="tool-icon">⚡</div>
+          <div class="tool-badge">Most Popular</div>
+        </div>
+
+        <h3 class="tool-title">SRS Generator</h3>
+
+        <p class="tool-desc">
+          Transform your project ideas into a polished, IEEE 830-compliant Software Requirements Specification. Guided
+          form input, AI-enhanced sections, and embedded Mermaid diagrams — all in one click.
+        </p>
+
+        <ul class="tool-features">
+          <li>IEEE 830 structure</li>
+          <li>Domain-aware compliance</li>
+          <li>Auto-generated sections</li>
+          <li>Embedded diagrams</li>
+          <li>Problem statement enhancer</li>
+          <li>3 detail levels</li>
+        </ul>
+
+        <div class="tool-cta">
+          Open Generator
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg>
+        </div>
+      </div>
+    </a>
+
+    <!-- ── Doc Navigator ───────────────────── -->
+    <a href="/document-navigator" class="tool-card tool-card--navigator reveal delay-2">
+      <div class="tool-card-bg"></div>
+      <div class="tool-card-inner">
+        <div class="tool-icon">🗺️</div>
+        <h3 class="tool-title">Doc Navigator</h3>
+        <p class="tool-desc">Agentic document chat — ask questions, extract insights, and navigate complex specs with AI
+          guidance.</p>
+        <div class="tool-cta">
+          Start chatting
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg>
+        </div>
+      </div>
+    </a>
+
+    <!-- ── Projects ───────────────────────── -->
+    <a href="/project-buckets" class="tool-card tool-card--projects reveal delay-3">
+      <div class="tool-card-bg"></div>
+      <div class="tool-card-inner">
+        <div class="tool-icon">📁</div>
+        <h3 class="tool-title">Projects</h3>
+        <p class="tool-desc">Organise specs, diagrams, and upgrades into project buckets — structured and shareable.</p>
+        <div class="tool-cta">
+          View projects
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg>
+        </div>
+      </div>
+    </a>
+
+    <!-- ── Upload Upgrader (Hiding for Beta) ──
+    <div class="tool-card tool-card--coming-soon"
+      style="opacity:0.6; pointer-events:none; position:relative; grid-column: 1 / 2;">
+      <div class="coming-soon-badge" style="position:absolute; top:12px; right:12px; 
+           background:linear-gradient(135deg,#667eea,#764ba2); color:white; 
+           padding:4px 12px; border-radius:12px; font-size:0.75rem; font-weight:600;">
+        Coming Soon
+      </div>
+      <div class="tool-card-inner">
+        <div class="tool-icon">📄</div>
+        <h3 class="tool-title">Upload Upgrader</h3>
+        <p class="tool-desc">Upload existing SRS documents (PDF/DOCX) and upgrade them with AI-powered multi-agent
+          analysis.</p>
+      </div>
+    </div>
+    -->
+
+    <!-- ── Section Upgrader ────────────────── -->
+    <a href="/srs-generated-upgrader" class="tool-card tool-card--section reveal delay-2">
+      <div class="tool-card-bg"></div>
+      <div class="tool-card-inner">
+        <div class="tool-icon">✨</div>
+        <h3 class="tool-title">Section Upgrader</h3>
+        <p class="tool-desc">Upgrade individual sections of generated specs with targeted, AI-powered rewrites and
+          quality scoring.</p>
+        <div class="tool-cta">
+          Upgrade sections
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg>
+        </div>
+      </div>
+    </a>
+
+    <!-- ── Diagrams ────────────────────────── -->
+    <a href="/diagrams" class="tool-card tool-card--diagrams reveal delay-3">
+      <div class="tool-card-bg"></div>
+      <div class="tool-card-inner">
+        <div class="tool-icon">🖊️</div>
+        <h3 class="tool-title">Diagrams</h3>
+        <p class="tool-desc">Generate architecture, flow, ERD, and sequence diagrams with Mermaid — rendered and
+          embedded in your docs.</p>
+        <div class="tool-cta">
+          Draw diagrams
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg>
+        </div>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ── FEATURES ────────────────────────────────────────── -->
+<section id="features" class="features-section">
+  <div class="reveal">
+    <span class="section-label">What we offer</span>
+    <h2 class="section-heading">Everything you need<br>to ship great specs.</h2>
+    <p class="section-sub">From guided forms to AI-enhanced problem statements — every tool you need to document your
+      software properly.</p>
+  </div>
+
+  <div class="features-grid">
+    <div class="feature-card reveal delay-1">
+      <div class="feature-icon">📄</div>
+      <h2>SRS Generation</h2>
+      <p>Guided form input that produces a polished <code>.docx</code> SRS document, following IEEE 830 conventions.</p>
+      <a class="btn btn-primary" href="/srs-generator">Open Generator</a>
+    </div>
+
+    <div class="feature-card reveal delay-2">
+      <div class="feature-icon">✨</div>
+      <h2>Auto-Generate Sections</h2>
+      <p>Generate core features and primary user flows automatically based on your project name and problem statement.
+      </p>
+    </div>
+
+    <div class="feature-card reveal delay-3">
+      <div class="feature-icon">🔁</div>
+      <h2>Problem Statement Enhancer</h2>
+      <p>Improve clarity with measurable, outcome-driven problem statements — powered by AI rewriting.</p>
+    </div>
+
+    <div class="feature-card reveal delay-1">
+      <div class="feature-icon">🗺️</div>
+      <h2>External Interface Diagrams</h2>
+      <p>Mermaid-based architecture diagrams are automatically rendered and embedded directly in your document.</p>
+    </div>
+
+    <div class="feature-card reveal delay-2">
+      <div class="feature-icon">🏛️</div>
+      <h2>Domain-Aware Compliance</h2>
+      <p>Select your industry and get automatic recommendations for standards like HIPAA, GDPR, ISO 25010, and more.</p>
+    </div>
+
+    <div class="feature-card reveal delay-3">
+      <div class="feature-icon">⚡</div>
+      <h2>Multiple Detail Levels</h2>
+      <p>Choose high-level overviews, technical specs, or full enterprise-grade documentation — all from one form.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ── FAQS ─────────────────────────────────────────────── -->
+<section id="faqs" class="faqs-section">
+  <div class="reveal" style="text-align:center; margin: 0 auto;">
+    <span class="section-label">Got questions?</span>
+    <h2 class="section-heading">Frequently Asked<br>Questions</h2>
+  </div>
+
+  <div class="faq-list">
+
+    <div class="faq-item reveal delay-1">
+      <button class="faq-question" aria-expanded="false">
+        Where is the SRS generator?
+        <span class="faq-chevron">▾</span>
+      </button>
+      <div class="faq-answer" role="region">
+        <div class="faq-answer-inner">
+          You can access it from the button above or directly at <a href="/srs-generator">/srs-generator</a>. Just fill
+          in the guided form and click Generate SRS.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item reveal delay-2">
+      <button class="faq-question" aria-expanded="false">
+        Does it change my existing SRS flow?
+        <span class="faq-chevron">▾</span>
+      </button>
+      <div class="faq-answer" role="region">
+        <div class="faq-answer-inner">
+          No. The generator form and API endpoints remain the same — now protected behind login for a personalised
+          experience.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item reveal delay-3">
+      <button class="faq-question" aria-expanded="false">
+        Why do I need to log in?
+        <span class="faq-chevron">▾</span>
+      </button>
+      <div class="faq-answer" role="region">
+        <div class="faq-answer-inner">
+          Login enables user-specific access and future enhancements like saved document history and team collaboration
+          features.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item reveal delay-1">
+      <button class="faq-question" aria-expanded="false">
+        What output format does it produce?
+        <span class="faq-chevron">▾</span>
+      </button>
+      <div class="faq-answer" role="region">
+        <div class="faq-answer-inner">
+          The generator produces a <code>.docx</code> Word document with embedded diagrams, formatted sections, and your
+          chosen level of technical detail.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item reveal delay-2">
+      <button class="faq-question" aria-expanded="false">
+        Can I use Google to sign in?
+        <span class="faq-chevron">▾</span>
+      </button>
+      <div class="faq-answer" role="region">
+        <div class="faq-answer-inner">
+          Yes — Google OAuth is supported. Click "Continue with Google" on the login page for instant access.
+        </div>
+      </div>
+    </div>
+
+    <!--
+    <div class="faq-item reveal delay-3">
+      <button class="faq-question" aria-expanded="false">
+        What is the SRS Upgrader?
+        <span class="faq-chevron">▾</span>
+      </button>
+      <div class="faq-answer" role="region">
+        <div class="faq-answer-inner">
+          The SRS Upgrader accepts an existing PDF or DOCX specification and runs it through a multi-agent pipeline —
+          parsing requirements, detecting quality issues, running a three-agent debate, and exporting an upgraded
+          document with a full traceability matrix.
+        </div>
+      </div>
+    </div>
+    -->
+
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ── ABOUT ─────────────────────────────────────────────── -->
+<section id="about" class="about-section">
+  <div class="about-grid">
+    <div class="reveal-left">
+      <span class="section-label">About us</span>
+      <h2 class="section-heading">Built for teams who ship.</h2>
+      <p class="section-sub" style="margin-bottom: 24px;">
+        SpecForge AI is an AI-assisted platform for generating structured Software Requirements Specification documents.
+        It helps teams capture scope, features, interfaces, and non-functional requirements consistently — without the
+        manual overhead.
+      </p>
+      <p class="section-sub">
+        Whether you're a solo developer or a cross-functional team, SpecForge AI makes documentation a first-class
+        citizen of your workflow.
+      </p>
+    </div>
+
+    <div class="about-stat-grid reveal-right">
+      <div class="stat-card">
+        <div class="stat-number">IEEE</div>
+        <div class="stat-label">830-compliant output</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">9+</div>
+        <div class="stat-label">Industry domains</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">3×</div>
+        <div class="stat-label">Faster than manual writing</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">AI</div>
+        <div class="stat-label">Powered enhancements</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ── CONTACT ────────────────────────────────────────────── -->
+<section id="contact" class="contact-section">
+  <div class="reveal" style="text-align:center; margin: 0 auto;">
+    <span class="section-label">Get in touch</span>
+    <h2 class="section-heading">We'd love to<br>hear from you.</h2>
+    <p class="section-sub" style="margin: 0 auto;">Have feedback, a feature request, or a question? Drop us a message.
+    </p>
+  </div>
+
+  <div class="contact-card reveal delay-1">
+    <form id="contactForm" class="form">
+      <label>
+        <span>Your Name</span>
+        <input name="name" type="text" placeholder="Jane Doe" required />
+      </label>
+      <label>
+        <span>Email Address</span>
+        <input name="email" type="email" placeholder="jane@example.com" required />
+      </label>
+      <label>
+        <span>Subject</span>
+        <input name="subject" type="text" placeholder="Feature request, bug report..." required />
+      </label>
+      <label>
+        <span>Message</span>
+        <textarea name="message" rows="5" placeholder="Tell us more..." required></textarea>
+      </label>
+      <input name="website" type="text" class="hp" tabindex="-1" autocomplete="off" />
+      <button class="btn btn-primary" type="submit" style="width: 100%; padding: 13px;">Send Message</button>
+      <div id="contactStatus" class="muted"></div>
+    </form>
+  </div>
+</section>
+
+{% endblock %}

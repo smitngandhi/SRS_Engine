@@ -1,0 +1,70 @@
+sequenceDiagram
+actor User
+participant WebBrowser
+participant LoadBalancer
+participant WebServer
+participant ApplicationServer
+participant Database
+participant PaymentGateway
+participant FinancialInstitution
+
+User->>WebBrowser: Login request
+WebBrowser->>LoadBalancer: HTTPS request
+LoadBalancer->>WebServer: Routing
+WebServer->>ApplicationServer: API call
+ApplicationServer->>Database: Validate user
+Database-->>ApplicationServer: User valid
+ApplicationServer->>PaymentGateway: Charge card
+PaymentGateway->>FinancialInstitution: Process payment
+FinancialInstitution-->>PaymentGateway: Payment status
+PaymentGateway-->>ApplicationServer: Payment result
+ApplicationServer-->>WebServer: Payment response
+WebServer-->>LoadBalancer: Response
+LoadBalancer-->>WebBrowser: Response
+WebBrowser-->>User: Payment result
+
+User->>WebBrowser: Upload data file
+WebBrowser->>LoadBalancer: HTTPS request
+LoadBalancer->>WebServer: Routing
+WebServer->>ApplicationServer: API call
+ApplicationServer->>Database: Store data file
+Database-->>ApplicationServer: Data file stored
+ApplicationServer-->>WebServer: Success response
+WebServer-->>LoadBalancer: Response
+LoadBalancer-->>WebBrowser: Response
+WebBrowser-->>User: Success message
+
+User->>WebBrowser: Request dashboard analytics
+WebBrowser->>LoadBalancer: HTTPS request
+LoadBalancer->>WebServer: Routing
+WebServer->>ApplicationServer: API call
+ApplicationServer->>Database: Retrieve analytics data
+Database-->>ApplicationServer: Analytics data
+ApplicationServer-->>WebServer: Analytics response
+WebServer-->>LoadBalancer: Response
+LoadBalancer-->>WebBrowser: Response
+WebBrowser-->>User: Dashboard analytics
+
+User->>WebBrowser: Request predictive model training
+WebBrowser->>LoadBalancer: HTTPS request
+LoadBalancer->>WebServer: Routing
+WebServer->>ApplicationServer: API call
+ApplicationServer->>Database: Retrieve training data
+Database-->>ApplicationServer: Training data
+ApplicationServer->>ApplicationServer: Train predictive model
+ApplicationServer-->>WebServer: Training result
+WebServer-->>LoadBalancer: Response
+LoadBalancer-->>WebBrowser: Response
+WebBrowser-->>User: Training result
+
+User->>WebBrowser: Request automated email notification
+WebBrowser->>LoadBalancer: HTTPS request
+LoadBalancer->>WebServer: Routing
+WebServer->>ApplicationServer: API call
+ApplicationServer->>Database: Retrieve notification settings
+Database-->>ApplicationServer: Notification settings
+ApplicationServer->>ApplicationServer: Send email notification
+ApplicationServer-->>WebServer: Notification sent
+WebServer-->>LoadBalancer: Response
+LoadBalancer-->>WebBrowser: Response
+WebBrowser-->>User: Notification sent

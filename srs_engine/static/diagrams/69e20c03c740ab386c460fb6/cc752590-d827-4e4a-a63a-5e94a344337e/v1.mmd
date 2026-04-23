@@ -1,0 +1,28 @@
+gantt
+dateFormat YYYY-MM-DD
+title Agent Factory Project Timeline
+
+section Introduction
+Introduction :active, intro, 2024-01-01, 5d
+Purpose Definition :after intro, purpose, 5d
+Project Scope :after purpose, scope, 5d
+
+section Development
+User Registration :active, reg, 2024-01-15, 10d
+Dashboard Development :after reg, dash, 15d
+Predictive Model Training :after dash, model, 20d
+Automated Email Notifications :after model, notify, 10d
+Role-Based Access Control :after notify, access, 10d
+Data Visualization :after access, viz, 15d
+
+section Testing
+Unit Testing :after viz, unit, 10d
+Integration Testing :after unit, integ, 15d
+System Testing :after integ, sys, 20d
+
+section Deployment
+Deployment Preparation :after sys, deploy, 10d
+System Deployment :after deploy, prod, 5d
+
+section Maintenance
+Maintenance and Updates :after prod, maint, 30d

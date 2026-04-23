@@ -1,0 +1,30 @@
+stateDiagram-v2
+[*] --> Unregistered : Initialize
+Unregistered --> Registered : Register
+Registered --> LoggedIn : Login
+LoggedIn --> Dashboard : View Dashboard
+Dashboard --> SearchBooks : Search Books
+Dashboard --> UploadData : Upload Data
+Dashboard --> ViewReports : View Reports
+Dashboard --> ManageProfile : Manage Profile
+Dashboard --> Logout : Logout
+Logout --> Unregistered : Unregistered
+SearchBooks --> BookFound : Book Found
+SearchBooks --> BookNotFound : Book Not Found
+UploadData --> DataUploaded : Data Uploaded
+UploadData --> UploadFailed : Upload Failed
+ViewReports --> ReportGenerated : Report Generated
+ViewReports --> ReportFailed : Report Failed
+ManageProfile --> ProfileUpdated : Profile Updated
+ManageProfile --> UpdateFailed : Update Failed
+[*] --> Deleted : Delete Account
+BookFound --> BorrowBook : Borrow Book
+BookFound --> ReturnBook : Return Book
+BorrowBook --> BookBorrowed : Book Borrowed
+ReturnBook --> BookReturned : Book Returned
+BookBorrowed --> Overdue : Overdue
+BookReturned --> Available : Available
+Overdue --> ReturnBook : Return Book
+Available --> BorrowBook : Borrow Book
+[*] --> Error : Error Occurred
+Error --> Unregistered : Recover
