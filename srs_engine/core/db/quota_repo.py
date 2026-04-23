@@ -14,6 +14,7 @@ from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from srs_engine.core.logging import get_logger
+from srs_engine.core.config import get_settings
 
 logger = get_logger(__name__)
 
@@ -37,8 +38,11 @@ class QuotaRepo:
         if user and not user.get("is_active", True):
             return False # Strictly block all features
         
-        # 2. Check admin bypass via dedicated admins collection
+        # 2. Check admin bypass via settings and dedicated admins collection
+        settings = get_settings()
         if user and user.get("email"):
+            if user["email"] == settings.admin_email:
+                return True
             admin = await self.db.admins.find_one({"email": user["email"]})
             if admin:
                 return True
@@ -103,8 +107,16 @@ class QuotaRepo:
         # Fetch user doc for email
         user = await self.db.users.find_one({"_id": ObjectId(user_id) if isinstance(user_id, str) and len(user_id)==24 else user_id})
         
-        # Admin Bypass via dedicated collection
+        # Admin Bypass via settings and dedicated collection
+        settings = get_settings()
         if user and user.get("email"):
+            if user["email"] == settings.admin_email:
+                return {
+                    "docx_count": 0, "docx_limit": 9999,
+                    "chat_query_count": 0, "chat_query_limit": 9999,
+                    "is_admin": True,
+                    "projects": {}
+                }
             admin = await self.db.admins.find_one({"email": user["email"]})
             if admin:
                 return {
