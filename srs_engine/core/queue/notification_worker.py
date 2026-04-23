@@ -22,7 +22,7 @@ async def run_notification_worker(app):
 
             # Blpop (Blocking left pop) waits for a message
             # The [0] is the key, [1] is the value
-            result = await app.state.redis.blpop("notification_queue", timeout=30)
+            result = await app.state.redis.client.blpop("notification_queue", timeout=30)
             
             if result:
                 payload = json.loads(result[1])

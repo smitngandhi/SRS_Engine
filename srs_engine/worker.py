@@ -240,7 +240,8 @@ async def _notify_user(
             "project_name": project_name,
             "generated_path": generated_path
         }
-        await db.redis.rpush("notification_queue", json.dumps(notification_payload))
+        redis_mgr = get_redis_manager()
+        await redis_mgr.client.rpush("notification_queue", json.dumps(notification_payload))
         logger.info(f"Worker | Notification queued for Render | job_id={project_name}")
 
     except Exception as exc:
