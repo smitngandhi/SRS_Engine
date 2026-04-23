@@ -232,11 +232,16 @@ async def _notify_user(
         user_email        = user.get("email")
         user_display_name = user.get("display_name") or user.get("username") or "User"
 
-        await send_srs_complete_email(
-            settings=settings,
-            to_email=user_email,
-            project_name=project_name,
-        )
+        # Offload email to Render via Redis because HF blocks SMTP ports
+        notification_payload = {
+            "type": "srs_complete",
+            "user_id": user_id,
+            "user_email": user_email,
+            "project_name": project_name,
+            "generated_path": generated_path
+        }
+        await db.redis.rpush("notification_queue", json.dumps(notification_payload))
+        logger.info(f"Worker | Notification queued for Render | job_id={project_name}")
 
     except Exception as exc:
         # Email failure must never bubble up and mark the job as failed

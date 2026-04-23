@@ -57,6 +57,10 @@ async def lifespan(app: FastAPI):
         logger.error(f"Startup | Redis connection failed | error={exc}")
         app.state.redis = None
 
+    # ── Notification Worker (for Render to send HF emails) ────────────
+    from srs_engine.core.queue.notification_worker import run_notification_worker
+    asyncio.create_task(run_notification_worker(app))
+
     # ── SMTP warning ───────────────────────────────────────────────────
     if not all([settings.smtp_host, settings.smtp_username, settings.smtp_password]):
         logger.warning("WARNING: SMTP not configured — users will NOT receive email backups")

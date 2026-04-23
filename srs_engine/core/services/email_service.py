@@ -15,11 +15,13 @@ logger = get_logger(__name__)
 def _send_smtp(settings: Settings, msg: EmailMessage) -> None:
     """Synchronous SMTP send."""
     try:
-        with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
+        # Add a 15-second timeout to prevent hanging
+        with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=15) as server:
             server.starttls()
             if settings.smtp_username and settings.smtp_password:
                 server.login(settings.smtp_username, settings.smtp_password)
             server.send_message(msg)
+            logger.info(f"SMTP | Email successfully sent to {msg['To']}")
     except Exception as e:
         logger.error(f"SMTP error: {e}")
         raise
