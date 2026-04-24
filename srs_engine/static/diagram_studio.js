@@ -275,8 +275,9 @@ async function _checkContextAvailability(projectName) {
 /* ── Quota Check ──────────────────────────────────────────────────────────── */
 async function updateDiagramQuota(projectName) {
   try {
-    const res = await fetch('/api/my-quota');
-    const q = await res.json();
+    const q = window.refreshQuotas ? await window.refreshQuotas() : null;
+    if (!q) return;
+
     const isAdmin = q.is_admin || false;
     const limit = q.diag_limit || 2;
     const projData = q.projects?.[projectName] || {};
@@ -899,6 +900,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         generateBtn.click();
       }
     }, 500);
+  }
+
+  // ── Mobile Tab Switching ──
+  const studioBody = document.getElementById('studioBody');
+  const tabBtns = document.querySelectorAll('.studio-mobile-tabs .tab-btn');
+  
+  if (studioBody && tabBtns.length > 0) {
+    tabBtns.forEach((btn, idx) => {
+      btn.addEventListener('click', () => {
+        // Update active tab button
+        tabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Update body data attribute for CSS switching
+        studioBody.setAttribute('data-active-tab', idx);
+        
+        // If switching to Preview, trigger mermaid render just in case
+        if (idx === 1 && state.mermaidCode) {
+           renderDiagram(state.mermaidCode);
+        }
+      });
+    });
+    
+    // Default to Preview (1) if code already exists, otherwise Config (0)
+    const initialTab = state.mermaidCode ? 1 : 0;
+    tabBtns[initialTab].click();
   }
 });
 

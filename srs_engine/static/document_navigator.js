@@ -186,32 +186,40 @@ async function refreshDocList() {
 /** Fetch current chat quota and update banner/UI */
 async function checkChatQuota() {
     try {
-        const res = await fetch('/api/my-quota');
-        if (!res.ok) return;
-        const q = await res.json();
-
-        const count = q.chat_query_count || 0;
-        const limit = q.chat_query_limit || 15;
-        const remaining = Math.max(0, limit - count);
-
-        if (quotaBanner) {
-            quotaBanner.style.display = 'flex';
-            quotaText.innerHTML = `<strong>Beta Quota:</strong> ${remaining} messages remaining (${count}/${limit} used)`;
-            
-            if (remaining <= 0) {
-                quotaBanner.style.background = 'rgba(252, 129, 129, 0.1)';
-                quotaBanner.style.borderColor = 'rgba(252, 129, 129, 0.2)';
-                quotaBanner.style.color = '#fc8181';
-                quotaText.innerHTML = `<strong>Quota Reached:</strong> 0 messages remaining. Upgrade to continue!`;
-                
-                // Lock the UI
-                chatInput.disabled = true;
-                chatInput.placeholder = "Quota reached — please upgrade your plan.";
-                sendBtn.disabled = true;
-            }
+        const q = window.refreshQuotas ? await window.refreshQuotas() : null;
+        if (!q) {
+             const res = await fetch('/api/my-quota');
+             if (!res.ok) return;
+             const data = await res.json();
+             _renderChatQuota(data);
+        } else {
+            _renderChatQuota(q);
         }
     } catch (err) {
         console.warn('Failed to fetch quota:', err);
+    }
+}
+
+function _renderChatQuota(q) {
+    const count = q.chat_query_count || 0;
+    const limit = q.chat_query_limit || 15;
+    const remaining = Math.max(0, limit - count);
+
+    if (quotaBanner) {
+        quotaBanner.style.display = 'flex';
+        quotaText.innerHTML = `<strong>Beta Quota:</strong> ${remaining} messages remaining (${count}/${limit} used)`;
+        
+        if (remaining <= 0) {
+            quotaBanner.style.background = 'rgba(252, 129, 129, 0.1)';
+            quotaBanner.style.borderColor = 'rgba(252, 129, 129, 0.2)';
+            quotaBanner.style.color = '#fc8181';
+            quotaText.innerHTML = `<strong>Quota Reached:</strong> 0 messages remaining. Upgrade to continue!`;
+            
+            // Lock the UI
+            chatInput.disabled = true;
+            chatInput.placeholder = "Quota reached — please upgrade your plan.";
+            sendBtn.disabled = true;
+        }
     }
 }
 

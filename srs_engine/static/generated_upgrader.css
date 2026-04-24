@@ -155,8 +155,9 @@ body {
 @media (max-width: 900px) {
   .gu-upgrader-layout {
     grid-template-columns: 1fr;
-    height: auto;
-    overflow: visible;
+    height: calc(100vh - 64px);
+    overflow: hidden;
+    position: relative;
   }
 }
 
@@ -275,12 +276,21 @@ body {
   color: var(--gu-text);
 }
 
+@media (max-width: 900px) {
+  .gu-topbar { padding: 0 1rem; }
+  .gu-topbar-title { font-size: 0.85rem; }
+}
+
 /* ── Content Area ──────────────────────────────────────────────── */
 
 .gu-content-area {
   flex: 1;
   overflow-y: auto;
   padding: 2rem 2.5rem;
+}
+
+@media (max-width: 768px) {
+  .gu-content-area { padding: 1.5rem 1rem; }
 }
 
 .gu-content-area::-webkit-scrollbar { width: 5px; }
@@ -362,6 +372,11 @@ body {
   border-top: 1px solid var(--gu-border);
   background: rgba(6, 9, 15, 0.85);
   backdrop-filter: blur(8px);
+  z-index: 10;
+}
+
+@media (max-width: 768px) {
+  .gu-instruction-bar { padding: 0.75rem 1rem; gap: 8px; }
 }
 
 .gu-instruction-bar textarea {

@@ -74,8 +74,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function updateUpgraderQuota() {
     try {
-      const res = await fetch('/api/my-quota');
-      const q = await res.json();
+      const q = window.refreshQuotas ? await window.refreshQuotas() : null;
+      if (!q) return;
+
       const isAdmin = q.is_admin || false;
       const limit = q.upgrade_limit || 5;
       const projData = q.projects?.[projectName] || {};

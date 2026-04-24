@@ -596,7 +596,105 @@ function escHtml(str) {
         .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-document.addEventListener('DOMContentLoaded', loadAdminFeedback);
+document.addEventListener('DOMContentLoaded', () => {
+    loadAdminFeedback();
+    // Start polling stats every 10 seconds
+    setInterval(pollSystemStats, 10000);
+});
+
+async function pollSystemStats() {
+    try {
+        const res = await fetch('/api/monitor/admin/all-stats');
+        if (!res.ok) return;
+        const stats = await res.json();
+        
+        // Update Global Stats
+        const totalUsersEl = document.querySelector('.stats-grid .stat-glass-card:nth-child(1) .stat-value');
+        if (totalUsersEl) totalUsersEl.childNodes[0].textContent = stats.total_users || 0;
+        
+        const totalJobsEl = document.querySelector('.stats-grid .stat-glass-card:nth-child(2) .stat-value');
+        if (totalJobsEl) totalJobsEl.textContent = stats.total_jobs || 0;
+        
+        const activeJobsEl = document.querySelector('.stats-grid .stat-glass-card:nth-child(3) .stat-value');
+        if (activeJobsEl) activeJobsEl.textContent = stats.active_jobs || 0;
+        
+        const completedJobsEl = document.querySelector('.stats-grid .stat-glass-card:nth-child(4) .stat-value');
+        if (completedJobsEl) completedJobsEl.textContent = stats.completed_jobs || 0;
+
+        // Rebuild User Monitor Grid ONLY if modal is closed
+        if (!document.getElementById('adminModal').classList.contains('open')) {
+            const grid = document.querySelector('.user-monitor-grid');
+            if (grid && stats.user_metrics) {
+                grid.innerHTML = stats.user_metrics.map(user => `
+                    <div class="user-card">
+                        <div class="user-card-header">
+                            <div class="user-avatar">${(user.display_name ? user.display_name[0] : '?').toUpperCase()}</div>
+                            <div class="user-info">
+                                <h3>${escHtml(user.display_name || 'User')}</h3>
+                                <p class="user-email">${user.email || 'unknown'}</p>
+                            </div>
+                            <div class="user-status-tag ${user.is_verified ? 'verified' : 'pending'}">
+                                ${user.is_verified ? 'Verified' : 'Unverified'}
+                            </div>
+                        </div>
+
+                        <div class="quota-grid">
+                            <div class="quota-item">
+                                <div class="quota-header">
+                                    <span>SRS Specs</span>
+                                    <span>${user.quotas.srs.used}/${user.quotas.srs.limit}</span>
+                                </div>
+                                <div class="quota-bar">
+                                    <div class="quota-fill ${ (user.quotas.srs.used / user.quotas.srs.limit) >= 1 ? 'critical' : '' }" style="width: ${(user.quotas.srs.used / user.quotas.srs.limit * 100) || 0}%;"></div>
+                                </div>
+                            </div>
+                            <div class="quota-item">
+                                <div class="quota-header">
+                                    <span>AI Chat</span>
+                                    <span>${user.quotas.chat.used}/${user.quotas.chat.limit}</span>
+                                </div>
+                                <div class="quota-bar">
+                                    <div class="quota-fill chat" style="width: ${(user.quotas.chat.used / user.quotas.chat.limit * 100) || 0}%;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="activity-timeline">
+                            <div class="timeline-label">Last Activity</div>
+                            ${(user.recent_jobs || []).map(job => `
+                                <div class="timeline-item">
+                                    <span class="job-status-dot ${ (job.status || 'pending').toLowerCase() }"></span>
+                                    <span class="job-name">${escHtml(job.name || 'Untitled')}</span>
+                                    <span class="job-time">${job.created || ''}</span>
+                                </div>
+                            `).join('') || '<p class="muted" style="font-size: 0.75rem; margin-top: 10px;">No jobs yet</p>'}
+                        </div>
+
+                        <div class="user-footer">
+                            <div class="footer-stat"><span>Joined</span><p>${user.joined || '---'}</p></div>
+                            <div class="footer-stat"><span>Last Login</span><p>${user.last_login || 'Never'}</p></div>
+                        </div>
+
+                        <div class="user-actions">
+                            <button class="action-btn message" data-user-id="${user.id}" data-email="${user.email}" onclick="openActionModal(this.dataset.userId, this.dataset.email, 'message')">💬 Message</button>
+                            <button class="action-btn promote" data-user-id="${user.id}" data-email="${user.email}" data-srs="${user.quotas.srs.limit}" data-chat="${user.quotas.chat.limit}" data-diag="${user.quotas.diagrams.limit}" data-upgr="${user.quotas.upgrades.limit}" onclick="openActionModal(this.dataset.userId, this.dataset.email, 'promote', { srs: this.dataset.srs, chat: this.dataset.chat, diag: this.dataset.diag, upgr: this.dataset.upgr })">⏫ Promote</button>
+                            ${user.is_active ? `
+                                <button class="action-btn revoke" data-user-id="${user.id}" data-email="${user.email}" onclick="openActionModal(this.dataset.userId, this.dataset.email, 'revoke')">🚫 Revoke</button>
+                            ` : `
+                                <button class="action-btn restore" data-user-id="${user.id}" data-email="${user.email}" onclick="openActionModal(this.dataset.userId, this.dataset.email, 'restore')">♻️ Restore</button>
+                            `}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        loadAdminFeedback();
+
+    } catch (e) {
+        console.warn('Polling failed', e);
+    }
+}
 
 document.getElementById('submitActionBtn').onclick = async function() {
     const reason = document.getElementById('actionReason').value;
