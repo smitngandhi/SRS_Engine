@@ -216,8 +216,15 @@ async def auto_generate_section(app: Any, input_data: Any, user_id: str) -> dict
                 f"auto_generate_section | Input received | "
                 f"project={project_name} | section={section_type}"
             )
+            internal_section_type = {
+                "features": "CORE_FEATURES",
+                "flow": "PRIMARY_USER_FLOW",
+                "constraints": "SYSTEM_CONSTRAINTS",
+                "assumptions": "KEY_ASSUMPTIONS"
+            }.get(section_type)
 
-            internal_section_type = "CORE_FEATURES" if section_type == "features" else "PRIMARY_USER_FLOW"
+            if not internal_section_type:
+                raise ValueError(f"Unsupported section type: {section_type}")
 
             initial_state = {
                 "project_name": project_name,
@@ -244,29 +251,30 @@ async def auto_generate_section(app: Any, input_data: Any, user_id: str) -> dict
                 if section_type == "features":
                     if "core_features" not in data:
                         raise ValueError("Response missing 'core_features' key")
-                    if not isinstance(data["core_features"], list):
-                        raise ValueError("'core_features' must be a list")
-                    if len(data["core_features"]) < 4:
-                        raise ValueError("Must have at least 4 features")
-
-                    logger.info(
-                        f"auto_generate_section | SUCCESS | "
-                        f"section=features | feature_count={len(data['core_features'])}"
-                    )
+                    logger.info(f"auto_generate_section | SUCCESS | section=features | feature_count={len(data['core_features'])}")
                     return {"core_features": data["core_features"]}
+                
+                elif section_type == "flow":
+                    if "primary_user_flow" not in data:
+                        raise ValueError("Response missing 'primary_user_flow' key")
+                    logger.info(f"auto_generate_section | SUCCESS | section=flow | flow_len={len(data['primary_user_flow'])}")
+                    return {"primary_user_flow": data["primary_user_flow"]}
+                
+                elif section_type == "constraints":
+                    if "system_constraints" not in data:
+                        raise ValueError("Response missing 'system_constraints' key")
+                    constraints = data["system_constraints"]
+                    logger.info(f"auto_generate_section | SUCCESS | section=constraints | count={len(constraints)}")
+                    return {"system_constraints": "\n".join(constraints) if isinstance(constraints, list) else constraints}
+                
+                elif section_type == "assumptions":
+                    if "key_assumptions" not in data:
+                        raise ValueError("Response missing 'key_assumptions' key")
+                    assumptions = data["key_assumptions"]
+                    logger.info(f"auto_generate_section | SUCCESS | section=assumptions | count={len(assumptions)}")
+                    return {"key_assumptions": "\n".join(assumptions) if isinstance(assumptions, list) else assumptions}
 
-                if "primary_user_flow" not in data:
-                    raise ValueError("Response missing 'primary_user_flow' key")
-                if not isinstance(data["primary_user_flow"], str):
-                    raise ValueError("'primary_user_flow' must be a string")
-                if len(data["primary_user_flow"]) < 100:
-                    raise ValueError("User flow must be at least 100 characters")
 
-                logger.info(
-                    f"auto_generate_section | SUCCESS | "
-                    f"section=flow | flow_len={len(data['primary_user_flow'])}"
-                )
-                return {"primary_user_flow": data["primary_user_flow"]}
 
             except json.JSONDecodeError as e:
                 logger.error(f"auto_generate_section | JSON Parse Error | {str(e)}")

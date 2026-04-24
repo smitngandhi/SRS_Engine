@@ -29,11 +29,25 @@
 
 @media (max-width: 900px) {
   .buckets-sidebar {
-    width: 100%;
-    max-height: 280px;
-    height: auto;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    z-index: 1100;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 20px 0 50px rgba(0,0,0,0.5);
+    background: #090b10;
+    border-right: 1px solid var(--border);
+  }
+  .buckets-sidebar.open {
+    transform: translateX(0);
+  }
+  #mobile-sidebar-close, #mobile-sidebar-open {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
   }
 }
 
@@ -208,7 +222,7 @@
 .diagram-preview-thumb {
   width: 100%;
   height: 160px;
-  background: rgba(0,0,0,0.3);
+  background: #ffffff;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -227,36 +241,7 @@
   height: 100% !important;
   background: transparent !important;
   display: block;
-}
-
-.diagram-preview-thumb svg > rect:first-child,
-.diagram-preview-thumb svg rect.background {
-  fill: transparent !important;
-}
-
-.diagram-preview-thumb .node rect,
-.diagram-preview-thumb .node circle,
-.diagram-preview-thumb .node ellipse,
-.diagram-preview-thumb .node polygon {
-  fill: var(--bg2) !important;
-  stroke: var(--accent) !important;
-}
-
-.diagram-preview-thumb .edgeLabel rect,
-.diagram-preview-thumb .edgeLabel {
-  background: transparent !important;
-  fill: transparent !important;
-}
-
-.diagram-preview-thumb .flowchart-link,
-.diagram-preview-thumb path.path {
-  stroke: var(--accent) !important;
-}
-
-.diagram-preview-thumb marker path,
-.diagram-preview-thumb .arrowheadPath {
-  fill: var(--accent) !important;
-  stroke: var(--accent) !important;
+  padding: 10px;
 }
 
 /* ── Card body ──────────────────────────────────────────────────────────── */

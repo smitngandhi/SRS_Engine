@@ -36,6 +36,35 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentProject = null;
   let pendingRestoreVersion = null;
 
+  /* ── Mobile Sidebar Logic ────────────────────────────────────────── */
+  const sidebar = document.querySelector('.buckets-sidebar');
+  const openBtn = document.getElementById('mobile-sidebar-open');
+  const closeBtn = document.getElementById('mobile-sidebar-close');
+
+  if (openBtn) {
+    openBtn.onclick = () => sidebar.classList.add('open');
+  }
+  if (closeBtn) {
+    closeBtn.onclick = () => sidebar.classList.remove('open');
+  }
+
+  // Close sidebar when clicking outside on mobile
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 900 && sidebar.classList.contains('open')) {
+      if (!sidebar.contains(e.target) && e.target !== openBtn) {
+        sidebar.classList.remove('open');
+      }
+    }
+  });
+
+  // Close on item click
+  elements.list.addEventListener('click', (e) => {
+    if (window.innerWidth <= 900 && e.target.closest('.project-item')) {
+      sidebar.classList.remove('open');
+    }
+  });
+
+
   /* ── Tab Logic ───────────────────────────────────────────────────────── */
   elements.tabButtons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -53,14 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof mermaid === 'undefined') return;
     mermaid.initialize({
       startOnLoad: false,
-      theme: 'base',
+      theme: 'neutral',
       themeVariables: {
-        background: 'transparent',
-        mainBkg: '#0f1117',
-        nodeBorder: '#00e5cc',
-        nodeTextColor: '#e2e8f0',
-        edgeLabelBackground: '#0d1117',
-        lineColor: '#00e5cc',
         fontFamily: "'Inter','Segoe UI',sans-serif",
         fontSize: '11px',
       },
@@ -84,17 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
       svgEl.removeAttribute('width');
       svgEl.removeAttribute('height');
       svgEl.style.cssText = 'width:100%!important;height:100%!important;background:transparent!important;display:block;';
-
-      svgEl.querySelectorAll('[fill="white"],[fill="#ffffff"],[fill="#fff"]').forEach(el =>
-        el.setAttribute('fill', 'transparent')
-      );
-      svgEl.querySelectorAll('style').forEach(s => {
-        s.textContent = s.textContent
-          .replace(/background(-color)?:\s*(white|#fff(fff)?)\s*;?/gi, 'background:transparent;')
-          .replace(/fill:\s*(white|#fff(fff)?)\s*;?/gi, 'fill:transparent;');
-      });
-      const firstRect = svgEl.querySelector('rect:first-child');
-      if (firstRect) firstRect.setAttribute('fill', 'transparent');
     } catch (_) {}
   }
 

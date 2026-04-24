@@ -265,16 +265,24 @@
           </div>
 
           <div class="field-group full">
-            <label class="field-label" for="system_constraints">System Constraints & Limitations</label>
+            <div class="label-row">
+              <label class="field-label" for="system_constraints">System Constraints & Limitations</label>
+              <button type="button" id="autoGenerateConstraintsBtn" class="inline-btn">✨ Auto-Generate</button>
+            </div>
             <textarea class="field-input" id="system_constraints" name="system_constraints" rows="3"
               placeholder="e.g. Must work offline, Limited to 2GB RAM, Must be deployed on-premise"></textarea>
+            <div id="constraintsStatus" class="field-status"></div>
             <span class="field-hint">Any technical or business restrictions that limit design options.</span>
           </div>
 
           <div class="field-group full">
-            <label class="field-label" for="key_assumptions">Key Assumptions</label>
+            <div class="label-row">
+              <label class="field-label" for="key_assumptions">Key Assumptions</label>
+              <button type="button" id="autoGenerateAssumptionsBtn" class="inline-btn">✨ Auto-Generate</button>
+            </div>
             <textarea class="field-input" id="key_assumptions" name="key_assumptions" rows="3"
               placeholder="e.g. Users have stable internet connection, Third-party APIs remain unchanged"></textarea>
+            <div id="assumptionsStatus" class="field-status"></div>
             <span class="field-hint">Facts considered to be true for the system to function correctly.</span>
           </div>
         </div>

@@ -374,6 +374,8 @@ const problemInput     = document.getElementById('problem_statement');
 const enhanceBtn       = document.getElementById('enhanceProblemBtn');
 const autoFeaturesBtn  = document.getElementById('autoGenerateFeaturesBtn');
 const autoFlowBtn      = document.getElementById('autoGenerateFlowBtn');
+const autoConstraintsBtn = document.getElementById('autoGenerateConstraintsBtn');
+const autoAssumptionsBtn = document.getElementById('autoGenerateAssumptionsBtn');
 
 function checkBtns() {
   const name   = (document.getElementById('project_name')?.value.trim().length ?? 0) > 0;
@@ -383,6 +385,8 @@ function checkBtns() {
   if (enhanceBtn)      { enhanceBtn.disabled      = !bothOk; enhanceBtn.style.opacity      = bothOk ? '1' : '0.35'; }
   if (autoFeaturesBtn) { autoFeaturesBtn.disabled  = !bothOk; autoFeaturesBtn.style.opacity  = bothOk ? '1' : '0.35'; }
   if (autoFlowBtn)     { autoFlowBtn.disabled      = !bothOk; autoFlowBtn.style.opacity      = bothOk ? '1' : '0.35'; }
+  if (autoConstraintsBtn){ autoConstraintsBtn.disabled = !bothOk; autoConstraintsBtn.style.opacity = bothOk ? '1' : '0.35'; }
+  if (autoAssumptionsBtn){ autoAssumptionsBtn.disabled = !bothOk; autoAssumptionsBtn.style.opacity = bothOk ? '1' : '0.35'; }
 }
 
 projectNameInput?.addEventListener('input', checkBtns);
@@ -451,6 +455,28 @@ autoFlowBtn?.addEventListener('click', () => aiCall(
   d => {
     if (d.primary_user_flow) {
       document.getElementById('primary_user_flow').value = d.primary_user_flow;
+    }
+  }
+));
+
+autoConstraintsBtn?.addEventListener('click', () => aiCall(
+  '/auto-generate-section',
+  { project_name: projectNameInput.value.trim(), problem_statement: problemInput.value.trim(), section_type: 'constraints' },
+  document.getElementById('constraintsStatus'), autoConstraintsBtn, '✨ Auto-Generate',
+  d => {
+    if (d.system_constraints) {
+      document.getElementById('system_constraints').value = d.system_constraints;
+    }
+  }
+));
+
+autoAssumptionsBtn?.addEventListener('click', () => aiCall(
+  '/auto-generate-section',
+  { project_name: projectNameInput.value.trim(), problem_statement: problemInput.value.trim(), section_type: 'assumptions' },
+  document.getElementById('assumptionsStatus'), autoAssumptionsBtn, '✨ Auto-Generate',
+  d => {
+    if (d.key_assumptions) {
+      document.getElementById('key_assumptions').value = d.key_assumptions;
     }
   }
 ));

@@ -740,7 +740,7 @@ def _now() -> datetime:
 
 
 def _svg_url(user_id: str, diagram_id: str, version_number: int) -> str:
-    return f"{STATIC_URL_PREFIX}/{user_id}/{diagram_id}/v{version_number}.svg"
+    return f"/api/diagrams/{diagram_id}/v/{version_number}/svg"
 
 
 def _svg_disk_path(user_id: str, diagram_id: str, version_number: int) -> Path:
@@ -798,7 +798,9 @@ def _render_svg(mermaid_code: str, disk_path: Path) -> None:
         f.write(mermaid_code)
 
     mmdc = _find_mmdc()
-    cmd = [mmdc, "-i", str(mmd_path), "-o", str(disk_path)]
+    # Use 'neutral' theme for clean aesthetics and dark text on light backgrounds
+    # Use transparent background so we can control it in the UI
+    cmd = [mmdc, "-i", str(mmd_path), "-o", str(disk_path), "-t", "neutral", "-b", "transparent"]
     try:
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
         logger.info(f"diagram_service | SVG rendered | path={disk_path}")

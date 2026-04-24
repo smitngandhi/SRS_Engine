@@ -19,19 +19,9 @@
 /* ── Mermaid init ─────────────────────────────────────────────────────────── */
 mermaid.initialize({
   startOnLoad: false,
-  theme: "dark",
+  theme: "neutral",
   securityLevel: "loose",
-
-  themeVariables: {
-    primaryColor: "#0a1023",
-    primaryBorderColor: "#4f8eff",
-    primaryTextColor: "#e8eeff",
-    lineColor: "#64748b",
-    secondaryColor: "#0a0f1e",
-    tertiaryColor: "#06090f",
-    fontFamily: "DM Sans"
-  },
-
+  fontFamily: "DM Sans",
   flowchart: {
     nodeSpacing: 60,
     rankSpacing: 80,

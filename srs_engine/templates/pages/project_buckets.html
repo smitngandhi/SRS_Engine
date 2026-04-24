@@ -12,12 +12,18 @@
   <!-- LEFT PANEL: Project List -->
   <aside class="buckets-sidebar">
     <div class="sidebar-header">
-      <h2>Your Projects</h2>
+      <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+        <h2>Your Projects</h2>
+        <button id="mobile-sidebar-close" class="btn btn-outline" style="display:none; padding: 4px 8px; font-size: 0.8rem;">✕ Close</button>
+      </div>
     </div>
     <div id="project-list" class="project-list">
       <div class="muted" style="padding: 16px;">Loading projects...</div>
     </div>
   </aside>
+
+  <button id="mobile-sidebar-open" class="btn btn-primary" style="display:none; position: fixed; bottom: 20px; left: 20px; z-index: 1001; border-radius: 50%; width: 50px; height: 50px; padding: 0; box-shadow: 0 4px 15px var(--glow);">📂</button>
+
 
   <!-- RIGHT PANEL: Project Details -->
   <main class="buckets-main">
@@ -133,7 +139,7 @@
       <h3 id="modal-diagram-title" style="margin:0; font-size:1.1rem; color: #e2e8f0;">Diagram</h3>
       <button id="modal-diagram-close" style="background:none; border:none; color:#94a3b8; font-size:1.5rem; cursor:pointer; line-height:1; padding:0;">&times;</button>
     </div>
-    <div id="modal-diagram-content" style="flex:1; overflow:auto; padding:24px; display:flex; justify-content:center; align-items:center; min-height:400px; background:#090b10;">
+    <div id="modal-diagram-content" style="flex:1; overflow:auto; padding:32px; display:flex; justify-content:center; align-items:center; min-height:400px; background:#ffffff; position:relative;">
       <!-- SVG injected here -->
     </div>
     <div style="padding:16px 20px; border-top:1px solid var(--border-color, rgba(255,255,255,0.1)); display:flex; justify-content:flex-end; background:rgba(255,255,255,0.02);">
