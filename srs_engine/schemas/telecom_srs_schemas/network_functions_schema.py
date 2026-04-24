@@ -13,7 +13,7 @@ class NetworkFunction(StrictBaseModel):
     )
     description: str = Field(..., description="Description of this network function's responsibilities")
     served_interfaces: List[str] = Field(..., description="SBI or reference point interfaces served (e.g. N1, N2, Nsmf)")
-    3gpp_spec_reference: Optional[str] = Field(
+    gpp_spec_reference: Optional[str] = Field(
         default=None, description="3GPP spec defining this NF (e.g. TS 23.502)"
     )
 

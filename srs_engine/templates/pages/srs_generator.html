@@ -263,6 +263,20 @@
               <option value="Real-time">Real-time</option>
             </select>
           </div>
+
+          <div class="field-group full">
+            <label class="field-label" for="system_constraints">System Constraints & Limitations</label>
+            <textarea class="field-input" id="system_constraints" name="system_constraints" rows="3"
+              placeholder="e.g. Must work offline, Limited to 2GB RAM, Must be deployed on-premise"></textarea>
+            <span class="field-hint">Any technical or business restrictions that limit design options.</span>
+          </div>
+
+          <div class="field-group full">
+            <label class="field-label" for="key_assumptions">Key Assumptions</label>
+            <textarea class="field-input" id="key_assumptions" name="key_assumptions" rows="3"
+              placeholder="e.g. Users have stable internet connection, Third-party APIs remain unchanged"></textarea>
+            <span class="field-hint">Facts considered to be true for the system to function correctly.</span>
+          </div>
         </div>
       </div>
 
@@ -345,6 +359,18 @@
               <option value="Hybrid">Hybrid</option>
               <option value="Any">Any</option>
             </select>
+          </div>
+
+          <div class="field-group full">
+            <label class="field-label">Operating Environment</label>
+            <div class="chip-group">
+              <label class="chip-label"><input type="checkbox" name="operating_environment" value="Modern Web Browsers"><span>Web Browsers</span></label>
+              <label class="chip-label"><input type="checkbox" name="operating_environment" value="iOS"><span>iOS</span></label>
+              <label class="chip-label"><input type="checkbox" name="operating_environment" value="Android"><span>Android</span></label>
+              <label class="chip-label"><input type="checkbox" name="operating_environment" value="Windows"><span>Windows</span></label>
+              <label class="chip-label"><input type="checkbox" name="operating_environment" value="macOS"><span>macOS</span></label>
+              <label class="chip-label"><input type="checkbox" name="operating_environment" value="Linux"><span>Linux</span></label>
+            </div>
           </div>
         </div>
       </div>

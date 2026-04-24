@@ -17,14 +17,21 @@ SECTION_SCHEMA_MAP = {
 ## For app
 
 def create_auto_generate_agent(section: str):
-
     schema = SECTION_SCHEMA_MAP.get(section)
+    
+    if section == "CORE_FEATURES":
+        desc = CORE_FEATURES_AGENT_DESCRIPTION
+        instr = CORE_FEATURES_AGENT_INSTRUCTION
+    else:
+        desc = PRIMARY_USER_FLOW_AGENT_DESCRIPTION
+        instr = PRIMARY_USER_FLOW_AGENT_INSTRUCTION
+
     return LlmAgent(
-    name="auto_generate_agent",
-    model=groq_llm_2,
-    output_schema=schema,
-    description=f"{section}_AGENT_DESCRIPTION",
-    instruction=f"{section}_AGENT_INSTRUCTION",
-    output_key=f"{section}_output",
-    generate_content_config = generate_content_config
-)
+        name="auto_generate_agent",
+        model=groq_llm_2,
+        output_schema=schema,
+        description=desc,
+        instruction=instr,
+        output_key=f"{section}_output",
+        generate_content_config=generate_content_config
+    )

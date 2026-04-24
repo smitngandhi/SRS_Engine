@@ -23,8 +23,9 @@ Generate a valid JSON object for the "Overall Description" section of an SRS bas
 1. **Analyze {user_inputs}**: Extract the project name, domain, target users, technical stack, and core features.
 2. **Contextualize Perspective**: Based on the 'application_type' and 'domain' in {user_inputs}, describe how this product fits into the existing industry landscape.
 3. **Map User Classes**: For every user in the 'target_users' list from {user_inputs}, define specific professional 'characteristics' (e.g., tech-savviness, frequency of use).
-4. **Extract Constraints**: Convert the 'technical_preferences' and 'compliance_requirements' from {user_inputs} into formal design and implementation constraints.
-5. **Formulate Dependencies**: Identify what external systems (databases, APIs, or cloud providers mentioned in {user_inputs}) the software depends on.
+4. **Extract Constraints**: Convert 'technical_preferences' and 'compliance_requirements' into formal design and implementation constraints. You MUST explicitly include any 'system_constraints' provided in the non-functional requirements of {user_inputs}.
+5. **Define Environment**: Use the explicit 'operating_environment' array from {user_inputs} (e.g. Web Browsers, iOS, Android). If empty, logically infer based on the 'application_type'.
+6. **Formulate Dependencies**: Identify what external systems (databases, APIs, or cloud providers) the software depends on.
 
 # EXAMPLE OF EXPECTED FORMAT
 {

@@ -58,6 +58,8 @@ class NonFunctionalRequirements(BaseModel):
     """Non-functional requirements"""
     expected_user_scale: str = Field(..., description="Expected number of users")
     performance_expectation: str = Field(..., description="Expected performance level")
+    key_assumptions: Optional[str] = Field(None, description="Key assumptions for the system")
+    system_constraints: Optional[str] = Field(None, description="System constraints or limitations")
     
     @validator('expected_user_scale')
     def validate_user_scale(cls, v):
@@ -71,6 +73,13 @@ class NonFunctionalRequirements(BaseModel):
         valid_performance = ["Normal", "High", "Real-time"]
         if v not in valid_performance:
             raise ValueError(f'Performance expectation must be one of {valid_performance}')
+        return v
+    
+    @validator('key_assumptions', 'system_constraints')
+    def strip_if_exists_nfr(cls, v):
+        if v:
+            stripped = v.strip()
+            return stripped if stripped else None
         return v
 
 
@@ -96,6 +105,7 @@ class TechnicalPreferences(BaseModel):
     preferred_backend: Optional[str] = Field(None, description="Preferred backend technology")
     database_preference: Optional[str] = Field(None, description="Database preference")
     deployment_preference: Optional[str] = Field(None, description="Deployment preference")
+    operating_environment: Optional[List[str]] = Field(default_factory=list, description="Target operating environment (browsers, OS, etc.)")
     
     @validator('preferred_backend', 'database_preference', 'deployment_preference')
     def strip_if_exists(cls, v):
@@ -103,6 +113,12 @@ class TechnicalPreferences(BaseModel):
             stripped = v.strip()
             return stripped if stripped else None
         return v
+        
+    @validator('operating_environment')
+    def validate_env(cls, v):
+        if v is None:
+            return []
+        return [env.strip() for env in v if env.strip()]
 
 
 class OutputControl(BaseModel):

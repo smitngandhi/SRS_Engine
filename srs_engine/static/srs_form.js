@@ -466,22 +466,35 @@ function buildReview() {
     { label: 'Domain',       id: 'domain' },
     { label: 'User Scale',   id: 'expected_user_scale' },
     { label: 'Performance',  id: 'performance_expectation' },
+    { label: 'Constraints',  id: 'system_constraints' },
     { label: 'Backend',      id: 'preferred_backend' },
     { label: 'Database',     id: 'database_preference' },
   ];
-  grid.innerHTML = fields.map(f => {
+  
+  const getChecked = (name) => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(el => el.value);
+  
+  let html = fields.map(f => {
     const val = document.getElementById(f.id)?.value?.trim() || '—';
     return `<div class="review-item">
       <span class="review-item-label">${f.label}</span>
       <span class="review-item-value">${val}</span>
     </div>`;
   }).join('');
+  
+  const envChecked = getChecked('operating_environment');
+  html += `<div class="review-item">
+      <span class="review-item-label">Environment</span>
+      <span class="review-item-value">${envChecked.length ? envChecked.join(', ') : '—'}</span>
+    </div>`;
+    
+  grid.innerHTML = html;
 }
 
 /* ── Persist form across login redirect ────────────── */
 const PERSIST_FIELDS = [
   'project_name', 'organization', 'problem_statement',
   'core_features', 'primary_user_flow', 'application_type', 'domain',
+  'system_constraints', 'key_assumptions'
 ];
 
 function saveFormState() {
@@ -558,6 +571,7 @@ document.getElementById('srsForm')?.addEventListener('submit', async (e) => {
 
   const authors      = splitArr(formData.get('author'));
   const coreFeatures = splitArr(formData.get('core_features'));
+  const operatingEnv = getChecked('operating_environment');
 
   const payload = {
     project_identity: {
@@ -578,6 +592,8 @@ document.getElementById('srsForm')?.addEventListener('submit', async (e) => {
     non_functional_requirements: {
       expected_user_scale:     formData.get('expected_user_scale'),
       performance_expectation: formData.get('performance_expectation'),
+      key_assumptions:         formData.get('key_assumptions')?.trim() || null,
+      system_constraints:      formData.get('system_constraints')?.trim() || null,
     },
     security_and_compliance: {
       authentication_required: formData.get('authentication_required') === 'true',
@@ -588,6 +604,7 @@ document.getElementById('srsForm')?.addEventListener('submit', async (e) => {
       preferred_backend:     formData.get('preferred_backend')?.trim()     || null,
       database_preference:   formData.get('database_preference')?.trim()   || null,
       deployment_preference: formData.get('deployment_preference')?.trim() || null,
+      operating_environment: operatingEnv,
     },
     output_control: {
       srs_detail_level: formData.get('srs_detail_level'),

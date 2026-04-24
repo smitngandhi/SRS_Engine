@@ -53,6 +53,9 @@ Your output MUST match this exact structure:
 Scan {user_inputs}, {introduction_section}, {overall_description_section}, {system_features_section}, 
 and {nfr_section} for:
 
+**User-Provided Assumptions (CRITICAL PRIORITY):**
+- You MUST explicitly include and expand upon any 'key_assumptions' provided in the non-functional requirements section of {user_inputs}. Do not drop these.
+
 **Technical Assumptions:**
 - Technology stack availability and compatibility
 - Third-party service reliability and APIs
