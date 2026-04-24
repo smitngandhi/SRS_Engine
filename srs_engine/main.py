@@ -115,9 +115,12 @@ def create_app() -> FastAPI:
 
     # ── Favicon fallback ──────────────────────────────────────────────
     from fastapi.responses import FileResponse
+    import os
     @app.get("/favicon.ico", include_in_schema=False)
     async def favicon():
-        return FileResponse("srs_engine/static/favicon.png")
+        # Get absolute path to the static folder relative to this file (main.py)
+        static_path = os.path.join(os.path.dirname(__file__), "static", "favicon.png")
+        return FileResponse(static_path)
 
     return app
 
