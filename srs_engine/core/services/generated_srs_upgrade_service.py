@@ -126,12 +126,24 @@ async def list_generated_srs(user_id: str, db: Any) -> list[dict]:
     results = []
     for f in files:
         try:
-            meta_bytes = await fs.get_file(f["metadata"])
+            # We already have the core metadata from list_files
+            meta = f.get("metadata", {})
+            project = meta.get("project_name", "")
+            if not project:
+                continue
+                
+            # If we need the full content of the meta_json (e.g. for versions),
+            # fetch it specifically.
+            meta_bytes = await fs.get_file({"type": "meta_json", "user_id": user_id, "project_name": project})
             if meta_bytes:
-                meta = json.loads(meta_bytes)
-                project = meta.get("project_name", "")
+                content = json.loads(meta_bytes)
+                # Merge or use content
+                content["id"] = project
+                content["version_count"] = len(content.get("versions", []))
+                results.append(content)
+            else:
+                # Fallback to what we have in metadata
                 meta["id"] = project
-                meta["version_count"] = len(meta.get("versions", []))
                 results.append(meta)
         except Exception:
             continue

@@ -12,12 +12,13 @@ import random
 from srs_engine.core.auth.deps import require_user
 from srs_engine.core.db.mongo import get_db
 from srs_engine.core.db.file_storage import FileStorage
+from urllib.parse import unquote
 
 router = APIRouter()
 
 QUOTES = [
     "First, solve the problem. Then, write the code. — John Johnson",
-    "Code is like humor. When you have to explain it, it’s bad. — Cory House",
+    "Code is like humor. When you have to explain it, it's bad. — Cory House",
     "Fix the cause, not the symptom. — Steve Maguire",
     "Simplicity is the soul of efficiency. — Austin Freeman",
     "Make it work, make it right, make it fast. — Kent Beck",
@@ -25,7 +26,47 @@ QUOTES = [
     "Talk is cheap. Show me the code. — Linus Torvalds",
     "The best way to predict the future is to invent it. — Alan Kay",
     "Software is a great combination between artistry and engineering. — Bill Gates",
-    "Innovation distinguishes between a leader and a follower. — Steve Jobs"
+    "Innovation distinguishes between a leader and a follower. — Steve Jobs",
+    "The best requirements are those that disappear through elegant design. — SpecForge AI",
+    "Documentation is a love letter that you write to your future self. — Damian Conway",
+    "Requirements are not what the user says, but what the user needs. — Unknown",
+    "Design is not just what it looks like and feels like. Design is how it works. — Steve Jobs",
+    "A good SRS is the compass that keeps the project on course. — SpecForge AI",
+    "The most expensive part of software is the part that was never written. — Unknown",
+    "Measuring programming progress by lines of code is like measuring aircraft building progress by weight. — Bill Gates",
+    "The function of good software is to make the complex appear to be simple. — Grady Booch",
+    "Quality is not an act, it is a habit. — Aristotle",
+    "Software architecture is the art of drawing lines that you don't cross. — Robert C. Martin",
+    "Requirements engineering is the most difficult part of software development. — Fred Brooks",
+    "An SRS should be clear enough for a human and precise enough for an agent. — SpecForge AI",
+    "Agility is the ability to adapt to change, not the absence of a plan. — Unknown",
+    "The best error message is the one that never shows up. — Thomas Fuchs",
+    "Software is the only limit to our imagination. — Unknown",
+    "Code never lies, comments sometimes do. — Ron Jeffries",
+    "Optimization is the root of all evil. — Donald Knuth",
+    "Great software is built on a foundation of solid requirements. — SpecForge AI",
+    "The sooner you start to code, the longer the program will take. — Roy Carlson",
+    "A user interface is like a joke. If you have to explain it, it's not that good. — Unknown",
+    "System analysis is the process of understanding what is requested. — Unknown",
+    "Architectural decisions are those that are hard to change later. — Martin Fowler",
+    "AI doesn't replace the architect; it gives the architect a faster brush. — SpecForge AI",
+    "Refactoring is the process of changing a software system in such a way that it does not alter the external behavior. — Martin Fowler",
+    "Complexity is the enemy of reliability. — Unknown",
+    "Good design is obvious. Great design is transparent. — Joe Sparano",
+    "Requirements should be verifiable, not just aspirational. — SpecForge AI",
+    "Don't comment bad code—rewrite it. — Brian Kernighan",
+    "The best tool for requirements is a clear mind. — Unknown",
+    "Automation is not about doing things faster, but doing things right every time. — SpecForge AI",
+    "Technical debt is a loan that you never stop paying interest on. — Ward Cunningham",
+    "The user's experience is the ultimate metric of success. — Unknown",
+    "Software is eating the world, and requirements are the menu. — SpecForge AI",
+    "A requirement is a bridge between a problem and a solution. — Unknown",
+    "Iteration is the key to perfection. — Unknown",
+    "Consistency is the hallmark of professional software. — SpecForge AI",
+    "The most important requirement is the one the customer forgot to mention. — Unknown",
+    "Build for the user, but design for the system. — SpecForge AI",
+    "Clear requirements save more time than fast typing. — Unknown",
+    "SpecForge AI: Forging the future of requirements, one section at a time."
 ]
 
 
@@ -167,7 +208,8 @@ async def download_srs(doc_id: str, user=Depends(require_user), db=Depends(get_d
     if "/" in doc_id or "\\" in doc_id or ".." in doc_id:
         raise HTTPException(status_code=400, detail="Invalid document ID")
 
-    project_name = doc_id.removesuffix("_SRS")
+    # BUG FIX: handle URL encoding (e.g. %20 for spaces)
+    project_name = unquote(doc_id).removesuffix("_SRS")
     fs = FileStorage(db)
     data = await fs.get_file({"type": "docx", "user_id": user_id, "project_name": project_name})
 
@@ -285,6 +327,7 @@ async def document_navigator_page(request: Request):
     if not user_id:
         return RedirectResponse(url="/login?next=/document-navigator", status_code=302)
     
+    return _render(request, "pages/document_navigator.html")
 
 @router.get("/profile")
 async def profile_page(request: Request, user=Depends(require_user)):

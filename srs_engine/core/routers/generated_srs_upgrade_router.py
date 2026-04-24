@@ -8,6 +8,7 @@ Completely separate from the existing upload-based upgrade_router.py.
 
 from __future__ import annotations
 
+from urllib.parse import unquote
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict
 
@@ -104,6 +105,7 @@ async def get_section(
     Returns 404 if page_index is not in the domain's map.
     """
     _validate_project_name(project)
+    project = unquote(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
     try:
@@ -132,6 +134,7 @@ async def search_section(
     Returns the matched section + confidence score.
     """
     _validate_project_name(project)
+    project = unquote(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
     try:
@@ -162,6 +165,7 @@ async def preview(
     Does NOT persist any changes.
     """
     _validate_project_name(project)
+    project = unquote(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
     try:
@@ -193,6 +197,7 @@ async def confirm(
     Creates a versioned backup before writing.
     """
     _validate_project_name(project)
+    project = unquote(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
     try:
@@ -220,6 +225,7 @@ async def rebuild(
     (mix of original + confirmed upgrades).
     """
     _validate_project_name(project)
+    project = unquote(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
     try:
@@ -241,6 +247,7 @@ async def get_history(
 ):
     """Return the version list for a project."""
     _validate_project_name(project)
+    project = unquote(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
     history = await get_version_history(user_id, project, db)
@@ -256,6 +263,7 @@ async def restore(
 ):
     """Restore a project to a specific version."""
     _validate_project_name(project)
+    project = unquote(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
     try:
@@ -278,6 +286,7 @@ async def download_version(
     from fastapi.responses import Response
 
     _validate_project_name(project)
+    project = unquote(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
 

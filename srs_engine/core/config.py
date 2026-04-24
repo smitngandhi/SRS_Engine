@@ -42,8 +42,8 @@ class Settings(BaseSettings):
     smtp_to_email: str = _env("SMTP_TO_EMAIL", "hello.specforge@gmail.com") or "hello.specforge@gmail.com"
     
     # ── Google OAuth ──────────────────────────────────────
-    google_oauth_client_id: str = ""
-    google_oauth_client_secret: str = ""
+    google_oauth_client_id: str = _env("GOOGLE_OAUTH_CLIENT_ID", "") or ""
+    google_oauth_client_secret: str = _env("GOOGLE_OAUTH_CLIENT_SECRET", "") or ""
     google_oauth_redirect_uri: str = _env("GOOGLE_OAUTH_REDIRECT_URI", "http://localhost:8000/auth/google/callback") or "http://localhost:8000/auth/google/callback"
     
     # ── Admin Settings ────────────────────────────────────

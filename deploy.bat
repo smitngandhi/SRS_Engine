@@ -1,5 +1,6 @@
 @echo off
-set /p msg="Enter your commit message: "
+set msg=%~1
+if "%msg%"=="" set /p msg="Enter your commit message: "
 
 echo Starting SpecForge AI Unified Deployment...
 

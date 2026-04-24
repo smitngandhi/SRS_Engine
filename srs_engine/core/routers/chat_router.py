@@ -76,24 +76,30 @@ _WEAK_SIGNALS = (
 )
 
 
-# ── File I/O ──────────────────────────────────────────────────────────────────
+# ── File I/O (GridFS via Service) ─────────────────────────────────────────────
 
-def _load_sections_json(user_id: str, project_name: str) -> dict | None:
-    p = GENERATED_SRS_ROOT / user_id / f"{project_name}_sections.json"
-    if not p.exists():
+async def _load_sections_json(user_id: str, project_name: str, db: Any) -> dict | None:
+    """Fetch sections from GridFS."""
+    from srs_engine.core.db.file_storage import FileStorage
+    fs = FileStorage(db)
+    data = await fs.get_file({"type": "sections_json", "user_id": user_id, "project_name": project_name})
+    if not data:
         return None
     try:
-        return json.loads(p.read_text(encoding="utf-8"))
+        return json.loads(data)
     except Exception:
         return None
 
 
-def _load_meta_json(user_id: str, project_name: str) -> dict:
-    p = GENERATED_SRS_ROOT / user_id / f"{project_name}_meta.json"
-    if not p.exists():
+async def _load_meta_json(user_id: str, project_name: str, db: Any) -> dict:
+    """Fetch metadata from GridFS."""
+    from srs_engine.core.db.file_storage import FileStorage
+    fs = FileStorage(db)
+    data = await fs.get_file({"type": "meta_json", "user_id": user_id, "project_name": project_name})
+    if not data:
         return {}
     try:
-        return json.loads(p.read_text(encoding="utf-8"))
+        return json.loads(data)
     except Exception:
         return {}
 
@@ -344,64 +350,45 @@ async def chat_page(request: Request):
 # ── List documents ────────────────────────────────────────────────────────────
 
 @router.get("/api/chat/documents")
-async def api_list_chat_documents(user=Depends(require_user)):
+async def api_list_chat_documents(user=Depends(require_user), db=Depends(get_db)):
     """
-    List all SRS projects that have a _sections.json file.
-    doc_id == project_name (stable, human-readable key).
-
-    BUG-1 FIX: was missing 'return result'.
-    BUG-2 FIX: reads generated_srs/ not parsed_docs/.
-    BUG-4 FIX: doc_id == project_name, not a random hash.
+    List all SRS projects from GridFS.
     """
-    user_id  = str(user.get("_id"))
-    user_dir = GENERATED_SRS_ROOT / user_id
-    if not user_dir.exists():
-        return []
-
-    result: list[dict] = []
-    for path in sorted(user_dir.glob("*_sections.json")):
-        project_name = path.stem.removesuffix("_sections")
-        try:
-            sections_json = json.loads(path.read_text(encoding="utf-8"))
-            meta          = _load_meta_json(user_id, project_name)
-            domain        = sections_json.get("domain", "technical")
-
-            # Count how many sections have data
-            section_count = sum(
-                1 for k in _SECTION_LABELS if sections_json.get(k)
-            )
-
-            result.append({
-                "doc_id":        project_name,
-                "filename":      f"{project_name} — SRS",
-                "project_name":  project_name,
-                "domain":        domain,
-                "section_count": section_count,
-                "organization":  meta.get("organization", ""),
-                "generated_at":  meta.get("generated_at", ""),
-            })
-        except Exception:
+    from srs_engine.core.services.generated_srs_upgrade_service import list_generated_srs
+    user_id = str(user.get("_id"))
+    
+    # Use the existing service that already pulls from GridFS
+    docs = await list_generated_srs(user_id, db)
+    
+    result = []
+    for doc in docs:
+        project_name = doc.get("project_name", "")
+        if not project_name:
             continue
+            
+        result.append({
+            "doc_id":        project_name,
+            "filename":      f"{project_name} — SRS",
+            "project_name":  project_name,
+            "domain":        doc.get("domain", "technical"),
+            "section_count": len(doc.get("modified_sections", [])), # Approximation
+            "organization":  doc.get("organization", ""),
+            "generated_at":  doc.get("generated_at", ""),
+        })
 
-    # BUG-1 FIX: original code never returned result
     return result
 
 
 # ── Section tree ──────────────────────────────────────────────────────────────
 
 @router.get("/api/chat/documents/{doc_id}/index")
-async def api_get_page_index(doc_id: str, user=Depends(require_user)):
+async def api_get_page_index(doc_id: str, user=Depends(require_user), db=Depends(get_db)):
     """
     Return the full section tree for a project.
     doc_id == project_name.
-    Tree is built from PAGE_INDEX_MAP so ordering & labels are exact.
-
-    BUG-2 FIX: Loads _sections.json directly.
-    NEW:  Uses PAGE_INDEX_MAP so the navigator reflects the same structure
-          that was defined at generation time.
     """
     user_id       = str(user.get("_id"))
-    sections_json = _load_sections_json(user_id, doc_id)
+    sections_json = await _load_sections_json(user_id, doc_id, db)
     if sections_json is None:
         return {"error": f"No generated SRS found for project '{doc_id}'."}
 
@@ -455,7 +442,7 @@ async def api_chat_query(
         }
 
     # ── Load ──────────────────────────────────────────────────────────────────
-    sections_json = _load_sections_json(user_id, doc_id)
+    sections_json = await _load_sections_json(user_id, doc_id, db)
     if sections_json is None:
         return {"error": f"SRS document '{doc_id}' not found. Generate it first."}
 
