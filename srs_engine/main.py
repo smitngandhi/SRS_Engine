@@ -31,6 +31,7 @@ from srs_engine.core.routers import (
     diagram_router,
     chat_router,
     monitor_router,
+    feedback_router,
 )
 
 
@@ -88,6 +89,16 @@ def create_app() -> FastAPI:
     if ProxyHeadersMiddleware:
         app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
+    # ── CORS ───────────────────────────────────────────────────────────
+    from fastapi.middleware.cors import CORSMiddleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"], # In production, restrict this to your domains
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     app.add_middleware(
         SessionMiddleware,
         secret_key=settings.session_secret_key,
@@ -112,6 +123,7 @@ def create_app() -> FastAPI:
     app.include_router(diagram_router)
     app.include_router(chat_router)
     app.include_router(monitor_router)
+    app.include_router(feedback_router)
 
     # ── Favicon fallback ──────────────────────────────────────────────
     from fastapi.responses import FileResponse

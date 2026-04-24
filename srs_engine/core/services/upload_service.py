@@ -5,29 +5,24 @@ upload_service.py
 ─────────────────
 Handles all business logic for the SRS Upgrader upload step:
   - MIME / extension validation
-  - Saving to  user_uploads/{user_id}/{pdf|docx}/
-  - Writing / reading a per-user  file_registry.json
+  - Saving to GridFS via FileStorage
   - Listing and deleting uploaded files
 """
 
-import json
-import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
+from srs_engine.core.db.file_storage import FileStorage
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 # ── Constants ────────────────────────────────────────────────────────────────
-
-UPLOAD_ROOT = Path("./user_uploads")
 
 ALLOWED_MIME_TYPES: dict[str, str] = {
     "application/pdf": "pdf",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
-    # browsers sometimes send this for .docx
     "application/msword": "docx",
-    # fallback when browser sends octet-stream but extension is right
-    "application/octet-stream": None,   # resolved via extension below
+    "application/octet-stream": None,   # resolved via extension
 }
 
 ALLOWED_EXTENSIONS: dict[str, str] = {
@@ -42,26 +37,6 @@ MAX_FILE_SIZE_MB = 20
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
-
-
-def _registry_path(user_id: str) -> Path:
-    return UPLOAD_ROOT / user_id / "file_registry.json"
-
-
-def _load_registry(user_id: str) -> list[dict]:
-    path = _registry_path(user_id)
-    if not path.exists():
-        return []
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return []
-
-
-def _save_registry(user_id: str, records: list[dict]) -> None:
-    path = _registry_path(user_id)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(records, default=str, indent=2), encoding="utf-8")
 
 
 def _resolve_file_type(content_type: str, filename: str) -> str:
@@ -85,9 +60,6 @@ def _resolve_file_type(content_type: str, filename: str) -> str:
         ),
     )
 
-
-from srs_engine.core.db.file_storage import FileStorage
-from motor.motor_asyncio import AsyncIOMotorDatabase
 
 # ── Public service functions ──────────────────────────────────────────────────
 
@@ -122,6 +94,8 @@ async def save_upload(db: AsyncIOMotorDatabase, user_id: str, file: UploadFile) 
         raise HTTPException(status_code=422, detail="File is empty.")
 
     # 2. Save to GridFS
+    # Note: Using original_filename in metadata ensures overwrite semantics 
+    # for the same user + same file name.
     metadata = {
         "type": "upload",
         "user_id": user_id,

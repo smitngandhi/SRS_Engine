@@ -72,7 +72,7 @@ const DIAGRAM_TYPES = [
     label: 'Class',
     icon: '◫',
     desc: 'Object model / architecture',
-    hint: 'e.g. "Animal hierarchy with Dog and Cat subclasses and their methods"',
+    hint: 'e.g. "Microservices architecture for a payment gateway with retry and fallback strategies"',
   },
   {
     type: 'state',
@@ -277,18 +277,28 @@ async function updateDiagramQuota(projectName) {
   try {
     const res = await fetch('/api/my-quota');
     const q = await res.json();
+    const isAdmin = q.is_admin || false;
+    const limit = q.diag_limit || 2;
     const projData = q.projects?.[projectName] || {};
     const used = projData.diagram_count || 0;
-    const remaining = 2 - used;
+    const remaining = limit - used;
     const el = document.getElementById('diagram-quota');
     if (!el) return;
     el.style.display = 'block';
+
+    if (isAdmin) {
+      el.innerHTML = `✨ Administrative access: Unlimited diagrams available for "${projectName}"`;
+      el.className = 'quota-banner quota-admin';
+      document.getElementById('generateBtn')?.removeAttribute('disabled');
+      return;
+    }
+
     if (remaining <= 0) {
-      el.innerHTML = '🔒 You have used all 2 diagram slots for this project.';
+      el.innerHTML = `🔒 You have used all ${limit} diagram slots for this project.`;
       el.className = 'quota-banner quota-exhausted';
       document.getElementById('generateBtn')?.setAttribute('disabled', 'true');
     } else {
-      el.innerHTML = `🎨 ${remaining} of 2 diagrams remaining for "${projectName}"`;
+      el.innerHTML = `🎨 ${remaining} of ${limit} diagrams remaining for "${projectName}"`;
       el.className = 'quota-banner';
       document.getElementById('generateBtn')?.removeAttribute('disabled');
     }
@@ -664,6 +674,7 @@ if (generateBtn) {
       showToast(e.message || 'Generation failed.', 'error');
     } finally {
       setGenerating(false);
+      if (window.refreshQuotas) window.refreshQuotas();
     }
   });
 }
@@ -687,6 +698,7 @@ if (regenBtn) {
       showToast(e.message || 'Regeneration failed.', 'error');
     } finally {
       setGenerating(false);
+      if (window.refreshQuotas) window.refreshQuotas();
     }
   });
 }
@@ -725,6 +737,7 @@ if (applyEditBtn) {
       applyEditBtn.disabled = false;
       applyEditBtn.textContent = '✏️ Apply Edit';
       previewLoading?.classList.remove('active');
+      if (window.refreshQuotas) window.refreshQuotas();
     }
   });
 }

@@ -9,3 +9,4 @@ from .generated_srs_upgrade_router import router as generated_upgrade_router
 from .diagram_router import router as diagram_router
 from .chat_router import router as chat_router
 from .monitor_api import router as monitor_router
+from .feedback_api import router as feedback_router

@@ -189,6 +189,12 @@ async def handle_job(job_id: str) -> None:
         # ── 4. Mark completed ──────────────────────────────────────────
         await job_repo.mark_completed(job_id=job_id, result_path=generated_path)
 
+        # ── 4b. Increment Quota ────────────────────────────────────────
+        from srs_engine.core.db.quota_repo import QuotaRepo
+        quota_repo = QuotaRepo(db)
+        await quota_repo.increment_quota(user_id, "docx_count")
+        logger.info(f"Worker | Quota incremented | user_id={user_id} | type=docx_count")
+
         # ── 5. Send completion email ───────────────────────────────────
         await _notify_user(
             user_repo=user_repo,

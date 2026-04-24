@@ -53,6 +53,33 @@
   flex-shrink: 0;
 }
 
+.studio-mobile-tabs {
+  display: none;
+  gap: 6px;
+}
+
+.studio-mobile-tabs .tab-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.studio-mobile-tabs .tab-btn.active {
+  background: rgba(79, 142, 255, 0.15);
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 12px rgba(79, 142, 255, 0.2);
+}
+
 /* ── Three-panel body ───────────────────────────────────────────────────────── */
 .studio-body {
   display: grid;
@@ -774,26 +801,40 @@
 }
 
 @media (max-width: 860px) {
-  .studio-page { height: auto; overflow: visible; }
+  .studio-page { height: 100vh; overflow: hidden; }
+  .studio-header { padding: 10px 16px; }
+  .studio-header-left p { display: none; }
+  .studio-btn-desktop { display: none !important; }
+  .studio-mobile-tabs { display: flex; }
+  
+  #downloadBtn span { display: none; }
+  #downloadBtn { width: 38px; height: 38px; padding: 0; }
+
   .studio-body {
     grid-template-columns: 1fr;
-    overflow: visible;
+    height: calc(100vh - 110px);
+    display: block;
+    position: relative;
   }
+  
   .studio-panel {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
     border-right: none;
-    border-bottom: 1px solid var(--border);
-    min-height: 0;
-    overflow: visible;
   }
-  .preview-wrap { min-height: 360px; position: relative; }
-  .preview-svg-wrap { position: absolute; }
-  .code-editor-wrap { min-height: 200px; }
-  .studio-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  .studio-header-actions { width: 100%; }
+  
+  /* Switch logic via data attribute */
+  .studio-body[data-active-tab="0"] .studio-panel:nth-child(1) { opacity: 1; pointer-events: auto; }
+  .studio-body[data-active-tab="1"] .studio-panel:nth-child(2) { opacity: 1; pointer-events: auto; }
+  .studio-body[data-active-tab="2"] .studio-panel:nth-child(3) { opacity: 1; pointer-events: auto; }
+  
+  .preview-wrap { min-height: 0; height: 100%; }
+  .preview-svg-wrap { inset: 10px; }
+  
+  .panel-resizer-horizontal { display: none; }
 }
 
 /* =========================================================

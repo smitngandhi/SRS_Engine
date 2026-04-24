@@ -33,6 +33,7 @@ def _set_session(request: Request, user: dict[str, Any]) -> None:
     request.session["username"] = user.get("username") or user.get("email") or "user"
     request.session["display_name"] = user.get("display_name") or request.session["username"]
     request.session["has_avatar"] = bool(user.get("avatar_file_id"))
+    request.session["is_admin"] = user.get("role") == "admin"
 
 def _redirect_error(url: str, msg: str) -> RedirectResponse:
     return RedirectResponse(url=f"{url}?error={msg}", status_code=302)
@@ -223,8 +224,27 @@ async def verify_otp(
     if not user:
         return _redirect_error("/login", "User not found")
 
+    # ── Check Lockout ──
+    if user.get("locked_until"):
+        locked_until = user["locked_until"]
+        if locked_until.tzinfo is None:
+            locked_until = locked_until.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) < locked_until:
+            return _redirect_error("/login", "This account is temporarily locked due to too many failed attempts. Please try again in 24 hours.")
+
     if user.get("verification_otp") != otp:
-        return _redirect_error("/verify", "Invalid verification code")
+        # Increment failed attempts
+        attempts = user.get("otp_fail_count", 0) + 1
+        await repo.update_user(user_id, {"otp_fail_count": attempts})
+        
+        if attempts >= 5:
+            # Lock for 24 hours
+            lock_until = datetime.now(timezone.utc) + timedelta(hours=24)
+            await repo.lock_user(user_id, lock_until)
+            request.session.pop("verify_user_id", None)
+            return _redirect_error("/login", "Too many failed attempts. This account is now locked for 24 hours.")
+            
+        return _redirect_error("/verify", f"Invalid verification code. ({5 - attempts} attempts remaining)")
 
     # Check Expiration
     expires_at = user.get("otp_expires_at")

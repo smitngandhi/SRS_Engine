@@ -58,6 +58,38 @@
             </div>
         </div>
     </div>
+
+    <!-- Feedback Section -->
+    <div class="reveal delay-2" style="margin-top: 40px;">
+        <span class="section-label">Experience</span>
+        <h2 class="section-heading">Share Your Feedback</h2>
+        <p class="section-sub">Help us improve SpecForge AI by sharing your experience.</p>
+        
+        <div class="auth-card" style="margin-top: 24px; text-align: left;">
+            <form id="feedbackForm" class="form">
+                <div style="margin-bottom: 20px;">
+                    <span style="display: block; margin-bottom: 8px; font-size: 0.9rem; color: var(--muted);">Rating</span>
+                    <div id="starRating" style="display: flex; gap: 8px; font-size: 1.5rem; cursor: pointer; color: var(--muted);">
+                        <span data-value="1">★</span>
+                        <span data-value="2">★</span>
+                        <span data-value="3">★</span>
+                        <span data-value="4">★</span>
+                        <span data-value="5">★</span>
+                    </div>
+                    <input type="hidden" name="rating" id="ratingInput" value="5">
+                </div>
+
+                <label>
+                    <span>Your Comment</span>
+                    <textarea name="comment" id="commentText" rows="4" placeholder="What do you think about the platform?..." required minlength="5" maxlength="1000"></textarea>
+                </label>
+
+                <button type="submit" id="submitFeedbackBtn" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+                    Submit Experience →
+                </button>
+            </form>
+        </div>
+    </div>
 </div>
 
 <div id="toast" style="position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--bg2); border: 1px solid var(--primary); padding: 12px 24px; border-radius: 99px; color: var(--text); transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1); z-index: 2000; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
@@ -67,6 +99,66 @@
 
 {% block scripts %}
 <script>
+    // Project-related quotes
+    const quotes = [
+        "Precision in documentation is the bridge between idea and reality.",
+        "Architecture starts with a clear vision and a structured SRS.",
+        "A well-defined diagram is worth a thousand lines of unorganized code.",
+        "SpecForge AI: Transforming complexity into technical clarity.",
+        "Documentation is a love letter to your future self.",
+        "Great software is built on the foundation of IEEE 830 standards.",
+        "Diagrams are the blueprints of innovation.",
+        "Clear requirements lead to flawless execution.",
+        "Automating documentation, empowering engineers.",
+        "In the world of AI, structure is the ultimate intelligence.",
+        "Your project's DNA is encoded in its SRS.",
+        "Visualize the logic, master the system.",
+        "SpecForge: Where natural language meets technical precision.",
+        "The best code is code that was clearly planned first.",
+        "Don't just build; architect with purpose.",
+        "Requirements are the compass of every successful project.",
+        "Complexity is the enemy; SpecForge is the solution.",
+        "Scaling your vision, one diagram at a time.",
+        "Technical documentation is the storytelling of engineering.",
+        "From prompt to prototype: the SpecForge way.",
+        "Quality starts with a quality specification.",
+        "Build with confidence, document with ease.",
+        "The future of development is AI-driven documentation.",
+        "Stay organized, stay ahead.",
+        "Innovation requires a clear map of the territory.",
+        "Structure is the language of efficiency.",
+        "SpecForge AI: The architect's best friend.",
+        "Your ideas deserve the clarity of a professional SRS.",
+        "Minimize ambiguity, maximize productivity.",
+        "The blueprint for success is a well-structured diagram.",
+        "Documentation is the oxygen of collaborative engineering.",
+        "Think big, specify precisely.",
+        "Transforming thoughts into technical blueprints.",
+        "A system well-described is a system half-built.",
+        "Clarity is the ultimate sophistication in software design.",
+        "IEEE compliance: The gold standard for your projects.",
+        "SpecForge AI: Crafting the specs of tomorrow, today.",
+        "Good design is obvious. Great design is documented.",
+        "Your project is only as strong as its requirements.",
+        "Efficiency is the byproduct of clear communication.",
+        "Lead with logic, follow with documentation.",
+        "SpecForge: Engineering the world's documentation.",
+        "Bridging the gap between stakeholders and developers.",
+        "Every great journey starts with a plan.",
+        "Documentation: The silent hero of every successful launch.",
+        "Focus on the features, we'll handle the specs.",
+        "Architecture is about making the complex simple.",
+        "A clear diagram eliminates the fog of development.",
+        "SpecForge AI: The future of technical writing.",
+        "Build fast, but build right."
+    ];
+
+    const quoteText = document.getElementById('quoteText');
+    if (quoteText) {
+        const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+        quoteText.innerText = randomQuote;
+    }
+
     const avatarInput = document.getElementById('avatarInput');
     const profileImg = document.getElementById('profileImg');
     const profileInitial = document.getElementById('profileInitial');
@@ -134,6 +226,75 @@
                 }
             } catch (err) {
                 showToast("Network error", true);
+            }
+        });
+    }
+    
+    // ── Feedback Handling ──────────────────────────────
+    const feedbackForm = document.getElementById('feedbackForm');
+    const starRating = document.getElementById('starRating');
+    const ratingInput = document.getElementById('ratingInput');
+    const submitFeedbackBtn = document.getElementById('submitFeedbackBtn');
+
+    if (starRating) {
+        const stars = starRating.querySelectorAll('span');
+        
+        function updateStars(val) {
+            stars.forEach(s => {
+                const sVal = parseInt(s.getAttribute('data-value'));
+                if (sVal <= val) {
+                    s.style.color = '#fbbf24';
+                } else {
+                    s.style.color = 'var(--muted)';
+                }
+            });
+            ratingInput.value = val;
+        }
+
+        stars.forEach(s => {
+            s.addEventListener('click', () => {
+                updateStars(parseInt(s.getAttribute('data-value')));
+            });
+        });
+
+        // Default 5
+        updateStars(5);
+    }
+
+    if (feedbackForm) {
+        feedbackForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const comment = document.getElementById('commentText').value;
+            const rating = ratingInput.value;
+
+            if (comment.length < 5) {
+                showToast("Comment too short", true);
+                return;
+            }
+
+            try {
+                submitFeedbackBtn.disabled = true;
+                submitFeedbackBtn.textContent = "Sending...";
+                
+                const res = await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rating: parseInt(rating), comment: comment })
+                });
+
+                if (res.ok) {
+                    showToast("Experience shared! Thank you.");
+                    feedbackForm.reset();
+                    updateStars(5);
+                } else {
+                    const data = await res.json();
+                    showToast(data.detail || "Failed to submit", true);
+                }
+            } catch (err) {
+                showToast("Network error", true);
+            } finally {
+                submitFeedbackBtn.disabled = false;
+                submitFeedbackBtn.textContent = "Submit Experience →";
             }
         });
     }

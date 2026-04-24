@@ -42,8 +42,6 @@ from srs_engine.schemas.diagram_schemas.diagram_schemas import (
 
 router = APIRouter()
 
-PARSED_DOCS_ROOT   = Path("./parsed_docs")
-GENERATED_SRS_ROOT = Path("./srs_engine/generated_srs")
 
 # Human-readable section labels (mirrors chat_router._SECTION_LABELS)
 _SECTION_LABELS: dict[str, str] = {
@@ -295,26 +293,30 @@ async def api_project_parsed_docs(
     db=Depends(get_db),
     user=Depends(require_user),
 ):
-    user_id  = str(user.get("_id"))
-    user_dir = PARSED_DOCS_ROOT / user_id
-    if not user_dir.exists():
-        return []
-
+    """
+    List all parsed documents that belong to this project or were uploaded by this user.
+    Uses GridFS (type: parsed_doc).
+    """
+    user_id = str(user.get("_id"))
+    storage = FileStorage(db)
+    
+    # List all parsed docs for this user
+    files = await storage.list_files({"type": "parsed_json", "user_id": user_id})
+    
     result = []
-    for json_path in user_dir.glob("*.json"):
-        try:
-            data = json.loads(json_path.read_text(encoding="utf-8"))
-            meta = data.get("metadata", {})
-            if "project_name" in meta and meta["project_name"] != project_name:
-                continue
-            result.append({
-                "doc_id":        json_path.stem,
-                "filename":      meta.get("original_filename", json_path.stem),
-                "section_count": len(data.get("sections", [])),
-                "word_count":    meta.get("word_count", 0),
-            })
-        except Exception:
-            continue
+    for f in files:
+        data = f.get("metadata", {})
+        # Note: We can filter by project_name if it's stored in metadata, 
+        # or just return all user parsed docs for the context selector.
+        if "project_name" in data and data["project_name"] != project_name:
+             continue
+             
+        result.append({
+            "doc_id":        f["metadata"].get("doc_id", f["file_id"]),
+            "filename":      f["metadata"].get("original_filename", f["filename"]),
+            "section_count": f["metadata"].get("section_count", 0),
+            "word_count":    f["metadata"].get("word_count", 0),
+        })
     return result
 
 

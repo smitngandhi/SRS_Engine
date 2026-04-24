@@ -94,6 +94,7 @@ def _render(request: Request, template: str, **ctx):
         template, {
             "request": request,
             "is_logged_in": _is_logged_in(request),
+            "is_admin": bool(request.session.get("is_admin")),
             "user": request.session.get("display_name"),
             "avatar_url": avatar_url,
             **ctx

@@ -52,7 +52,6 @@ from srs_engine.core.db.quota_repo import QuotaRepo
 
 router = APIRouter()
 
-GENERATED_SRS_ROOT = Path("./srs_engine/generated_srs")
 
 # Human-readable labels for each section_key
 _SECTION_LABELS: dict[str, str] = {
@@ -359,6 +358,7 @@ async def api_list_chat_documents(user=Depends(require_user), db=Depends(get_db)
     
     # Use the existing service that already pulls from GridFS
     docs = await list_generated_srs(user_id, db)
+    print(f"[chat_router] list_generated_srs for {user_id} returned {len(docs)} docs")
     
     result = []
     for doc in docs:
@@ -376,6 +376,7 @@ async def api_list_chat_documents(user=Depends(require_user), db=Depends(get_db)
             "generated_at":  doc.get("generated_at", ""),
         })
 
+    print(f"[chat_router] returning {len(result)} formatted docs")
     return result
 
 

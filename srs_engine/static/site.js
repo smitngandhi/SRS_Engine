@@ -182,14 +182,66 @@ function escHtml(str) {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+
+/* ── My Experiences loader ─────────────────────────── */
+async function loadExperiences() {
+  const flow = document.getElementById('feedbackFlow');
+  if (!flow) return;
+
+  try {
+    const res = await fetch('/api/feedback');
+    if (!res.ok) throw new Error(res.statusText);
+    const feedbacks = await res.json();
+
+    if (!feedbacks.length) {
+      flow.innerHTML = '<div class="flow-placeholder">No experiences shared yet. Be the first!</div>';
+      return;
+    }
+
+    flow.innerHTML = '';
+    feedbacks.forEach((f, i) => {
+      const date = new Date(f.created_at).toLocaleDateString('en-GB', {
+        day: '2-digit', month: 'short', year: 'numeric'
+      });
+      const stars = '★'.repeat(f.rating) + '☆'.repeat(5 - f.rating);
+      
+      const card = document.createElement('div');
+      card.className = `experience-card reveal delay-${(i % 3) + 1}`;
+      
+      const initials = f.display_name ? f.display_name[0].toUpperCase() : 'U';
+      const avatar = f.avatar_url 
+        ? `<img src="${f.avatar_url}" class="experience-avatar" alt="${f.display_name}" />`
+        : `<div class="experience-avatar">${initials}</div>`;
+
+      card.innerHTML = `
+        <div class="experience-header">
+          ${avatar}
+          <div class="experience-user-info">
+            <span class="experience-name">${escHtml(f.display_name)}</span>
+            <span class="experience-rating">${stars}</span>
+          </div>
+        </div>
+        <p class="experience-comment">"${escHtml(f.comment)}"</p>
+        <span class="experience-date">${date}</span>
+      `;
+      flow.appendChild(card);
+      revealObserver.observe(card);
+    });
+  } catch (err) {
+    console.warn('loadExperiences error:', err);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   loadDocuments();
   loadDiagrams();
+  loadExperiences();
   
   // Live updates: refresh lists every 30 seconds
   setInterval(() => {
     loadDocuments();
     loadDiagrams();
+    loadExperiences();
   }, 30000);
 });
 

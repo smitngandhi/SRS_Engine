@@ -529,9 +529,32 @@ select.field-input option {
 
 /* ── RESPONSIVE ─────────────────────────────────────── */
 @media (max-width: 900px) {
-  .srs-layout { grid-template-columns: 1fr; }
-  .srs-sidebar { display: none; }
-  .srs-main { padding: 28px 20px 60px; }
+  .srs-layout { grid-template-columns: 1fr; min-height: auto; }
+  .srs-sidebar { 
+    position: sticky; 
+    top: 57px; 
+    height: auto; 
+    border-right: none; 
+    border-bottom: 1px solid var(--border);
+    z-index: 50;
+  }
+  .srs-sidebar-inner { padding: 12px 20px; gap: 12px; }
+  .sidebar-brand, .sidebar-progress { display: none; }
+  
+  .step-nav { 
+    flex-direction: row; 
+    overflow-x: auto; 
+    padding-bottom: 4px;
+    gap: 8px;
+    scrollbar-width: none; /* Hide scrollbar */
+  }
+  .step-nav::-webkit-scrollbar { display: none; }
+  
+  .step-btn { padding: 6px 12px; width: auto; white-space: nowrap; }
+  .step-label { font-size: 0.75rem; }
+  .step-num { padding: 2px 5px; }
+
+  .srs-main { padding: 24px 20px 60px; min-height: auto; }
   .fields-grid { grid-template-columns: 1fr; }
   .field-group.half { grid-column: 1; }
   .field-group.third { grid-column: 1; }

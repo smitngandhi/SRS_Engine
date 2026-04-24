@@ -33,7 +33,8 @@
 
     <!-- Top bar -->
     <div class="gu-topbar">
-      <span id="project-title" style="font-weight:400;color:var(--gu-text-muted);font-size:.88rem;"></span>
+      <button id="mobile-sidebar-toggle" class="gu-btn gu-btn-outline" style="display:none; padding: 6px 10px; margin-right: 10px;">☰</button>
+      <span id="project-title" style="font-weight:400;color:var(--gu-text-muted);font-size:.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></span>
       <span style="color:var(--gu-border);">/</span>
       <span id="topbar-title" class="gu-topbar-title">Select a section</span>
       <div id="topbar-badges" style="display:flex;gap:.4rem;margin-left:auto;"></div>
@@ -54,10 +55,10 @@
     <div class="gu-instruction-bar">
       <textarea
         id="instruction-text"
-        placeholder="Describe what you want to change in this section… e.g. 'Add Redis cache between FastAPI and MongoDB'"
+        placeholder="Describe changes…"
         rows="1"
       ></textarea>
-      <button id="preview-btn" class="gu-btn gu-btn-primary">✨ Preview Upgrade</button>
+      <button id="preview-btn" class="gu-btn gu-btn-primary">✨ Upgrade</button>
     </div>
 
   </div>
@@ -83,4 +84,39 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', path='section_upgrader.js') }}"></script>
+<style>
+@media (max-width: 900px) {
+  #mobile-sidebar-toggle { display: block !important; }
+  .gu-sidebar {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    bottom: 0;
+    z-index: 1000;
+    width: 280px;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    background: #06090f;
+  }
+  .gu-sidebar.open { transform: translateX(0); }
+  .gu-main { width: 100%; }
+  .gu-instruction-bar { padding: 10px; }
+  #preview-btn { padding: 10px; }
+}
+</style>
+<script>
+  const sidebar = document.querySelector('.gu-sidebar');
+  const toggle = document.getElementById('mobile-sidebar-toggle');
+  if (toggle) {
+    toggle.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+  }
+  // Close sidebar on section select
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.gu-section-pill') && window.innerWidth <= 900) {
+      sidebar.classList.remove('open');
+    }
+  });
+</script>
 {% endblock %}

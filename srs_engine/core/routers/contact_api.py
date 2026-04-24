@@ -23,9 +23,29 @@ class ContactPayload(BaseModel):
 
 @router.post("/api/contact")
 async def submit_contact(payload: ContactPayload, request: Request):
-    # Honeypot (basic spam mitigation)
+    # 1. Honeypot (basic spam mitigation)
     if payload.website:
         return {"ok": True}
+
+    # 2. Rate Limiting (Redis-based)
+    redis_mgr = request.app.state.redis
+    if redis_mgr and redis_mgr.is_connected:
+        client_ip = request.client.host if request.client else "unknown"
+        rate_key  = f"rate_limit:contact:{client_ip}"
+        
+        # Check current count
+        count = await redis_mgr.client.get(rate_key)
+        if count and int(count) >= 3:
+            raise HTTPException(
+                status_code=429, 
+                detail="Too many messages. Please try again in an hour."
+            )
+        
+        # Increment
+        if not count:
+            await redis_mgr.client.set(rate_key, 1, ex=3600) # 1 hour expiry
+        else:
+            await redis_mgr.client.incr(rate_key)
 
     if "@" not in payload.email or "." not in payload.email:
         raise HTTPException(status_code=400, detail="Invalid email address")

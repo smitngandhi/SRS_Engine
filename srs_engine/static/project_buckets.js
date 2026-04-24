@@ -143,7 +143,9 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ── Select project ───────────────────────────────────────────────────── */
   async function selectProject(proj) {
     currentProject = proj;
+    window.currentProject = proj.project_name;
     renderProjectList();
+    if (window.refreshQuotas) window.refreshQuotas();
 
     elements.emptyState.style.display = 'none';
     elements.details.style.display = 'block';

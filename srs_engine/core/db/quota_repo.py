@@ -32,20 +32,20 @@ class QuotaRepo:
     ) -> bool:
         """Returns True if the user is within quota."""
         # 0. Fetch user doc to get email and status
-        user = await self.db.users.find_one({"_id": ObjectId(user_id) if isinstance(user_id, str) and len(user_id)==24 else user_id})
+        # 0. Fetch user doc to get email and status
+        # We check both users and admins collections
+        oid = ObjectId(user_id) if isinstance(user_id, str) and len(user_id)==24 else user_id
+        user = await self.db.users.find_one({"_id": oid})
+        if not user:
+            user = await self.db.admins.find_one({"_id": oid})
         
         # 1. Block Revoked Users
         if user and not user.get("is_active", True):
             return False # Strictly block all features
         
-        # 2. Check admin bypass via settings and dedicated admins collection
-        settings = get_settings()
-        if user and user.get("email"):
-            if user["email"] == settings.admin_email:
-                return True
-            admin = await self.db.admins.find_one({"email": user["email"]})
-            if admin:
-                return True
+        # 2. Check admin bypass
+        if user and (user.get("role") == "admin" or user.get("email") == get_settings().admin_email):
+            return True
 
         doc = await self.db.user_quotas.find_one({"user_id": user_id})
         if not doc:
@@ -104,27 +104,21 @@ class QuotaRepo:
 
     async def get_summary(self, user_id: str) -> dict:
         """Return quota summary for the user (for the /api/my-quota endpoint)."""
-        # Fetch user doc for email
-        user = await self.db.users.find_one({"_id": ObjectId(user_id) if isinstance(user_id, str) and len(user_id)==24 else user_id})
+        # Fetch user doc for email (check both collections)
+        oid = ObjectId(user_id) if isinstance(user_id, str) and len(user_id)==24 else user_id
+        user = await self.db.users.find_one({"_id": oid})
+        if not user:
+            user = await self.db.admins.find_one({"_id": oid})
         
-        # Admin Bypass via settings and dedicated collection
-        settings = get_settings()
-        if user and user.get("email"):
-            if user["email"] == settings.admin_email:
-                return {
-                    "docx_count": 0, "docx_limit": 9999,
-                    "chat_query_count": 0, "chat_query_limit": 9999,
-                    "is_admin": True,
-                    "projects": {}
-                }
-            admin = await self.db.admins.find_one({"email": user["email"]})
-            if admin:
-                return {
-                    "docx_count": 0, "docx_limit": 9999,
-                    "chat_query_count": 0, "chat_query_limit": 9999,
-                    "is_admin": True,
-                    "projects": {}
-                }
+        # Admin Bypass
+        if user and (user.get("role") == "admin" or user.get("email") == get_settings().admin_email):
+            return {
+                "docx_count": 0, "docx_limit": 9999,
+                "chat_query_count": 0, "chat_query_limit": 9999,
+                "diag_limit": 9999, "upgrade_limit": 9999,
+                "is_admin": True,
+                "projects": {}
+            }
 
         doc = await self.db.user_quotas.find_one({"user_id": user_id}) or {}
         

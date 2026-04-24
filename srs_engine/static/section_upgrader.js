@@ -64,9 +64,11 @@ document.addEventListener('DOMContentLoaded', () => {
    * sections from the server before loading any section content.
    */
   async function init() {
+    window.currentProject = projectName;
     await fetchModifiedSections();
     buildSidebar();
     await updateUpgraderQuota();
+    if (window.refreshQuotas) window.refreshQuotas();
     await loadSection(SECTIONS[0].page_index);
   }
 
@@ -74,19 +76,32 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch('/api/my-quota');
       const q = await res.json();
+      const isAdmin = q.is_admin || false;
+      const limit = q.upgrade_limit || 5;
       const projData = q.projects?.[projectName] || {};
       const used = projData.upgrade_count || 0;
-      const remaining = 5 - used;
+      const remaining = limit - used;
       const el = document.getElementById('upgrader-quota');
       if (!el) return;
       el.style.display = 'block';
+
+      if (isAdmin) {
+        el.innerHTML = `✨ Administrative access: Unlimited upgrades available for "${projectName}"`;
+        el.style.background = 'rgba(0,229,201,0.05)';
+        el.style.borderColor = 'rgba(0,229,201,0.2)';
+        document.getElementById('preview-btn')?.removeAttribute('disabled');
+        return;
+      }
+
       if (remaining <= 0) {
-        el.innerHTML = '🔒 You have used all 5 section upgrades for this project.';
+        el.innerHTML = `🔒 You have used all ${limit} section upgrades for this project.`;
         el.style.background = 'rgba(244,67,54,0.1)';
         el.style.borderColor = 'rgba(244,67,54,0.3)';
         document.getElementById('preview-btn')?.setAttribute('disabled', 'true');
       } else {
-        el.innerHTML = `✨ ${remaining} of 5 section upgrades remaining for "${projectName}"`;
+        el.innerHTML = `✨ ${remaining} of ${limit} section upgrades remaining for "${projectName}"`;
+        el.style.background = 'rgba(255,255,255,0.03)';
+        el.style.borderColor = 'var(--border)';
         document.getElementById('preview-btn')?.removeAttribute('disabled');
       }
     } catch(e) {}

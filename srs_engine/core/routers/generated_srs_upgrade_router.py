@@ -23,6 +23,7 @@ from srs_engine.core.services.generated_srs_upgrade_service import (
     restore_version,
     search_section_rag,
 )
+from srs_engine.core.db.quota_repo import QuotaRepo
 
 from srs_engine.core.db.mongo import get_db
 from srs_engine.core.db.file_storage import FileStorage
@@ -41,14 +42,6 @@ router = APIRouter(prefix="/upgrade/generated", tags=["generated-upgrade"])
 def _validate_project_name(project: str) -> None:
     """
     Reject project names that contain path-traversal sequences.
-
-    BUG FIX: download_version (and other project-scoped endpoints) accepted
-    the raw `project` URL parameter and passed it straight into a Path
-    construction:
-        GENERATED_DIR / user_id / f"{project}_SRS_v{version}.docx"
-    A crafted project name containing ".." could escape the user's directory
-    and read arbitrary files from the server.  Every other download endpoint
-    in the codebase has an equivalent guard; this one was missing it.
     """
     if not project or "/" in project or "\\" in project or ".." in project:
         raise HTTPException(status_code=400, detail="Invalid project name")
@@ -102,10 +95,9 @@ async def get_section(
 ):
     """
     Fast path: look up a section by page_index.
-    Returns 404 if page_index is not in the domain's map.
     """
-    _validate_project_name(project)
     project = unquote(project)
+    _validate_project_name(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
     try:
@@ -131,10 +123,9 @@ async def search_section(
 ):
     """
     RAG fallback: search for the most relevant section using FAISS.
-    Returns the matched section + confidence score.
     """
-    _validate_project_name(project)
     project = unquote(project)
+    _validate_project_name(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
     try:
@@ -162,12 +153,22 @@ async def preview(
 ):
     """
     Call the upgrade agent and return a preview (original + upgraded JSON).
-    Does NOT persist any changes.
     """
-    _validate_project_name(project)
     project = unquote(project)
+    _validate_project_name(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
+
+    # ── Quota Check ───────────────────────────────────
+    quota = QuotaRepo(db)
+    limit = user.get("custom_upgrade_count_limit", 2)
+    allowed = await quota.check_quota(user_id, "upgrade_count", project_name=project, limit=limit)
+    if not allowed:
+        raise HTTPException(
+            status_code=429, 
+            detail=f"You've reached your plan limit of {limit} upgrades for this project."
+        )
+
     try:
         result = await preview_upgrade(
             user_id=user_id,
@@ -194,10 +195,9 @@ async def confirm(
 ):
     """
     Persist the upgraded section JSON.
-    Creates a versioned backup before writing.
     """
-    _validate_project_name(project)
     project = unquote(project)
+    _validate_project_name(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
     try:
@@ -208,6 +208,11 @@ async def confirm(
             upgraded_json=body.upgraded_json,
             db=db,
         )
+        
+        # Increment upgrade count after successful confirmation
+        quota = QuotaRepo(db)
+        await quota.increment_quota(user_id, "upgrade_count", project_name=project)
+
         return {"success": True, "message": "Section upgraded and saved."}
     except (ValueError, FileNotFoundError) as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -222,10 +227,9 @@ async def rebuild(
 ):
     """
     Rebuild the .docx from the current _sections.json
-    (mix of original + confirmed upgrades).
     """
-    _validate_project_name(project)
     project = unquote(project)
+    _validate_project_name(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
     try:
@@ -246,8 +250,8 @@ async def get_history(
     db=Depends(get_db),
 ):
     """Return the version list for a project."""
-    _validate_project_name(project)
     project = unquote(project)
+    _validate_project_name(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
     history = await get_version_history(user_id, project, db)
@@ -262,8 +266,8 @@ async def restore(
     db=Depends(get_db),
 ):
     """Restore a project to a specific version."""
-    _validate_project_name(project)
     project = unquote(project)
+    _validate_project_name(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
     try:
@@ -285,8 +289,8 @@ async def download_version(
     """Download a specific historical .docx backup from GridFS."""
     from fastapi.responses import Response
 
-    _validate_project_name(project)
     project = unquote(project)
+    _validate_project_name(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
 

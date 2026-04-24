@@ -44,14 +44,21 @@
       <p>Generate, edit, and version Mermaid diagrams from natural-language prompts.</p>
     </div>
     <div class="studio-header-actions">
-      <a href="/home#my-diagrams" class="btn btn-outline" style="font-size:0.85rem; padding:8px 16px;">← My Diagrams</a>
+      <!-- Mobile Toggles -->
+      <div class="studio-mobile-tabs">
+        <button class="tab-btn active" id="tabConfig" title="Config">⚙️</button>
+        <button class="tab-btn" id="tabPreview" title="Preview">👁️</button>
+        <button class="tab-btn" id="tabHistory" title="History">📜</button>
+      </div>
+
+      <a href="/home#my-diagrams" class="btn btn-outline studio-btn-desktop" style="font-size:0.85rem; padding:8px 16px;">← My Diagrams</a>
       <button id="downloadBtn" class="btn btn-secondary" style="font-size:0.85rem; padding:8px 16px;" disabled>⬇
-        Download SVG</button>
+        <span>Download SVG</span></button>
     </div>
   </div>
 
   <!-- ── THREE-PANEL BODY ──────────────────────────────────────────── -->
-  <div class="studio-body">
+  <div class="studio-body" id="studioBody">
 
     <!-- ── LEFT: Controls ────────────────────────────────────────────── -->
     <div class="studio-panel">

@@ -74,10 +74,14 @@ class TrackingService:
         pct = min(round((steps_completed / total_steps) * 100), 95)
         return {"progress": pct, "status": status}
 
-    async def get_admin_stats(self, admin_email: str = "hello.specforge@gmail.com") -> dict[str, Any]:
+    async def get_admin_stats(self, admin_email: str | None = None) -> dict[str, Any]:
         """
         Aggregates deep stats for the admin dashboard, including user quotas and history.
         """
+        from srs_engine.core.config import get_settings
+        settings = get_settings()
+        admin_email = admin_email or settings.admin_email
+
         total_users = await self.db.users.count_documents({"email": {"$ne": admin_email}})
         total_jobs = await self.db.jobs.count_documents({})
         active_jobs = await self.db.jobs.count_documents({"status": {"$in": [JobStatus.PENDING, JobStatus.PROCESSING]}})

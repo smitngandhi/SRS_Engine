@@ -144,20 +144,12 @@ async function init() {
 
 async function refreshDocList() {
     const currentVal = docSelect.value;
+    console.log("[navigator] Refreshing document list...");
     try {
         const resp = await fetch('/api/chat/documents');
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const docs = await resp.json();
-
-        // If list is same length and first doc matches, skip heavy DOM update
-        // (Primitive check to avoid flicker)
-        if (Array.isArray(docs) && docs.length > 0 && docSelect.options.length === docs.length + 1) {
-            // Check if names match
-            const firstOpt = docSelect.options[1];
-            if (firstOpt && firstOpt.value === docs[0].doc_id) {
-                return; 
-            }
-        }
+        console.log("[navigator] Received docs:", docs);
 
         docSelect.innerHTML = '<option value="">— Select Document —</option>';
         if (!Array.isArray(docs) || docs.length === 0) {
@@ -186,10 +178,8 @@ async function refreshDocList() {
             }
         }
     } catch (e) {
-        console.error('refreshDocList error:', e);
-        if (docSelect.innerHTML.includes('Loading')) {
-            docSelect.innerHTML = '<option value="">Failed to load documents</option>';
-        }
+        console.error('[navigator] refreshDocList error:', e);
+        docSelect.innerHTML = '<option value="">Failed to load documents</option>';
     }
 }
 

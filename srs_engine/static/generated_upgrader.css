@@ -43,6 +43,12 @@ body {
   margin: 0 auto;
 }
 
+@media (max-width: 768px) {
+  .gu-page { padding: 40px 20px 60px; }
+  .gu-page h1 { font-size: 1.8rem; }
+  .gu-page .subtitle { margin-bottom: 2rem; }
+}
+
 .gu-page h1 {
   font-family: 'Syne', sans-serif;
   font-weight: 800;
@@ -67,6 +73,10 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .gu-card-grid { grid-template-columns: 1fr; }
 }
 
 .gu-doc-card {
@@ -140,6 +150,14 @@ body {
   grid-template-columns: var(--sidebar-width) 1fr;
   height: calc(100vh - 64px);  /* subtract navbar height */
   overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  .gu-upgrader-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+  }
 }
 
 /* ── Sidebar ───────────────────────────────────────────────────── */

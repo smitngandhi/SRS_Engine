@@ -553,11 +553,11 @@ async def parse_uploaded_file(db: AsyncIOMotorDatabase, user_id: str, file_id: s
         tables=tables,
     )
 
-    # ── Save to GridFS (type: parsed_doc) ───────
+    # ── Save to GridFS (type: parsed_json) ───────
     await storage.save_json(
         unified.model_dump(),
         f"{file_id}_parsed.json",
-        {"type": "parsed_doc", "user_id": user_id, "file_id": file_id}
+        {"type": "parsed_json", "user_id": user_id, "doc_id": file_id}
     )
 
     return ParseResponse(
@@ -571,7 +571,7 @@ async def parse_uploaded_file(db: AsyncIOMotorDatabase, user_id: str, file_id: s
 async def get_parsed_document(db: AsyncIOMotorDatabase, user_id: str, file_id: str) -> UnifiedDocumentJSON:
     """Load and return an already-parsed document from GridFS."""
     storage = FileStorage(db)
-    data = await storage.get_json({"type": "parsed_doc", "user_id": user_id, "file_id": file_id})
+    data = await storage.get_json({"type": "parsed_json", "user_id": user_id, "doc_id": file_id})
     if not data:
         raise HTTPException(status_code=404, detail="Parsed document not found. Parse it first.")
     return UnifiedDocumentJSON.model_validate(data)

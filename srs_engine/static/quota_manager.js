@@ -22,7 +22,8 @@ window.refreshQuotas = async function() {
 
         // Per-project counts
         const urlParams = new URLSearchParams(window.location.search);
-        const projectName = window.currentProject || urlParams.get('project_id') || urlParams.get('project');
+        const rawProject = window.currentProject || urlParams.get('project_id') || urlParams.get('project');
+        const projectName = rawProject ? decodeURIComponent(rawProject) : null;
         
         let diagVal = 0;
         let diagLimit = q.diag_limit || 2;
@@ -34,6 +35,7 @@ window.refreshQuotas = async function() {
             upgradeVal = q.projects[projectName].upgrade_count || 0;
         }
         updateCount('diagrams', diagVal, diagLimit, isAdmin);
+        updateCount('upgrades', upgradeVal, upgradeLimit, isAdmin);
 
         headerPill.style.display = 'block';
 
@@ -53,9 +55,9 @@ function updateCount(id, current, limit, isAdmin = false) {
     }
 
     el.textContent = `${current}/${limit}`;
-    const percent = (current / limit) * 100;
+    const percent = limit > 0 ? (current / limit) * 100 : 0;
     
-    if (percent >= 100) {
+    if (limit > 0 && percent >= 100) {
         el.style.color = '#ef4444';
     } else if (percent >= 80) {
         el.style.color = '#fbbf24';

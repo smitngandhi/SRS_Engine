@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+import datetime
 from typing import Any
-
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
-
+from datetime import datetime, timezone
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
-
 
 class UserRepo:
     def __init__(self, db: AsyncIOMotorDatabase):
@@ -88,55 +86,40 @@ class UserRepo:
         except DuplicateKeyError:
             return None
 
-    async def set_verification_otp(self, user_id: str, otp: str, expires_at: datetime) -> None:
+    async def update_user(self, user_id: str, data: dict[str, Any]) -> None:
+        """Generic update for any user field."""
         try:
             oid = ObjectId(user_id)
         except Exception:
             return
-        await self.db.users.update_one(
-            {"_id": oid}, 
-            {"$set": {"verification_otp": otp, "otp_expires_at": expires_at}}
-        )
+        await self.db.users.update_one({"_id": oid}, {"$set": data})
+        await self.db.admins.update_one({"_id": oid}, {"$set": data})
+
+    async def set_verification_otp(self, user_id: str, otp: str, expires_at: datetime) -> None:
+        await self.update_user(user_id, {"verification_otp": otp, "otp_expires_at": expires_at})
 
     async def verify_user(self, user_id: str) -> None:
-        try:
-            oid = ObjectId(user_id)
-        except Exception:
-            return
-        await self.db.users.update_one(
-            {"_id": oid}, 
-            {"$set": {
-                "is_verified": True, 
-                "verification_otp": None, 
-                "otp_expires_at": None,
-                "otp_resend_count": 0,
-                "locked_until": None
-            }}
-        )
+        await self.update_user(user_id, {
+            "is_verified": True, 
+            "verification_otp": None, 
+            "otp_expires_at": None,
+            "otp_resend_count": 0,
+            "locked_until": None,
+            "otp_fail_count": 0
+        })
 
     async def increment_otp_resend(self, user_id: str) -> int:
         """Increment resend count and return the NEW count."""
-        try:
-            oid = ObjectId(user_id)
-        except Exception:
+        user = await self.get_by_id(user_id)
+        if not user:
             return 0
-        result = await self.db.users.find_one_and_update(
-            {"_id": oid},
-            {"$inc": {"otp_resend_count": 1}},
-            return_document=True
-        )
-        return result.get("otp_resend_count", 0) if result else 0
+        new_count = user.get("otp_resend_count", 0) + 1
+        await self.update_user(user_id, {"otp_resend_count": new_count})
+        return new_count
 
     async def lock_user(self, user_id: str, until: datetime) -> None:
         """Lock the user account until a specific time."""
-        try:
-            oid = ObjectId(user_id)
-        except Exception:
-            return
-        await self.db.users.update_one(
-            {"_id": oid},
-            {"$set": {"locked_until": until}}
-        )
+        await self.update_user(user_id, {"locked_until": until})
 
     async def upsert_google_user(
         self,
@@ -145,12 +128,9 @@ class UserRepo:
         display_name: str | None,
     ) -> tuple[dict[str, Any], bool]:
         """Upsert user into either 'admins' or 'users' collection based on identity."""
-        
-        # 1. Determine target collection
         is_admin = await self.is_admin(email) if email else False
         target_coll = self.db.admins if is_admin else self.db.users
         
-        # 2. Look up existing in target
         existing = await target_coll.find_one({"google_sub": google_sub})
         if not existing and email:
             existing = await target_coll.find_one({"email": email})
@@ -168,7 +148,6 @@ class UserRepo:
             )
             return await target_coll.find_one({"_id": existing["_id"]}), False
 
-        # 3. Create brand-new record
         doc = {
             "google_sub": google_sub,
             "email": email,
@@ -180,7 +159,6 @@ class UserRepo:
             "created_at": _now(),
             "last_login_at": _now(),
         }
-        
         if not is_admin:
             doc["custom_docx_limit"] = 2
             doc["custom_chat_query_limit"] = 15
@@ -189,31 +167,27 @@ class UserRepo:
         return await target_coll.find_one({"_id": res.inserted_id}), True
 
     async def update_last_login(self, user_id: str) -> None:
-        try:
-            oid = ObjectId(user_id)
-        except Exception:
-            return
-        await self.db.users.update_one({"_id": oid}, {"$set": {"last_login_at": _now()}})
+        await self.update_user(user_id, {"last_login_at": _now()})
 
     async def count_users(self) -> int:
-        """Return the total number of registered users (for beta cap enforcement)."""
+        """Return the total number of registered users."""
         return await self.db.users.count_documents({})
 
     async def authenticate_user(self, username: str, password_plain: str) -> dict[str, Any] | None:
-        """
-        Verify credentials for a local user.
-        Uses bcrypt for secure password hashing.
-        """
+        """Verify credentials for a local user or admin."""
         from passlib.context import CryptContext
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-        # Find by username OR email
         user = await self.db.users.find_one({
-            "$or": [
-                {"username": username},
-                {"email": username}
-            ]
+            "$or": [{"username": username}, {"email": username}]
         })
+        if not user:
+            user = await self.db.admins.find_one({
+                "$or": [{"username": username}, {"email": username}]
+            })
+            if user:
+                user["role"] = "admin"
+
         if not user or not user.get("password_hash"):
             return None
 
@@ -224,44 +198,14 @@ class UserRepo:
 
     async def set_active_status(self, user_id: str, active: bool) -> None:
         """Revoke or restore user access."""
-        try:
-            oid = ObjectId(user_id)
-        except Exception:
-            return
-        await self.db.users.update_one({"_id": oid}, {"$set": {"is_active": active}})
+        await self.update_user(user_id, {"is_active": active})
 
     async def update_all_quotas(self, user_id: str, srs_limit: int, chat_limit: int, diag_limit: int, upgrade_limit: int) -> None:
         """Global promotion across all platform features."""
-        try:
-            oid = ObjectId(user_id)
-        except Exception:
-            return
-        await self.db.users.update_one(
-            {"_id": oid}, 
-            {"$set": {
-                "custom_docx_limit": srs_limit,
-                "custom_chat_query_limit": chat_limit,
-                "custom_diagram_count_limit": diag_limit,
-                "custom_upgrade_count_limit": upgrade_limit,
-                "is_promoted": True
-            }}
-        )
-
-    async def get_quota_status(self, user_id: str) -> dict[str, Any]:
-        """Check user role and quota usage."""
-        user = await self.get_by_id(user_id)
-        if not user:
-            return {"allowed": False, "reason": "User not found"}
-        
-        if user.get("role") == "admin":
-            return {"allowed": True, "reason": "Admin privilege", "unlimited": True}
-        
-        limit = user.get("custom_quota", 2)
-        used = await self.db.jobs.count_documents({"user_id": user_id})
-        
-        return {
-            "allowed": used < limit,
-            "used": used,
-            "limit": limit,
-            "remaining": max(0, limit - used)
-        }
+        await self.update_user(user_id, {
+            "custom_docx_limit": srs_limit,
+            "custom_chat_query_limit": chat_limit,
+            "custom_diagram_count_limit": diag_limit,
+            "custom_upgrade_count_limit": upgrade_limit,
+            "is_promoted": True
+        })
