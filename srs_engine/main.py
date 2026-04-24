@@ -113,6 +113,12 @@ def create_app() -> FastAPI:
     app.include_router(chat_router)
     app.include_router(monitor_router)
 
+    # ── Favicon fallback ──────────────────────────────────────────────
+    from fastapi.responses import FileResponse
+    @app.get("/favicon.ico", include_in_schema=False)
+    async def favicon():
+        return FileResponse("srs_engine/static/favicon.png")
+
     return app
 
 

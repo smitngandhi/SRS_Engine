@@ -32,6 +32,7 @@ def _set_session(request: Request, user: dict[str, Any]) -> None:
     request.session["user_id"] = str(user["_id"])
     request.session["username"] = user.get("username") or user.get("email") or "user"
     request.session["display_name"] = user.get("display_name") or request.session["username"]
+    request.session["has_avatar"] = bool(user.get("avatar_file_id"))
 
 def _redirect_error(url: str, msg: str) -> RedirectResponse:
     return RedirectResponse(url=f"{url}?error={msg}", status_code=302)

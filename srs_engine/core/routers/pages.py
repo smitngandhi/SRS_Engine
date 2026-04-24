@@ -8,11 +8,25 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
+import random
 from srs_engine.core.auth.deps import require_user
 from srs_engine.core.db.mongo import get_db
 from srs_engine.core.db.file_storage import FileStorage
 
 router = APIRouter()
+
+QUOTES = [
+    "First, solve the problem. Then, write the code. — John Johnson",
+    "Code is like humor. When you have to explain it, it’s bad. — Cory House",
+    "Fix the cause, not the symptom. — Steve Maguire",
+    "Simplicity is the soul of efficiency. — Austin Freeman",
+    "Make it work, make it right, make it fast. — Kent Beck",
+    "Every great developer you know got there by solving problems they were unqualified to solve until they actually did it. — Patrick McKenzie",
+    "Talk is cheap. Show me the code. — Linus Torvalds",
+    "The best way to predict the future is to invent it. — Alan Kay",
+    "Software is a great combination between artistry and engineering. — Bill Gates",
+    "Innovation distinguishes between a leader and a follower. — Steve Jobs"
+]
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -27,11 +41,20 @@ def _is_logged_in(request: Request) -> bool:
 
 def _render(request: Request, template: str, **ctx):
     """Shorthand to render a template with common context."""
+    user_id = request.session.get("user_id")
+    avatar_url = None
+    if user_id and request.session.get("has_avatar"): # Optimization: check a session flag
+         avatar_url = f"/api/user/avatar/{user_id}"
+    
+    # Alternatively, just always check if we don't want session flags
+    # avatar_url = f"/api/user/avatar/{user_id}" if user_id else None
+
     return _templates(request).TemplateResponse(
         template, {
             "request": request,
             "is_logged_in": _is_logged_in(request),
             "user": request.session.get("display_name"),
+            "avatar_url": avatar_url,
             **ctx
         }
     )
@@ -262,4 +285,70 @@ async def document_navigator_page(request: Request):
     if not user_id:
         return RedirectResponse(url="/login?next=/document-navigator", status_code=302)
     
-    return _render(request, "pages/document_navigator.html")
+
+@router.get("/profile")
+async def profile_page(request: Request, user=Depends(require_user)):
+    """Render the user profile page with a random quote."""
+    quote = random.choice(QUOTES)
+    avatar_url = f"/api/user/avatar/{user['_id']}" if user.get("avatar_file_id") else None
+    
+    return _render(
+        request, 
+        "pages/profile.html", 
+        quote=quote,
+        full_user=user,
+        avatar_url=avatar_url
+    )
+
+
+@router.get("/api/user/avatar/{user_id}")
+async def get_avatar(user_id: str, db=Depends(get_db)):
+    """Serve the user's avatar from GridFS."""
+    from srs_engine.core.db.user_repo import UserRepo
+    repo = UserRepo(db)
+    user = await repo.get_by_id(user_id)
+    
+    if not user or not user.get("avatar_file_id"):
+        raise HTTPException(status_code=404, detail="Avatar not found")
+    
+    fs = FileStorage(db)
+    data = await fs.get_file_by_id(str(user["avatar_file_id"]))
+    
+    if not data:
+        raise HTTPException(status_code=404, detail="Avatar data not found")
+        
+    return Response(content=data, media_type="image/png")
+
+
+@router.post("/api/user/avatar/upload")
+async def upload_avatar(request: Request, user=Depends(require_user), db=Depends(get_db)):
+    """Upload and save user avatar to GridFS."""
+    from fastapi import UploadFile, File
+    form = await request.form()
+    file = form.get("avatar")
+    
+    if not isinstance(file, UploadFile):
+        raise HTTPException(status_code=400, detail="No file uploaded")
+        
+    content = await file.read()
+    if len(content) > 1 * 1024 * 1024: # 1MB limit
+        raise HTTPException(status_code=400, detail="File too large (max 1MB)")
+    
+    fs = FileStorage(db)
+    # save_file(data, filename, metadata)
+    file_id = await fs.save_file(
+        content,
+        f"avatar_{user['_id']}.png",
+        {"type": "avatar", "user_id": str(user["_id"])}
+    )
+    
+    # Update user doc
+    await db.users.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"avatar_file_id": file_id}}
+    )
+    
+    # Update session flag immediately
+    request.session["has_avatar"] = True
+    
+    return {"status": "ok", "avatar_url": f"/api/user/avatar/{user['_id']}"}

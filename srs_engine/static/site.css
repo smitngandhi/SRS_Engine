@@ -1270,3 +1270,104 @@ a:hover { text-decoration: underline; }
   border-radius: 2px;
   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s;
 }
+
+/* ─── MOBILE LINKS ────────────────────────────────────────── */
+.mobile-section-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin: 24px 0 12px;
+  padding: 0 4px;
+}
+
+.mobile-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+  text-decoration: none !important;
+}
+
+.mobile-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mobile-link.active {
+  background: rgba(79, 142, 255, 0.1);
+  color: var(--primary);
+}
+
+.mobile-link-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.mobile-auth {
+  margin-top: auto;
+  padding-top: 32px;
+  border-top: 1px solid rgba(100, 140, 255, 0.1);
+}
+
+.mobile-user {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+
+/* ─── PROFILE AVATAR ───────────────────────────────────────── */
+.profile-avatar-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 20px;
+}
+
+.profile-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--primary);
+  box-shadow: 0 0 20px var(--glow);
+  background: var(--bg2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.avatar-upload-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+  cursor: pointer;
+}
+
+.profile-avatar-container:hover .avatar-upload-overlay {
+  opacity: 1;
+}
+
+.avatar-icon { font-size: 1.5rem; color: #fff; }

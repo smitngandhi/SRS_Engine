@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile | SpecForge AI{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="reveal">
+        <span class="section-label">Account</span>
+        <h1 class="section-heading">User Profile</h1>
+        <p class="section-sub">Manage your personal identity and view your status.</p>
+    </div>
+
+    <div class="auth-card reveal delay-1" style="margin-top: 40px; text-align: center;">
+        <!-- Avatar Section -->
+        <div class="profile-avatar-container">
+            {% if avatar_url %}
+                <img src="{{ avatar_url }}" alt="Avatar" class="profile-avatar" id="profileImg">
+            {% else %}
+                <div class="profile-avatar" id="profileInitial">{{ full_user.display_name[0] | upper }}</div>
+            {% endif %}
+            
+            <label class="avatar-upload-overlay" for="avatarInput">
+                <span class="avatar-icon">📷</span>
+                <input type="file" id="avatarInput" accept="image/*" style="display: none;">
+            </label>
+        </div>
+
+        <h2 style="font-family: 'Syne', sans-serif; margin-bottom: 8px;">{{ full_user.display_name }}</h2>
+        <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 24px;">{{ full_user.email }}</p>
+
+        <!-- Quote Section -->
+        <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin: 20px 0; position: relative; overflow: hidden;">
+            <div style="position: absolute; top: -10px; left: 10px; font-size: 4rem; opacity: 0.05; font-family: serif;">"</div>
+            <p id="quoteText" style="font-style: italic; color: var(--text); font-size: 1.1rem; line-height: 1.6; position: relative; z-index: 1;">
+                {{ quote }}
+            </p>
+        </div>
+
+        <div class="auth-grid" style="text-align: left; margin-top: 32px;">
+            <div class="auth-panel">
+                <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 12px;">Stats</h3>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--muted);">Role</span>
+                        <span style="color: var(--primary); font-weight: 700;">{{ full_user.role | capitalize }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--muted);">Joined</span>
+                        <span style="color: var(--text);">{{ full_user.created_at.strftime('%b %d, %Y') if full_user.created_at else 'N/A' }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="auth-panel">
+                <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 12px;">Security</h3>
+                <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 14px;">Your account is secured with SpecForge AI protocol.</p>
+                <a href="/auth/logout" class="btn btn-outline" style="width: 100%; font-size: 0.8rem;">Sign Out</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toast" style="position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--bg2); border: 1px solid var(--primary); padding: 12px 24px; border-radius: 99px; color: var(--text); transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1); z-index: 2000; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+    <span id="toastMsg"></span>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const avatarInput = document.getElementById('avatarInput');
+    const profileImg = document.getElementById('profileImg');
+    const profileInitial = document.getElementById('profileInitial');
+    const headerAvatar = document.getElementById('headerAvatar');
+
+    function showToast(msg, isError = false) {
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toastMsg');
+        toastMsg.innerText = msg;
+        toast.style.borderColor = isError ? '#ef4444' : 'var(--primary)';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+        setTimeout(() => {
+            toast.style.transform = 'translateX(-50%) translateY(100px)';
+        }, 3000);
+    }
+
+    if (avatarInput) {
+        avatarInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (file.size > 1024 * 1024) {
+                showToast("File too large (max 1MB)", true);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('avatar', file);
+
+            try {
+                showToast("Uploading...");
+                const res = await fetch('/api/user/avatar/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showToast("Profile photo updated!");
+                    // Update UI immediately
+                    const newUrl = data.avatar_url + '?t=' + Date.now();
+                    if (profileImg) {
+                        profileImg.src = newUrl;
+                    } else if (profileInitial) {
+                        const img = document.createElement('img');
+                        img.src = newUrl;
+                        img.className = 'profile-avatar';
+                        img.id = 'profileImg';
+                        profileInitial.parentNode.replaceChild(img, profileInitial);
+                    }
+                    
+                    // Update header if exists
+                    if (headerAvatar) {
+                        const img = document.createElement('img');
+                        img.src = newUrl;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.borderRadius = '50%';
+                        img.style.objectFit = 'cover';
+                        headerAvatar.innerHTML = '';
+                        headerAvatar.appendChild(img);
+                    }
+                } else {
+                    showToast(data.detail || "Upload failed", true);
+                }
+            } catch (err) {
+                showToast("Network error", true);
+            }
+        });
+    }
+</script>
+{% endblock %}

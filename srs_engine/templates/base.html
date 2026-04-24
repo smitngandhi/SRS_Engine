@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}SpecForge AI{% endblock %}</title>
   <link rel="icon" type="image/png" href="{{ url_for('static', path='favicon.png') }}">
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='favicon.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', path='site.css') }}">
   {% block head %}{% endblock %}
 </head>
@@ -121,10 +123,16 @@
 
       {% set display_name = request.session.get('display_name') %}
       {% if display_name %}
-        <div class="user-chip" title="{{ display_name }}">
-          <span class="user-chip-avatar">{{ display_name[0] | upper }}</span>
+        <a class="user-chip" href="/profile" title="View Profile">
+          <span class="user-chip-avatar" id="headerAvatar">
+            {% if avatar_url %}
+              <img src="{{ avatar_url }}" alt="Avatar" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+            {% else %}
+              {{ display_name[0] | upper }}
+            {% endif %}
+          </span>
           <span class="user-chip-name">{{ display_name }}</span>
-        </div>
+        </a>
         <a class="btn btn-link nav-auth-btn" href="/auth/logout">Logout</a>
       {% else %}
         <a class="btn btn-primary nav-auth-btn" href="/login">Sign in</a>
@@ -192,6 +200,9 @@
         <div class="mobile-auth">
           {% if display_name %}
             <div class="mobile-user">Signed in as <strong>{{ display_name }}</strong></div>
+            <a href="/profile" class="mobile-link" onclick="closeMobileMenu()" style="margin-bottom:10px;">
+               <span class="mobile-link-icon">👤</span> View Profile
+            </a>
             <a class="btn btn-outline" href="/auth/logout" style="width:100%;justify-content:center;">Logout</a>
           {% else %}
             <a class="btn btn-primary" href="/login" style="width:100%;justify-content:center;">Sign in</a>
