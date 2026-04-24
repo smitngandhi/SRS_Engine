@@ -133,10 +133,31 @@ function tocItemEl(sectionId) {
 
 /* ── Init: load document list ────────────────────────────────────────────── */
 async function init() {
+    await refreshDocList();
+    
+    // Live updates: refresh document list every 30 seconds
+    setInterval(refreshDocList, 30000);
+
+    // Check quota on boot
+    checkChatQuota();
+}
+
+async function refreshDocList() {
+    const currentVal = docSelect.value;
     try {
         const resp = await fetch('/api/chat/documents');
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const docs = await resp.json();
+
+        // If list is same length and first doc matches, skip heavy DOM update
+        // (Primitive check to avoid flicker)
+        if (Array.isArray(docs) && docs.length > 0 && docSelect.options.length === docs.length + 1) {
+            // Check if names match
+            const firstOpt = docSelect.options[1];
+            if (firstOpt && firstOpt.value === docs[0].doc_id) {
+                return; 
+            }
+        }
 
         docSelect.innerHTML = '<option value="">— Select Document —</option>';
         if (!Array.isArray(docs) || docs.length === 0) {
@@ -153,19 +174,23 @@ async function init() {
             docSelect.appendChild(opt);
         });
 
-        // Auto-select from ?doc_id= query param
-        const urlDocId = new URLSearchParams(window.location.search).get('doc_id');
-        if (urlDocId) {
-            docSelect.value = urlDocId;
-            if (docSelect.value) loadDocument(urlDocId);
+        // Restore selection if it still exists
+        if (currentVal) {
+            docSelect.value = currentVal;
+        } else {
+            // Auto-select from ?doc_id= query param on first load
+            const urlDocId = new URLSearchParams(window.location.search).get('doc_id');
+            if (urlDocId) {
+                docSelect.value = urlDocId;
+                if (docSelect.value) loadDocument(urlDocId);
+            }
         }
     } catch (e) {
-        console.error('init error:', e);
-        docSelect.innerHTML = '<option value="">Failed to load documents</option>';
+        console.error('refreshDocList error:', e);
+        if (docSelect.innerHTML.includes('Loading')) {
+            docSelect.innerHTML = '<option value="">Failed to load documents</option>';
+        }
     }
-    
-    // Check quota on boot
-    checkChatQuota();
 }
 
 /** Fetch current chat quota and update banner/UI */

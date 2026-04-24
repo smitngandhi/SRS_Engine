@@ -22,13 +22,16 @@ window.refreshQuotas = async function() {
 
         // Per-project counts
         const urlParams = new URLSearchParams(window.location.search);
-        const projectName = urlParams.get('project_id') || urlParams.get('project');
+        const projectName = window.currentProject || urlParams.get('project_id') || urlParams.get('project');
         
         let diagVal = 0;
         let diagLimit = q.diag_limit || 2;
+        let upgradeVal = 0;
+        let upgradeLimit = q.upgrade_limit || 2;
 
         if (projectName && q.projects && q.projects[projectName]) {
             diagVal = q.projects[projectName].diagram_count || 0;
+            upgradeVal = q.projects[projectName].upgrade_count || 0;
         }
         updateCount('diagrams', diagVal, diagLimit, isAdmin);
 

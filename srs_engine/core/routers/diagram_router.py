@@ -441,6 +441,14 @@ async def api_regenerate_diagram(
     existing = await get_diagram(db, user_id, diagram_id)
     project_name = existing.project_name if existing else ""
 
+    # Quota check
+    quota = QuotaRepo(db)
+    diag_limit = user.get("custom_diagram_count_limit", 2)
+    # Regenerate also counts towards diagram usage as it's an AI call
+    allowed = await quota.check_quota(user_id, "diagram_count", project_name=project_name, limit=diag_limit)
+    if not allowed:
+        raise HTTPException(status_code=429, detail=f"You've reached your plan limit of {diag_limit} diagrams for this project.")
+
     context_str = await _get_context(
         user_id=user_id,
         project_name=project_name,
@@ -459,6 +467,7 @@ async def api_regenerate_diagram(
         error_feedback=body.error_feedback,
         detail_level=body.detail_level,
     )
+    await quota.increment_quota(user_id, "diagram_count", project_name=project_name)
     return diagram.dict()
 
 

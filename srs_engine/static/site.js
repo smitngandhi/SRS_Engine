@@ -185,6 +185,12 @@ function escHtml(str) {
 document.addEventListener('DOMContentLoaded', () => {
   loadDocuments();
   loadDiagrams();
+  
+  // Live updates: refresh lists every 30 seconds
+  setInterval(() => {
+    loadDocuments();
+    loadDiagrams();
+  }, 30000);
 });
 
 /* ── My Diagrams loader ─────────────────────────────── */

@@ -627,7 +627,13 @@ function applyDiagramResponse(data) {
   if (downloadBtn)  downloadBtn.disabled  = false;
 
   // Live quota refresh
-  if (window.refreshQuotas) window.refreshQuotas();
+  if (window.refreshQuotas) {
+    window.currentProject = data.project_name || state.projectName;
+    window.refreshQuotas();
+  }
+  if (state.projectName) {
+    updateDiagramQuota(state.projectName);
+  }
 }
 
 /* ── Get selected context doc IDs ─────────────────────────────────────────── */
@@ -807,8 +813,11 @@ if (projectSelect) {
       } else { projectSelect.value = ''; return; }
     }
     // Check context availability whenever project changes
+    state.projectName = projectSelect.value;
+    window.currentProject = projectSelect.value;
     await _checkContextAvailability(projectSelect.value);
     await updateDiagramQuota(projectSelect.value);
+    if (window.refreshQuotas) window.refreshQuotas();
   });
 }
 
@@ -837,7 +846,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       projectSelect.insertBefore(opt, projectSelect.lastElementChild);
     }
     if (projectSelect) projectSelect.value = p;
+    state.projectName = p;
+    window.currentProject = p;
     await _checkContextAvailability(p);
+    await updateDiagramQuota(p);
+    if (window.refreshQuotas) window.refreshQuotas();
   }
 
   if (params.has('type')) {
