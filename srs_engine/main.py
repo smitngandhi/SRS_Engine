@@ -120,6 +120,9 @@ def create_app() -> FastAPI:
     async def favicon():
         # Get absolute path to the static folder relative to this file (main.py)
         static_path = os.path.join(os.path.dirname(__file__), "static", "favicon.png")
+        if not os.path.exists(static_path):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Favicon not found")
         return FileResponse(static_path)
 
     return app

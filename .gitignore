@@ -31,7 +31,7 @@ screenshots/
 srs_engine/generated_srs/
 srs_engine/generated_images/
 srs_engine/diagrams/*.png
-*.png
+!srs_engine/static/*.png
 *.docx
 *.pdf
 

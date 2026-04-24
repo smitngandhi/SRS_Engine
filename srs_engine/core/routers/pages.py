@@ -4,7 +4,7 @@ import os
 import re
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, File, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
@@ -321,16 +321,14 @@ async def get_avatar(user_id: str, db=Depends(get_db)):
 
 
 @router.post("/api/user/avatar/upload")
-async def upload_avatar(request: Request, user=Depends(require_user), db=Depends(get_db)):
+async def upload_avatar(
+    request: Request, 
+    avatar: UploadFile = File(...), 
+    user=Depends(require_user), 
+    db=Depends(get_db)
+):
     """Upload and save user avatar to GridFS."""
-    from fastapi import UploadFile, File
-    form = await request.form()
-    file = form.get("avatar")
-    
-    if not isinstance(file, UploadFile):
-        raise HTTPException(status_code=400, detail="No file uploaded")
-        
-    content = await file.read()
+    content = await avatar.read()
     if len(content) > 1 * 1024 * 1024: # 1MB limit
         raise HTTPException(status_code=400, detail="File too large (max 1MB)")
     
