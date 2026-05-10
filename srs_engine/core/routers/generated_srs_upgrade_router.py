@@ -8,7 +8,6 @@ Completely separate from the existing upload-based upgrade_router.py.
 
 from __future__ import annotations
 
-from urllib.parse import unquote
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict
 
@@ -27,7 +26,7 @@ from srs_engine.core.db.quota_repo import QuotaRepo
 
 from srs_engine.core.db.mongo import get_db
 from srs_engine.core.db.file_storage import FileStorage
-from srs_engine.core.services.generated_srs_upgrade_service import BASE_DIR as GENERATED_DIR
+
 
 
 class StrictBaseModel(BaseModel):
@@ -96,7 +95,6 @@ async def get_section(
     """
     Fast path: look up a section by page_index.
     """
-    project = unquote(project)
     _validate_project_name(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
@@ -124,7 +122,6 @@ async def search_section(
     """
     RAG fallback: search for the most relevant section using FAISS.
     """
-    project = unquote(project)
     _validate_project_name(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
@@ -154,7 +151,6 @@ async def preview(
     """
     Call the upgrade agent and return a preview (original + upgraded JSON).
     """
-    project = unquote(project)
     _validate_project_name(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
@@ -196,7 +192,6 @@ async def confirm(
     """
     Persist the upgraded section JSON.
     """
-    project = unquote(project)
     _validate_project_name(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
@@ -228,7 +223,6 @@ async def rebuild(
     """
     Rebuild the .docx from the current _sections.json
     """
-    project = unquote(project)
     _validate_project_name(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
@@ -250,7 +244,6 @@ async def get_history(
     db=Depends(get_db),
 ):
     """Return the version list for a project."""
-    project = unquote(project)
     _validate_project_name(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
@@ -266,7 +259,6 @@ async def restore(
     db=Depends(get_db),
 ):
     """Restore a project to a specific version."""
-    project = unquote(project)
     _validate_project_name(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))
@@ -289,7 +281,6 @@ async def download_version(
     """Download a specific historical .docx backup from GridFS."""
     from fastapi.responses import Response
 
-    project = unquote(project)
     _validate_project_name(project)
     project = _clean_project_name(project)
     user_id = str(user.get("_id"))

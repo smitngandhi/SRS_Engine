@@ -175,7 +175,9 @@ async def get_section_by_pageindex(
     if not meta_bytes:
         raise ValueError(f"Project '{project_name}' meta not found")
     meta = json.loads(meta_bytes)
-    domain = meta.get("domain", "technical")
+    domain = meta.get("domain", "technical").lower()
+    if domain not in ["technical"]: # Fallback for now as only technical is supported
+        domain = "technical"
 
     section_info = get_section_by_index(domain, page_index)
     if not section_info:
@@ -213,7 +215,9 @@ async def search_section_rag(
     if not meta_bytes:
         raise ValueError(f"Project '{project_name}' meta not found")
     meta = json.loads(meta_bytes)
-    domain = meta.get("domain", "technical")
+    domain = meta.get("domain", "technical").lower()
+    if domain not in ["technical"]: # Fallback for now as only technical is supported
+        domain = "technical"
 
     matched_key, confidence = await search_section(
         query=query,
@@ -272,7 +276,9 @@ async def preview_upgrade(
     if not meta_bytes:
         raise ValueError(f"Project '{project_name}' meta not found")
     meta = json.loads(meta_bytes)
-    domain = meta.get("domain", "technical")
+    domain = meta.get("domain", "technical").lower()
+    if domain not in ["technical"]: # Fallback for now as only technical is supported
+        domain = "technical"
 
     section_info = get_section_by_index(domain, page_index)
     if not section_info:
@@ -386,7 +392,9 @@ async def confirm_upgrade(
     if not meta_bytes:
         raise ValueError(f"Project '{project_name}' meta not found")
     meta = json.loads(meta_bytes)
-    domain = meta.get("domain", "technical")
+    domain = meta.get("domain", "technical").lower()
+    if domain not in ["technical"]: # Fallback for now as only technical is supported
+        domain = "technical"
 
     section_info = get_section_by_index(domain, page_index)
     if not section_info:

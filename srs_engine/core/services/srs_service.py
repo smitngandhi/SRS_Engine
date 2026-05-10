@@ -505,7 +505,7 @@ async def generate_srs(
                         # Construct and save meta
                         meta = {
                             "project_name": project_name,
-                            "domain": system_context.get("domain", "Technical"),
+                            "domain": system_context.get("domain", "technical"),
                             "authors": author_list,
                             "organization": organization_name,
                             "generated_at": datetime.now(timezone.utc).isoformat() + "Z",
