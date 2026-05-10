@@ -9,6 +9,7 @@ Also declares all collection indexes (idempotent — safe to run on every startu
 
 from typing import Any
 
+import certifi
 from fastapi import Request
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo import ASCENDING, DESCENDING
@@ -24,7 +25,7 @@ async def init_mongo(app: Any, settings: Settings) -> None:
     Initialize MongoDB client and store it on app.state.
     Declares indexes for all collections on startup.
     """
-    client = AsyncIOMotorClient(settings.mongodb_uri)
+    client = AsyncIOMotorClient(settings.mongodb_uri, tlsCAFile=certifi.where())
     db = client[settings.mongodb_db]
 
     app.state.mongo_client = client

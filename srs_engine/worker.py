@@ -26,6 +26,7 @@ import asyncio
 import json
 import types
 import logging
+import certifi
 from datetime import datetime, timedelta, timezone
 from dotenv import find_dotenv, load_dotenv
 
@@ -59,7 +60,7 @@ logger = get_logger("srs_engine.worker")
 # MongoDB bootstrap (global connection pool for worker)
 # ---------------------------------------------------------------------------
 
-client = AsyncIOMotorClient(settings.mongodb_uri)
+client = AsyncIOMotorClient(settings.mongodb_uri, tlsCAFile=certifi.where())
 db = client[settings.mongodb_db]
 job_repo = JobRepo(db)
 user_repo = UserRepo(db)

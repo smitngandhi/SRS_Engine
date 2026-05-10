@@ -38,3 +38,4 @@ jsonschema==4.23.0
 
 # ─── Process Management ───────────────────────────────────────
 supervisor==4.3.0
+certifi

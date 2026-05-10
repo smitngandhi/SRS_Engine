@@ -19,6 +19,7 @@ import subprocess
 import sys
 import signal
 import os
+import certifi
 from typing import List
 
 import redis.asyncio as aioredis
@@ -124,7 +125,7 @@ if __name__ == "__main__":
 
     # Initialize MongoDB connection for progress monitoring
     try:
-        mongodb_client = AsyncIOMotorClient(settings.mongodb_uri)
+        mongodb_client = AsyncIOMotorClient(settings.mongodb_uri, tlsCAFile=certifi.where())
         db = mongodb_client[settings.mongodb_db]
         job_repo = JobRepo(db)
         logger.info("Manager | MongoDB connection established")
