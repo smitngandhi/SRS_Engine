@@ -12,7 +12,7 @@ from ....schemas.home_page_schemas.key_assumptions_schema import KEY_ASSUMPTIONS
 from ....utils.globals import generate_content_config
 from ....utils.model import *
 from google.adk.agents.callback_context import CallbackContext
-from google.adk.models import LLMResponse
+from google.adk.models import LlmResponse
 
 SECTION_SCHEMA_MAP = {
     "CORE_FEATURES": CORE_FEATURES_Section,
@@ -24,7 +24,7 @@ SECTION_SCHEMA_MAP = {
 
 def validate_output(schema_class):
     """Returns a callback that parses + validates the raw JSON text response."""
-    def _callback(callback_context: CallbackContext, llm_response: LLMResponse):
+    def _callback(callback_context: CallbackContext, llm_response: LlmResponse):
         for part in llm_response.content.parts:
             if part.text:
                 try:

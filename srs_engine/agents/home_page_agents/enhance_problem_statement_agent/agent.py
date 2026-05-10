@@ -4,7 +4,7 @@ from ....schemas.home_page_schemas.problem_statement_enhance_schema import Enhan
 from ....utils.globals import generate_content_config
 from ....utils.model import *
 from google.adk.agents.callback_context import CallbackContext
-from google.adk.models import LLMResponse
+from google.adk.models import LlmResponse
 
 
 
@@ -12,7 +12,7 @@ from google.adk.models import LLMResponse
 
 def validate_output(schema_class):
     """Returns a callback that parses + validates the raw JSON text response."""
-    def _callback(callback_context: CallbackContext, llm_response: LLMResponse):
+    def _callback(callback_context: CallbackContext, llm_response: LlmResponse):
         for part in llm_response.content.parts:
             if part.text:
                 try:
