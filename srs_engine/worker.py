@@ -141,10 +141,17 @@ async def handle_job(job_id: str) -> None:
     """
     logger.info(f"Worker | Job received | job_id={job_id}")
 
-    # ── 1. Fetch job from MongoDB ──────────────────────────────────────
-    job = await job_repo.get_by_job_id(job_id)
+    # ── 1. Fetch job from MongoDB (with retry for race conditions) ─────
+    job = None
+    for attempt in range(3):
+        job = await job_repo.get_by_job_id(job_id)
+        if job:
+            break
+        logger.warning(f"Worker | Job not found yet, retrying... (Attempt {attempt+1}/3) | job_id={job_id}")
+        await asyncio.sleep(2) # Wait 500ms for DB replication/consistency
+
     if not job:
-        logger.error(f"Worker | Job not found in DB — skipping | job_id={job_id}")
+        logger.error(f"Worker | Job not found in DB after retries — skipping | job_id={job_id}")
         return
 
     # Guard against re-processing a job that somehow landed twice in the queue
