@@ -1,20 +1,95 @@
-name: Deploy Worker to Hugging Face
+name: Deploy SRS Engine to Hugging Face Spaces
 
 on:
   push:
-    branches: [ production_worker ]
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          lfs: true
 
-      - name: Push to Hugging Face Space
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install huggingface_hub
+        run: pip install "huggingface_hub>=0.23.0"
+
+      - name: Deploy to Hugging Face
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: git push https://Smit1002:$HF_TOKEN@huggingface.co/spaces/Smit1002/specforge-worker-2 HEAD:main --force
+          HF_USERNAME: ${{ secrets.HF_USERNAME }}
+          HF_SPACE_NAME: ${{ secrets.HF_SPACE_NAME }}
+        run: |
+          python - <<'EOF'
+          import os
+          from huggingface_hub import HfApi
+
+          api = HfApi()
+          url = api.upload_folder(
+              folder_path=".",
+              repo_id=f"{os.environ['HF_USERNAME']}/{os.environ['HF_SPACE_NAME']}",
+              repo_type="space",
+              token=os.environ["HF_TOKEN"],
+              commit_message=f"Deploy from GitHub Actions",
+              ignore_patterns=[
+                  # User-generated runtime artifacts - never deploy these
+                  "srs_engine/static/diagrams/**",
+
+                  # Python cache
+                  "**/__pycache__/**",
+                  "**/*.pyc",
+                  "**/*.pyo",
+
+                  # Virtual envs
+                  ".venv/**",
+                  "venv/**",
+                  "env/**",
+
+                  # Dev/local only
+                  ".env",
+                  ".env.*",
+                  "!.env.example",
+
+                  # CI/CD
+                  ".github/**",
+
+                  # Dev docs & notes (not needed in Space)
+                  "*.md",
+                  "!README.md",
+                  "*.txt",
+                  "!requirements.txt",
+                  "*.bat",
+                  "*.mmd",
+                  "checklist",
+                  "llm-context.txt",
+                  "presentation.txt",
+
+                  # Temp/debug scripts
+                  "temp.py",
+                  "check_syntax.py",
+                  "admin_summary.py",
+                  "test_mongo.py",
+
+                  # Dev images at root (screenshots/notes)
+                  "image.png",
+                  "image-*.png",
+                  "srs_engine_sequence.png",
+
+                  # Misc
+                  ".repomixignore",
+                  "puppeteer-config.json",
+                  "new-horizontal-plan.html",
+                  ".pytest_cache/**",
+              ]
+          )
+          print(f"✅ Deployed: {url}")
+          EOF
