@@ -17,11 +17,4 @@ jobs:
       - name: Push to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: |
-          git config --global credential.helper store
-          echo "https://USER:${HF_TOKEN}@huggingface.co" > ~/.git-credentials
-
-          git remote add hf https://huggingface.co/spaces/Smit1002/specforge-worker-2 || \
-            git remote set-url hf https://huggingface.co/spaces/Smit1002/specforge-worker-2
-
-          git push hf HEAD:main --force
+        run: git push https://Smit1002:$HF_TOKEN@huggingface.co/spaces/Smit1002/specforge-worker-2 HEAD:main --force
