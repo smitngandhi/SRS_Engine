@@ -2,7 +2,7 @@ name: Deploy SRS Engine to Hugging Face Spaces
 
 on:
   push:
-    branches: [ main ]
+    branches: [ production_worker ]
   workflow_dispatch:
 
 jobs:
