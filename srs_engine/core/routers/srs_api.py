@@ -140,8 +140,6 @@ async def generate_srs(
     # 4. Publish — worker picks this up asynchronously
     await publish_srs_job(job_id)
 
-    # 5. Increment quota after successful publish
-    await quota.increment_quota(user_id, "docx_count")
 
     # 6. Return with queue info + email UX
     user_email = user.get("email", "your email")
