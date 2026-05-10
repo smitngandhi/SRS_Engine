@@ -19,6 +19,26 @@ SECTION_SCHEMA_MAP = {
     "KEY_ASSUMPTIONS": KEY_ASSUMPTIONS_Section,
 }
 
+from google.adk.agents.callback_context import CallbackContext
+from google.adk.models import LLMResponse
+def validate_output(schema_class):
+    """Returns a callback that parses + validates the raw JSON text response."""
+    def _callback(callback_context: CallbackContext, llm_response: LLMResponse):
+        for part in llm_response.content.parts:
+            if part.text:
+                try:
+                    # Strip markdown fences if the model adds them
+                    text = part.text.strip().removeprefix("```json").removesuffix("```").strip()
+                    validated = schema_class.model_validate_json(text)
+                    # Write validated output into session state manually
+                    callback_context.state[callback_context.agent_name + "_output"] = validated.model_dump()
+                except Exception as e:
+                    # Log and let ADK handle as a normal text response
+                    print(f"[validate_output] Schema validation failed: {e}")
+        return None  # Don't replace the response, just side-effect state
+
+    return _callback
+
 def create_auto_generate_agent(section: str):
     schema = SECTION_SCHEMA_MAP.get(section)
     
@@ -40,7 +60,8 @@ def create_auto_generate_agent(section: str):
     return LlmAgent(
         name="auto_generate_agent",
         model=groq_llm_2,
-        output_schema=schema,
+        # output_schema=schema,
+        after_agent_callback=validate_output(schema),
         description=desc,
         instruction=instr,
         output_key=f"{section}_output",

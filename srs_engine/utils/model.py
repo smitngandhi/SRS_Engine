@@ -14,4 +14,5 @@ groq_llm = LiteLlm(
 
 groq_llm_2 = LiteLlm(
     model = GROQ_MODEL_2,
+    response_format={"type": "json_object"},
 )

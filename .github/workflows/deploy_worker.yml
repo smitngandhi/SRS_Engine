@@ -105,7 +105,6 @@ jobs:
 
                 # Misc
                 ".repomixignore",
-                "puppeteer-config.json",
                 "new-horizontal-plan.html",
                 ".pytest_cache/**",
             ]
