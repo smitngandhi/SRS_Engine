@@ -14,8 +14,14 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: Push to Hugging Face
-        uses: huggingface/github-action@v1
-        with:
-          factory_id: Smit1002/specforge-worker-2
-          hf_token: ${{ secrets.HF_TOKEN }}
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git config --global credential.helper store
+          echo "https://USER:${HF_TOKEN}@huggingface.co" > ~/.git-credentials
+
+          git remote add hf https://huggingface.co/spaces/Smit1002/specforge-worker-2 || \
+            git remote set-url hf https://huggingface.co/spaces/Smit1002/specforge-worker-2
+
+          git push hf HEAD:main --force
