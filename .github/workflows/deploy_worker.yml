@@ -41,55 +41,74 @@ jobs:
               token=os.environ["HF_TOKEN"],
               commit_message=f"Deploy from GitHub Actions",
               ignore_patterns=[
-                  # User-generated runtime artifacts - never deploy these
-                  "srs_engine/static/diagrams/**",
+                # User-generated runtime artifacts
+                "srs_engine/static/diagrams/**",
 
-                  # Python cache
-                  "**/__pycache__/**",
-                  "**/*.pyc",
-                  "**/*.pyo",
+                # Python cache
+                "**/__pycache__/**",
+                "**/*.pyc",
+                "**/*.pyo",
 
-                  # Virtual envs
-                  ".venv/**",
-                  "venv/**",
-                  "env/**",
+                # Virtual envs
+                ".venv/**",
+                "venv/**",
+                "env/**",
 
-                  # Dev/local only
-                  ".env",
-                  ".env.*",
-                  "!.env.example",
+                # Secrets
+                ".env",
 
-                  # CI/CD
-                  ".github/**",
+                # CI/CD
+                ".github/**",
 
-                  # Dev docs & notes (not needed in Space)
-                  "*.md",
-                  "!README.md",
-                  "*.txt",
-                  "!requirements.txt",
-                  "*.bat",
-                  "*.mmd",
-                  "checklist",
-                  "llm-context.txt",
-                  "presentation.txt",
+                # Dev markdown docs (keep README.md)
+                "COMPREHENSIVE_FEATURES.md",
+                "DETAILED_PROJECT_BUCKETS_DIAGRAM_STUDIO.md",
+                "LOGGING_AUDIT.md",
+                "LOGGING_IMPLEMENTATION.md",
+                "LOGGING_QUICK_REF.md",
+                "LOGGING_TESTING_GUIDE.md",
+                "PLAN_UPGRADER.md",
+                "PROJECT_BUCKETS_AND_DIAGRAM_STUDIO.md",
+                "STARTUP.md",
+                "api.md",
+                "backend_steps.md",
+                "changes.md",
+                "code-review-graph-workflow-1.md",
+                "deployment_plan.md",
+                "file_tree.md",
+                "frontend_steps.md",
+                "implementation_plan.md",
+                "overall.md",
+                "start.md",
+                "startup_guide.md",
+                "wiki.md",
 
-                  # Temp/debug scripts
-                  "temp.py",
-                  "check_syntax.py",
-                  "admin_summary.py",
-                  "test_mongo.py",
+                # Dev text files (keep requirements.txt)
+                "llm-context.txt",
+                "presentation.txt",
 
-                  # Dev images at root (screenshots/notes)
-                  "image.png",
-                  "image-*.png",
-                  "srs_engine_sequence.png",
+                # Bat/shell dev scripts
+                "*.bat",
+                "*.mmd",
+                "checklist",
 
-                  # Misc
-                  ".repomixignore",
-                  "puppeteer-config.json",
-                  "new-horizontal-plan.html",
-                  ".pytest_cache/**",
-              ]
+                # Temp/debug scripts
+                "temp.py",
+                "check_syntax.py",
+                "admin_summary.py",
+                "test_mongo.py",
+
+                # Dev screenshots at root
+                "image.png",
+                "image-*.png",
+                "srs_engine_sequence.png",
+
+                # Misc
+                ".repomixignore",
+                "puppeteer-config.json",
+                "new-horizontal-plan.html",
+                ".pytest_cache/**",
+            ]
           )
           print(f"✅ Deployed: {url}")
           EOF
