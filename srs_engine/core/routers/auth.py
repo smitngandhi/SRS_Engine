@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import secrets
+import json
 from datetime import datetime, timezone, timedelta
 from typing import Any
 
@@ -74,24 +75,27 @@ async def login(
     settings = get_settings()
     if user.get("email") == settings.admin_email:
         try:
-            await send_admin_security_alert(
-                settings=settings,
-                ip_address=request.client.host if request.client else "unknown",
-                user_agent=request.headers.get("user-agent", "unknown")
-            )
+            payload = {
+                "type": "security_alert",
+                "user_email": user.get("email"),
+                "ip_address": request.client.host if request.client else "unknown",
+                "user_agent": request.headers.get("user-agent", "unknown")
+            }
+            await request.app.state.redis.client.rpush("notification_queue", json.dumps(payload))
         except Exception as e:
-            logger.error(f"Failed admin security alert: {e}")
+            logger.error(f"Failed to queue admin security alert: {e}")
     else:
         # Standard admin notification
         try:
-            await send_login_notification(
-                settings=settings,
-                username=user.get("username", "unknown"),
-                user_email=user.get("email", "unknown"),
-                ip_address=request.client.host if request.client else "unknown",
-            )
+            payload = {
+                "type": "admin_login",
+                "user_email": user.get("email", "unknown"),
+                "username": user.get("username", "unknown"),
+                "ip_address": request.client.host if request.client else "unknown"
+            }
+            await request.app.state.redis.client.rpush("notification_queue", json.dumps(payload))
         except Exception as e:
-            logger.error(f"Failed to send login notification: {e}")
+            logger.error(f"Failed to queue login notification: {e}")
 
     return RedirectResponse(url="/home", status_code=302)
 
@@ -151,13 +155,14 @@ async def register(
         await repo.set_verification_otp(user_id, otp, expires_at)
         
         try:
-            await send_verification_email(
-                settings=get_settings(),
-                to_email=email,
-                otp=otp,
-            )
+            payload = {
+                "type": "verification_email",
+                "user_email": email,
+                "otp": otp
+            }
+            await request.app.state.redis.client.rpush("notification_queue", json.dumps(payload))
         except Exception as e:
-            logger.error(f"Failed to send verification email: {e}")
+            logger.error(f"Failed to queue verification email: {e}")
 
         request.session["verify_user_id"] = user_id
         return RedirectResponse(url="/verify", status_code=302)
@@ -206,14 +211,15 @@ async def resend_otp(
     await repo.increment_otp_resend(user_id)
     
     try:
-        await send_verification_email(
-            settings=get_settings(),
-            to_email=user["email"],
-            otp=otp,
-        )
+        payload = {
+            "type": "verification_email",
+            "user_email": user["email"],
+            "otp": otp
+        }
+        await request.app.state.redis.client.rpush("notification_queue", json.dumps(payload))
     except Exception as e:
-        logger.error(f"Failed to resend OTP: {e}")
-        return _redirect_error("/verify", "Failed to send email. Please try again later.")
+        logger.error(f"Failed to queue resend OTP: {e}")
+        return _redirect_error("/verify", "Service temporarily unavailable. Please try again later.")
 
     return RedirectResponse(url="/verify?msg=Code resent successfully", status_code=302)
 
@@ -273,32 +279,39 @@ async def verify_otp(
     
     # ── Security Logic ──
     if user.get("email") == settings.admin_email:
-        await send_admin_security_alert(
-            settings=settings,
-            ip_address=request.client.host if request.client else "unknown",
-            user_agent=request.headers.get("user-agent", "unknown")
-        )
+        try:
+            payload = {
+                "type": "security_alert",
+                "user_email": user.get("email"),
+                "ip_address": request.client.host if request.client else "unknown",
+                "user_agent": request.headers.get("user-agent", "unknown")
+            }
+            await request.app.state.redis.client.rpush("notification_queue", json.dumps(payload))
+        except Exception as e:
+            logger.error(f"Failed to queue admin security alert: {e}")
     else:
         # Welcome email (Standard users only)
         try:
-            await send_welcome_email(
-                settings=settings,
-                to_email=user.get("email"),
-                display_name=user.get("display_name") or "User",
-            )
+            payload = {
+                "type": "welcome_email",
+                "user_email": user.get("email"),
+                "display_name": user.get("display_name") or "User"
+            }
+            await request.app.state.redis.client.rpush("notification_queue", json.dumps(payload))
         except Exception as e:
-            logger.error(f"Failed welcome email: {e}")
+            logger.error(f"Failed to queue welcome email: {e}")
 
         # Admin notification
         try:
-            await send_login_notification(
-                settings=settings,
-                username=user.get("display_name", "user"),
-                user_email=user.get("email", "unknown"),
-                ip_address=request.client.host if request.client else "unknown",
-            )
+            payload = {
+                "type": "admin_login",
+                "user_email": user.get("email", "unknown"),
+                "username": user.get("display_name", "user"),
+                "ip_address": request.client.host if request.client else "unknown"
+            }
+            await request.app.state.redis.client.rpush("notification_queue", json.dumps(payload))
         except Exception as e:
-            logger.error(f"Failed admin notification: {e}")
+            logger.error(f"Failed to queue login notification: {e}")
 
     return RedirectResponse(url="/home", status_code=302)
 
@@ -355,34 +368,38 @@ async def google_callback(request: Request, db: AsyncIOMotorDatabase = Depends(g
         # ── Admin vs User Logic ──
         if user.get("email") == settings.admin_email:
             try:
-                await send_admin_security_alert(
-                    settings=settings,
-                    ip_address=request.client.host if request.client else "unknown",
-                    user_agent=request.headers.get("user-agent", "unknown")
-                )
+                payload = {
+                    "type": "security_alert",
+                    "user_email": user.get("email"),
+                    "ip_address": request.client.host if request.client else "unknown",
+                    "user_agent": request.headers.get("user-agent", "unknown")
+                }
+                await request.app.state.redis.client.rpush("notification_queue", json.dumps(payload))
             except Exception as e:
-                logger.error(f"Failed Google admin alert: {e}")
+                logger.error(f"Failed to queue Google admin alert: {e}")
         else:
             if is_new:
                 try:
-                    await send_welcome_email(
-                        settings=settings,
-                        to_email=user.get("email"),
-                        display_name=user.get("display_name") or "User",
-                    )
+                    payload = {
+                        "type": "welcome_email",
+                        "user_email": user.get("email"),
+                        "display_name": user.get("display_name") or "User"
+                    }
+                    await request.app.state.redis.client.rpush("notification_queue", json.dumps(payload))
                 except Exception as e:
-                    logger.error(f"Failed Google welcome email: {e}")
+                    logger.error(f"Failed to queue Google welcome email: {e}")
 
             # Standard admin notification
             try:
-                await send_login_notification(
-                    settings=settings,
-                    username=user.get("display_name", "user"),
-                    user_email=user.get("email", "unknown"),
-                    ip_address=request.client.host if request.client else "unknown",
-                )
+                payload = {
+                    "type": "admin_login",
+                    "user_email": user.get("email", "unknown"),
+                    "username": user.get("display_name", "user"),
+                    "ip_address": request.client.host if request.client else "unknown"
+                }
+                await request.app.state.redis.client.rpush("notification_queue", json.dumps(payload))
             except Exception as e:
-                logger.error(f"Failed admin notification: {e}")
+                logger.error(f"Failed to queue Google login notification: {e}")
 
         return RedirectResponse(url="/home", status_code=302)
 
