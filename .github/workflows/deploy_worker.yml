@@ -1,0 +1,21 @@
+name: Deploy Worker to Hugging Face
+
+on:
+  push:
+    branches: [ production_worker ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to Hugging Face
+        uses: huggingface/github-action@v1
+        with:
+          factory_id: Smit1002/specforge-worker-2
+          hf_token: ${{ secrets.HF_TOKEN }}

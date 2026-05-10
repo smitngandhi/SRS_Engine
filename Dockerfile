@@ -65,5 +65,6 @@ RUN chmod +x start_hf.sh
 # Hugging Face Spaces always use port 7860
 EXPOSE 7860
 
+RUN mkdir -p /app/logs && chmod 777 /app/logs
 # Start the application
 CMD ["./start_hf.sh"]

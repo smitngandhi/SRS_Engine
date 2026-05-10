@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-import random
+import secrets
 from datetime import datetime, timezone, timedelta
 from typing import Any
 
@@ -134,10 +134,19 @@ async def register(
             display_name=username
         )
         if not user_id:
-            return _redirect_error("/login", "Username or Email already exists")
+            # Check if this email is already tied to a Google account
+            existing = await repo.get_by_email(email)
+            if existing and not existing.get("password_hash"):
+                return _redirect_error("/login", "This email is registered via Google. Please use 'Log in with Google'.")
+            
+            # General duplicate check
+            existing_user = await repo.get_by_username(username)
+            if existing_user:
+                return _redirect_error("/login", "Username is already taken")
+            return _redirect_error("/login", "Email already exists")
 
-        # ── Generate & Send OTP ──
-        otp = f"{random.randint(100000, 999999)}"
+        # ── Generate & Send OTP (Cryptographically Secure) ──
+        otp = "".join(secrets.choice("0123456789") for _ in range(6))
         expires_at = datetime.now(timezone.utc) + timedelta(minutes=2)
         await repo.set_verification_otp(user_id, otp, expires_at)
         
@@ -189,8 +198,8 @@ async def resend_otp(
         request.session.pop("verify_user_id", None) # Clear session
         return _redirect_error("/login", "Too many resend attempts. This email is now locked for 24 hours.")
 
-    # ── Process Resend ──
-    otp = f"{random.randint(100000, 999999)}"
+    # ── Process Resend (Secure OTP) ──
+    otp = "".join(secrets.choice("0123456789") for _ in range(6))
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=2)
     
     await repo.set_verification_otp(user_id, otp, expires_at)
