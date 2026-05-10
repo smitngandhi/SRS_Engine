@@ -62,7 +62,7 @@ def create_auto_generate_agent(section: str):
         name="auto_generate_agent",
         model=groq_llm_2,
         # output_schema=schema,
-        after_agent_callback=validate_output(schema),
+        after_model_callback=validate_output(schema),
         description=desc,
         instruction=instr,
         output_key=f"{section}_output",

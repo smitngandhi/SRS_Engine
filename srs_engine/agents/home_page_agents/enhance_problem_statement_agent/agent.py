@@ -34,7 +34,7 @@ def create_enhance_problem_statement_agent():
     name="enhance_problem_statement_agent",
     model=groq_llm_2,
     # output_schema=EnhancedProblemStatementSection,
-    after_agent_callback=validate_output(EnhancedProblemStatementSection),
+    after_model_callback=validate_output(EnhancedProblemStatementSection),
     description=AGENT_DESCRIPTION,
     instruction=AGENT_INSTRUCTION,
     output_key=f"enhanced_problem_statement_output",
