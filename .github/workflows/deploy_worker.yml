@@ -25,8 +25,8 @@ jobs:
 
       - name: Deploy to Hugging Face
         env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          HF_USERNAME: ${{ secrets.HF_USERNAME }}
+          HF_TOKEN: Smit1002
+          HF_USERNAME: specforge-worker-2
           HF_SPACE_NAME: ${{ secrets.HF_SPACE_NAME }}
         run: |
           python - <<'EOF'
