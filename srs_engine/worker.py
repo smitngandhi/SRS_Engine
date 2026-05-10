@@ -177,50 +177,72 @@ async def handle_job(job_id: str) -> None:
     )
     logger.info(f"Worker | Starting pipeline | job_id={job_id} | project={project_name}")
 
-    # ── 3. Run the generation pipeline ────────────────────────────────
-    try:
-        session_service = InMemorySessionService()
-        app = _make_app(session_service)
+    # ── 3. Run the generation pipeline (with Rate Limit retries) ──────
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            session_service = InMemorySessionService()
+            app = _make_app(session_service)
 
-        result = await generate_srs(
-            app=app,
-            srs_data=payload,           # plain dict — generate_srs handles both
-            user_id=user_id,
-            on_progress=_make_progress_callback(job_id, job_repo),
-            db=db,                      # enables GridFS file persistence
-        )
+            result = await generate_srs(
+                app=app,
+                srs_data=payload,
+                user_id=user_id,
+                on_progress=_make_progress_callback(job_id, job_repo),
+                db=db,
+            )
 
-        generated_path: str = result["srs_document_path"]
-        logger.info(
-            f"Worker | Pipeline complete | job_id={job_id} | path={generated_path}"
-        )
+            generated_path: str = result["srs_document_path"]
+            logger.info(
+                f"Worker | Pipeline complete | job_id={job_id} | path={generated_path}"
+            )
 
-        # ── 4. Mark completed ──────────────────────────────────────────
-        await job_repo.mark_completed(job_id=job_id, result_path=generated_path)
+            # ── 4. Mark completed ──────────────────────────────────────────
+            await job_repo.mark_completed(job_id=job_id, result_path=generated_path)
 
-        # ── 4b. Increment Quota ────────────────────────────────────────
-        from srs_engine.core.db.quota_repo import QuotaRepo
-        quota_repo = QuotaRepo(db)
-        await quota_repo.increment_quota(user_id, "docx_count")
-        logger.info(f"Worker | Quota incremented | user_id={user_id} | type=docx_count")
+            # ── 4b. Increment Quota ────────────────────────────────────────
+            from srs_engine.core.db.quota_repo import QuotaRepo
+            quota_repo = QuotaRepo(db)
+            await quota_repo.increment_quota(user_id, "docx_count")
+            logger.info(f"Worker | Quota incremented | user_id={user_id} | type=docx_count")
 
-        # ── 5. Send completion email ───────────────────────────────────
-        await _notify_user(
-            user_repo=user_repo,
-            user_id=user_id,
-            project_name=project_name,
-            generated_path=generated_path,
-        )
+            # ── 5. Send completion email ───────────────────────────────────
+            await _notify_user(
+                user_repo=user_repo,
+                user_id=user_id,
+                project_name=project_name,
+                generated_path=generated_path,
+            )
+            # Success! Exit the retry loop
+            break
 
-    except Exception as exc:
-        error_msg = str(exc)
-        logger.error(
-            f"Worker | Pipeline failed | job_id={job_id} | error={error_msg}",
-            exc_info=True,
-        )
-        await job_repo.mark_failed(job_id=job_id, error=error_msg)
-        # Re-raise so the consumer requeues the job
-        raise
+        except Exception as exc:
+            import litellm
+            # Handle Rate Limits specifically
+            if isinstance(exc, litellm.exceptions.RateLimitError):
+                if attempt < max_retries - 1:
+                    logger.warning(
+                        f"Worker | Rate limit hit (Attempt {attempt+1}/{max_retries}). "
+                        f"Sleeping 60s before retry... | job_id={job_id}"
+                    )
+                    await job_repo.update_progress(
+                        job_id=job_id,
+                        progress=5,
+                        current_step="Rate limit hit — waiting 60s to retry...",
+                        status=JobStatus.PROCESSING
+                    )
+                    await asyncio.sleep(60)
+                    continue
+            
+            # For other errors or final retry failure
+            error_msg = str(exc)
+            logger.error(
+                f"Worker | Pipeline failed | job_id={job_id} | error={error_msg}",
+                exc_info=True,
+            )
+            await job_repo.mark_failed(job_id=job_id, error=error_msg)
+            # Re-raise so the consumer removes it from current active state
+            raise
 
 
 # ---------------------------------------------------------------------------
