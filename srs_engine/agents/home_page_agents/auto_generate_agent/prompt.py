@@ -383,7 +383,7 @@ Discrete numbered steps for complex flows:
 ## Step 4: Write User-Centric Language
 Focus on WHAT user does, not HOW system works:
 
-❌ AVOID: "Database queries records and ML calculates probabilities"
+AVOID: "Database queries records and ML calculates probabilities"
 ✓ PREFER: "User views prediction results showing risk scores"
 
 **Guidelines:**
