@@ -39,10 +39,10 @@ class PRIMARY_USER_FLOW_Section(StrictBaseModel):
     primary_user_flow: str = Field(
         ...,
         min_length=100,
-        max_length=800,
+        max_length=2000,
         description=(
             "A clear, step-by-step description of how a primary user interacts with the system "
-            "to accomplish their main goal. Should be 100-800 characters long, covering the complete "
+            "to accomplish their main goal. Should be 100-2000 characters long, covering the complete "
             "user journey from entry to exit. Include: login/access, main actions, data operations, "
             "viewing results, and any export/notification steps. Use clear, action-oriented language."
         ),

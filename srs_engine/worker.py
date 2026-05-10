@@ -62,6 +62,7 @@ logger = get_logger("srs_engine.worker")
 
 client = AsyncIOMotorClient(settings.mongodb_uri, tlsCAFile=certifi.where())
 db = client[settings.mongodb_db]
+logger.info(f"Worker | Connected to MongoDB | database={settings.mongodb_db}")
 job_repo = JobRepo(db)
 user_repo = UserRepo(db)
 
@@ -152,7 +153,7 @@ async def handle_job(job_id: str) -> None:
         await asyncio.sleep(2) # Wait 500ms for DB replication/consistency
 
     if not job:
-        logger.error(f"Worker | Job not found in DB after retries — skipping | job_id={job_id}")
+        logger.error(f"Worker | Job not found in DB [{settings.mongodb_db}] after retries — skipping | job_id={job_id}")
         return
 
     # Guard against re-processing a job that somehow landed twice in the queue
