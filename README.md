@@ -175,7 +175,8 @@ SRS_Engine/
 │   │   ├── model.py                        # LLM client setup (Groq via LiteLLM)
 │   │   └── srs_document_generator.py       # .docx assembly logic
 │   ├── main.py                             # FastAPI app entrypoint
-│   └── worker.py                           # RabbitMQ consumer / pipeline runner
+│   ├── worker.py                           # RabbitMQ consumer / pipeline runner
+│   └── worker_manager.py                   # Auto-scaling worker orchestrator
 ├── logs/                                   # Structured daily log folders
 ├── .env.example
 ├── requirements.txt
@@ -360,7 +361,7 @@ Startup | RabbitMQ ready
 
 ```bash
 cd SRS_Engine
-python -m srs_engine.worker
+python -m srs_engine.worker_manager
 ```
 
 You should see:
@@ -404,10 +405,12 @@ The worker is now idle and will activate the moment a user submits the form.
 ### Output Files
 
 ```
-srs_engine/generated_srs/
-└── {ProjectName}_SRS.docx
+srs_engine/generated_srs/{user_id}/
+├── {ProjectName}_SRS.docx
+├── {ProjectName}_sections.json
+└── _meta.json
 
-srs_engine/static/
+srs_engine/generated_images/
 ├── {ProjectName}_user_interfaces_diagram.png
 ├── {ProjectName}_hardware_interfaces_diagram.png
 ├── {ProjectName}_software_interfaces_diagram.png
@@ -418,20 +421,14 @@ srs_engine/static/
 
 ## 📈 Scaling
 
-To handle multiple concurrent users, open additional terminals and run extra worker instances. RabbitMQ distributes jobs one-at-a-time across all running workers automatically.
+The `worker_manager.py` automatically scales worker processes based on queue depth. You only need to run one instance of the manager:
 
 ```bash
 # Terminal 3
-python -m srs_engine.worker
-
-# Terminal 4
-python -m srs_engine.worker
-
-# Terminal 5 (and so on...)
-python -m srs_engine.worker
+python -m srs_engine.worker_manager
 ```
 
-Each worker processes one job at a time; the queue handles buffering.
+The manager monitors the RabbitMQ queue and will dynamically spawn new `worker.py` processes (up to 4 by default) when there are pending jobs, scaling back down when idle. Each worker processes one job at a time; the queue handles buffering.
 
 ---
 
@@ -460,12 +457,12 @@ Run your worker processes as background services (e.g. via `systemd` or `supervi
 ```bash
 # systemd unit example
 [Unit]
-Description=SRS Engine Worker
+Description=SRS Engine Worker Manager
 After=network.target
 
 [Service]
 WorkingDirectory=/app/SRS_Engine
-ExecStart=/app/venv/bin/python -m srs_engine.worker
+ExecStart=/app/venv/bin/python -m srs_engine.worker_manager
 Restart=always
 EnvironmentFile=/app/SRS_Engine/.env
 
@@ -631,7 +628,7 @@ Upload → Parse → Create Session → Analyse → Questions → Answers → Re
 ## 🛑 Stopping the Application
 
 ```bash
-# Terminal 3 — Stop worker
+# Terminal 3 — Stop worker manager
 Ctrl + C
 
 # Terminal 2 — Stop FastAPI
