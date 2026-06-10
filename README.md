@@ -61,7 +61,12 @@
 | Feature | Description |
 |---|---|
 | 🤖 **Multi-Agent SRS Generator** | A 7-step guided form (Project Identity → System Context → Functional Scope → NFRs → Security → Technical → Output Control) feeds 7 specialized AI agents that produce IEEE 830-1998 compliant documents at three detail levels: High-level, Technical, or Enterprise-grade |
+| 📄 **Problem Statement Enhancement** | AI automatically improves and expands your problem statements into detailed descriptions |
+| 🎯 **Auto-Generate Section** | Refine and generate specific sections on-demand without regenerating the entire document |
 | 📊 **Architecture Diagram Generation** | Automatically renders 4 Mermaid diagrams (User, Hardware, Software, Communication Interfaces) as PNGs embedded in the final `.docx` |
+| 📁 **Document Upload & Parsing** | Upload existing SRS documents (PDF/DOCX) and parse them into a structured JSON format |
+| 🔄 **SRS Upgrader** | Section-by-section AI enhancement workflow (Upload → Analyze → Flag → Question → Answer → Enhance → Export) |
+| 💬 **Intelligent Chatbot** | Agentic document chat with tool-calling to ask questions, extract insights, and navigate your generated specs |
 | 📋 **Job Tracker UI** | Real-time dashboard with per-job progress bars, status filters (All / Pending / Processing / Completed / Failed), completion time, and one-click `.docx` download |
 | 🔐 **Auth — Username/Password + Google OAuth** | Register and sign in with a username/password account, or continue with Google. Sessions managed server-side with `SESSION_SECRET_KEY` |
 | 📧 **Email Delivery** | Generated `.docx` is automatically emailed to the user upon job completion via SMTP |
@@ -74,7 +79,6 @@ The engine ships with Pydantic schemas for 9 industry verticals:
 `Aerospace` · `Automotive` · `E-commerce` · `Education` · `Energy` · `Finance` · `Healthcare & Medical Devices` · `Telecom` · `General Technical SRS`
 
 ### Roadmap
-- [ ] SRS Upgrader (section-by-section AI enhancement with question engine)
 - [ ] Domain-specific SRS generation (PSAC, ASPICE, ISO 26262, DO-178C, etc.)
 - [ ] Multi-worker horizontal scaling UI
 - [ ] PDF export alongside `.docx`
